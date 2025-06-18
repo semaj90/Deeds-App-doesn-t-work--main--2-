@@ -1,0 +1,53 @@
+# Page snapshot
+
+```yaml
+- navigation:
+  - link "WardenNet":
+    - /url: /
+  - textbox "Search..."
+  - img
+  - link "Sign In":
+    - /url: /login
+  - link "Register":
+    - /url: /register
+- main
+- main:
+  - img
+  - heading "Join WardenNet" [level=1]
+  - paragraph: Start Your Journey
+  - paragraph: Create your WardenNet account to access powerful case management tools, evidence tracking, and streamlined prosecution workflows designed for modern legal professionals.
+  - img
+  - text: Complete case management system
+  - img
+  - text: Secure evidence handling
+  - img
+  - text: Advanced analytics & reporting
+  - heading "Create Your Account" [level=2]
+  - text: Full Name
+  - img
+  - textbox "Full Name"
+  - text: Email Address
+  - img
+  - textbox "Email Address"
+  - text: Password
+  - img
+  - textbox "Password"
+  - text: Must be at least 8 characters with mixed case, numbers & symbols Confirm Password
+  - img
+  - textbox "Confirm Password"
+  - checkbox "I agree to the Terms of Service and Privacy Policy"
+  - text: I agree to the
+  - link "Terms of Service":
+    - /url: /terms
+  - text: and
+  - link "Privacy Policy":
+    - /url: /privacy
+  - button "Create Account":
+    - img
+    - text: Create Account
+  - text: or
+  - paragraph:
+    - text: Already have an account?
+    - link "Sign in here":
+      - /url: /login
+```

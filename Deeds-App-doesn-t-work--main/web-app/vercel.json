@@ -1,0 +1,18 @@
+{
+  "buildCommand": "cd web-app/sveltekit-frontend && npm run build",
+  "outputDirectory": "web-app/sveltekit-frontend/build",
+  "installCommand": "cd web-app/sveltekit-frontend && npm install",
+  "devCommand": "cd web-app/sveltekit-frontend && npm run dev",
+  "framework": "sveltekit",
+  "functions": {
+    "web-app/api/**/*.rs": {
+      "runtime": "rust"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ]
+}

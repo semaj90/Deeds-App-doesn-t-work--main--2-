@@ -1,0 +1,66 @@
+[package]
+name = "prosecutor-backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Web framework
+axum = "0.7"
+tokio = { version = "1.0", features = ["full"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "fs"] }
+hyper = "1.0"
+
+# Database (PostgreSQL only, simpler) - No TLS to avoid ring crate issues
+sqlx = { version = "0.7", features = ["runtime-tokio", "postgres", "uuid", "chrono", "json"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Authentication (commented out due to Windows ring crate issues)
+# jsonwebtoken = "9.0"  # Uses ring crate
+# bcrypt = "0.15"       # May have compilation issues
+
+# Simple auth alternative for now
+base64 = "0.22"
+sha2 = "0.10"
+lazy_static = "1.4"
+
+# Environment and configuration
+dotenv = "0.15"
+anyhow = "1.0"
+thiserror = "1.0"
+
+# File handling and uploads
+multer = "3.0"
+mime = "0.3"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Utilities
+rand = "0.8"
+
+# Development dependencies
+[dev-dependencies]
+# reqwest = { version = "0.12", features = ["json", "multipart"] }  # May cause ring issues
+tempfile = "3.8"
+
+# Optional AI features (can be enabled later)
+[features]
+default = []
+ai-features = [
+    # "qdrant-client",
+    # "candle-core", 
+    # "fastembed"
+]
+
+# Note: AI dependencies commented out due to Windows compilation issues
+# Will be re-enabled once environment is properly configured
+# qdrant-client = { version = "1.7", optional = true }
+# candle-core = { version = "0.4", optional = true }
+# fastembed = { version = "3.0", optional = true }

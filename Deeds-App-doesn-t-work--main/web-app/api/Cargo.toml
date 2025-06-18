@@ -1,0 +1,10 @@
+[package]
+name = "vercel-functions"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+prosecutor-core = { path = "../../core-rust-backend", features = ["web-server"] }
+vercel_lambda = "0.2"
+tokio = { version = "1.0", features = ["macros"] }
+serde_json = "1.0"

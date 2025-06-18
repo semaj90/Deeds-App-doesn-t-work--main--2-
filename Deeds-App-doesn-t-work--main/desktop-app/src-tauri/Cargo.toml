@@ -1,0 +1,32 @@
+[package]
+name = "prosecutor-desktop"
+version = "0.1.0"
+description = "Desktop Prosecutor Case Management App"
+authors = ["Your Name <your.email@example.com>"]
+license = "MIT"
+repository = "https://github.com/yourusername/prosecutor-app"
+edition = "2021"
+rust-version = "1.70"
+
+# Tauri build configuration
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+anyhow = "1.0"
+
+# Tauri dependencies
+tauri = { version = "1.6", features = ["api-all", "shell-open"] }
+
+# Our core backend library
+prosecutor-core = { path = "../../core-rust-backend", features = ["database"] }
+
+[features]
+# By default, Tauri runs in production mode when `tauri build` is run.
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

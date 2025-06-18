@@ -1,0 +1,22 @@
+{
+  "name": "prosecutor-desktop",
+  "version": "0.1.0",
+  "description": "Desktop Prosecutor Case Management App",
+  "main": "index.js",
+  "scripts": {
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "dev": "cd sveltekit-frontend && npm run dev",
+    "build": "cd sveltekit-frontend && npm run build",
+    "rust:build": "cd src-tauri && cargo build",
+    "rust:check": "cd src-tauri && cargo check"
+  },
+  "keywords": ["tauri", "prosecutor", "case-management", "desktop"],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "@tauri-apps/cli": "^1.5.0"
+  },
+  "dependencies": {}
+}

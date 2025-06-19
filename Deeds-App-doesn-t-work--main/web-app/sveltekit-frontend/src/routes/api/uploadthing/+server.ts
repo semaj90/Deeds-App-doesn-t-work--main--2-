@@ -1,10 +1,12 @@
 import { createUploadthing, type FileRouter } from 'uploadthing/server';
 import { UploadThingError } from 'uploadthing/server';
+import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 
 const f = createUploadthing();
 
 // FileRouter for your app, can contain multiple FileRoutes
-export const ourFileRouter = {
+const ourFileRouter = {
   // Define as many FileRoutes as you like, each with a unique routeSlug
   imageUploader: f({
     image: { maxFileSize: '4MB', maxFileCount: 10 },
@@ -48,3 +50,12 @@ export const ourFileRouter = {
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;
+
+// For now, return a simple response until UploadThing is properly configured
+export const POST: RequestHandler = async ({ request }) => {
+  return json({ message: 'Upload endpoint placeholder - UploadThing configuration needed' });
+};
+
+export const GET: RequestHandler = async () => {
+  return json({ message: 'Upload endpoint available' });
+};

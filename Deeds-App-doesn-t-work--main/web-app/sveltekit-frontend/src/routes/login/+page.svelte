@@ -36,6 +36,13 @@
       <p class="mt-2 text-sm text-gray-600">
         Sign in to your account
       </p>
+      <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p class="text-sm text-blue-800 font-medium mb-2">Demo Credentials:</p>
+        <div class="text-xs text-blue-700 space-y-1">
+          <div><strong>Admin:</strong> admin@example.com / admin123</div>
+          <div><strong>User:</strong> user@example.com / user123</div>
+        </div>
+      </div>
     </div>
     
     <form method="POST" use:enhance={({ formElement, formData, action, cancel, submitter }) => {

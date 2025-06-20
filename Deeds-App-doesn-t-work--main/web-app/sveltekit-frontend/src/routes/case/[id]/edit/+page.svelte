@@ -17,12 +17,11 @@
     try {
       await invoke('update_case', {
         id: caseItem.id,
-        name: caseItem.name,
-        description: caseItem.description,
         title: caseItem.title,
+        description: caseItem.description,
         summary: caseItem.summary,
         status: caseItem.status,
-        dateOpened: caseItem.dateOpened
+        date_opened: caseItem.date_opened
       });
       alert('Case updated successfully!');
       await goto(`/case/${caseItem.id}`);
@@ -49,16 +48,11 @@
 </script>
 
 <svelte:head>
-  <title>Edit Case: {caseItem.name} - WardenNet</title>
+  <title>Edit Case: {caseItem.title} - WardenNet</title>
 </svelte:head>
 <div class="container mt-4 text-dark">
-  <h1 class="mb-4 text-center text-primary">Edit Case: {caseItem.name}</h1>
+  <h1 class="mb-4 text-center text-primary">Edit Case: {caseItem.title}</h1>
   <form method="POST" use:enhance={handleUpdate}>
-    <div class="mb-3">
-      <label for="name" class="form-label">Case Name</label>
-      <input type="text" class="form-control" id="name" name="name" bind:value={caseItem.name} required />
-    </div>
-
     <div class="mb-3">
       <label for="title" class="form-label">Case Title</label>
       <input type="text" class="form-control" id="title" name="title" bind:value={caseItem.title} required />
@@ -79,8 +73,8 @@
     </div>
 
     <div class="mb-3">
-      <label for="dateOpened" class="form-label">Date Opened</label>
-      <input type="date" class="form-control" id="dateOpened" name="dateOpened" bind:value={caseItem.dateOpened} required />
+      <label for="date_opened" class="form-label">Date Opened</label>
+      <input type="date" class="form-control" id="date_opened" name="date_opened" bind:value={caseItem.date_opened} required />
     </div>
 
     <div class="mb-3">

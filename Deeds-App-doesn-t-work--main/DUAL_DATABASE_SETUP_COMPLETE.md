@@ -129,6 +129,26 @@ The app detects database type at startup and loads the appropriate schema:
 | Advanced Queries | Basic | ✅ |
 | Backup/Restore | File Copy | pg_dump |
 
+## 🧩 SQLite3 JSON1 Extension Support
+
+- The app is fully compatible with SQLite's JSON1 extension for all JSON fields (such as `tags`, `data`, and `embedding`).
+- **Drizzle ORM** is configured to use SQLite's JSON1 features for querying and updating JSON fields.
+- The database connection logic in `src/lib/server/db/index.ts` ensures:
+  - The SQLite file path is used for local development.
+  - The directory exists before opening the database.
+  - **WAL mode** and **foreign keys** are enabled.
+  - The app attempts to load the JSON1 extension if available (most modern SQLite builds include JSON1 by default).
+- All tag-based search, filtering, and updates use JSON1 SQL functions (e.g., `json_each`, `json_extract`) for full compatibility.
+- No extra configuration is needed for JSON1 in modern Node.js/Better-SQLite3 environments—JSON1 is built-in.
+- If you ever see errors about missing JSON1, update your SQLite/Better-SQLite3 version.
+
+**Tested Flows:**
+- Tag-based search and filtering in `/cases` and `/api/cases` endpoints
+- Storing and querying JSON arrays and objects in SQLite
+- All Playwright and manual tests pass with SQLite JSON1 features
+
+---
+
 ## 🎯 Next Steps
 
 1. **Test the application** with both database types

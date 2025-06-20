@@ -1,0 +1,23 @@
+{
+  "functions": {
+    "web-app/sveltekit-frontend/src/routes/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "ENABLE_AI_FEATURES": "true",
+      "ENABLE_SEMANTIC_SEARCH": "true",
+      "ENABLE_RAG": "true"
+    }
+  }
+}

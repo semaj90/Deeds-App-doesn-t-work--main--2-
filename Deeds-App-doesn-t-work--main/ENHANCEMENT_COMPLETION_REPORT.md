@@ -161,3 +161,42 @@ Successfully enhanced the SvelteKit-based legal case management app with advance
 ✅ **Performance Optimizations** throughout the application  
 
 The legal case management application is now significantly enhanced with enterprise-grade features and is ready for production deployment!
+
+## 🧪 PLAYWRIGHT E2E TESTING & TROUBLESHOOTING
+
+### Playwright Setup for Local Development
+- Playwright and @playwright/test are only installed in `web-app/sveltekit-frontend/package.json`.
+- **Always run Playwright commands from the `web-app/sveltekit-frontend` directory.**
+- If you see errors like:
+  > Playwright Test did not expect test.describe() to be called here.
+  > You have two different versions of @playwright/test.
+  This means you have duplicate Playwright installs or are running from the wrong directory.
+
+#### How to Fix Playwright Test Errors
+1. **Clean up all node_modules and lock files:**
+   ```powershell
+   Remove-Item -Recurse -Force .\node_modules
+   Remove-Item -Recurse -Force .\web-app\sveltekit-frontend\node_modules
+   Remove-Item -Force .\package-lock.json
+   Remove-Item -Force .\web-app\sveltekit-frontend\package-lock.json
+   ```
+2. **Reinstall dependencies in the correct place:**
+   ```powershell
+   cd .\web-app\sveltekit-frontend
+   npm install
+   ```
+3. **Run Playwright tests:**
+   ```powershell
+   npx playwright test
+   ```
+
+#### Best Practices
+- Never install Playwright in the monorepo root or other packages.
+- If you add new tests, always add them to `web-app/sveltekit-frontend/tests/`.
+- For local dev, ensure no other dev server is running before running Playwright tests.
+
+#### Example Test Command
+```powershell
+cd web-app/sveltekit-frontend
+npx playwright test
+```

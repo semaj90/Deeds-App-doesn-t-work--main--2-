@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { criminals } from '$lib/server/db/schema';
-import { eq, like, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
+import { cache, invalidateCacheByTags } from '$lib/server/cache/cache';
 
 export async function GET({ url }) {
     const page = parseInt(url.searchParams.get('page') || '1');
@@ -10,67 +11,80 @@ export async function GET({ url }) {
     const filterStatus = url.searchParams.get('status') || '';
     const filterThreatLevel = url.searchParams.get('threat') || '';
 
+    const cacheKey = `criminals:list:${page}:${limit}:${searchTerm}:${filterStatus}:${filterThreatLevel}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+        return json(cached);
+    }
     const offset = (page - 1) * limit;
-
     let query = db.select().from(criminals).$dynamic();
     let countQuery = db.select({ count: sql`count(*)` }).from(criminals).$dynamic();
-
     if (searchTerm) {
-        console.log(`Search Term: ${searchTerm}`);
         const searchPattern = `%${searchTerm.toLowerCase()}%`;
-        console.log(`Search Pattern: ${searchPattern}`);
-        query = query.where(
-            sql`${criminals.name} ILIKE ${searchPattern}`
-        );
-        countQuery = countQuery.where(
-            sql`${criminals.name} ILIKE ${searchPattern}`
-        );
+        query = query.where(sql`(lower(${criminals.firstName}) LIKE ${searchPattern} OR lower(${criminals.lastName}) LIKE ${searchPattern})`);
+        countQuery = countQuery.where(sql`(lower(${criminals.firstName}) LIKE ${searchPattern} OR lower(${criminals.lastName}) LIKE ${searchPattern})`);
     }
-
-
     if (filterThreatLevel) {
         query = query.where(eq(criminals.threatLevel, filterThreatLevel));
         countQuery = countQuery.where(eq(criminals.threatLevel, filterThreatLevel));
     }
-
+    if (filterStatus) {
+        query = query.where(eq(criminals.status, filterStatus));
+        countQuery = countQuery.where(eq(criminals.status, filterStatus));
+    }
     const fetchedCriminals = await query.limit(limit).offset(offset);
     const totalCriminalsResult = await countQuery;
     const totalCriminals = totalCriminalsResult[0].count;
-
-    return json({ criminals: fetchedCriminals, totalCriminals });
+    const result = { criminals: fetchedCriminals, totalCriminals };
+    cache.set(cacheKey, result, 300000, ['criminals', 'criminals:list']);
+    return json(result);
 }
 
 export async function POST({ request }) {
+    const body = await request.json();
     const {
-        name,
         firstName,
         lastName,
+        middleName,
         aliases,
+        dateOfBirth,
+        address,
+        phone,
+        photoUrl,
+        threatLevel,
+        status,
         priors,
         convictions,
-        threatLevel
-    } = await request.json();
-
+        notes,
+        aiSummary,
+        aiTags,
+        aiAnalysis,
+        createdBy
+    } = body;
     try {
-        // Handle name splitting if only name is provided
-        let fName = firstName;
-        let lName = lastName;
-        
-        if (name && !firstName && !lastName) {
-            const nameParts = name.trim().split(' ');
-            fName = nameParts[0] || '';
-            lName = nameParts.slice(1).join(' ') || '';
-        }
-
         const newCriminal = await db.insert(criminals).values({
-            firstName: fName,
-            lastName: lName,
-            name,
+            id: crypto.randomUUID(),
+            firstName,
+            lastName,
+            middleName,
             aliases: aliases || [],
+            dateOfBirth,
+            address,
+            phone,
+            photoUrl,
+            threatLevel: threatLevel || 'low',
+            status: status || 'active',
             priors: priors || [],
             convictions: convictions || [],
-            threatLevel
+            notes,
+            aiSummary,
+            aiTags: aiTags || [],
+            aiAnalysis: aiAnalysis || {},
+            createdBy,
+            createdAt: new Date(),
+            updatedAt: new Date()
         }).returning();
+        invalidateCacheByTags(['criminals', 'criminals:list']);
         return json(newCriminal[0], { status: 201 });
     } catch (error) {
         console.error('Error adding criminal:', error);

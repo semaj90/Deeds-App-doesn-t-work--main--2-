@@ -4,6 +4,10 @@ use serde::{Serialize, Deserialize};
 use dotenv::dotenv;
 use std::env;
 
+// Import our custom modules
+mod llm_commands;
+mod evidence_processor;
+
 // Define a struct that mirrors your `cases` table schema
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Case {
@@ -170,6 +174,8 @@ fn main() {
 
     tauri::Builder::default()
         .manage(pool) // Make the database pool available as a state
+        .plugin(llm_commands::register_llm_commands())
+        .plugin(evidence_processor::register_evidence_commands())
         .invoke_handler(tauri::generate_handler![
             create_case,
             update_case,

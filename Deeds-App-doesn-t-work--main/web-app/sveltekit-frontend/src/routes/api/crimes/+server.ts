@@ -1,72 +1,79 @@
-import { json } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { crimes, criminals, statutes } from '$lib/server/db/schema';
+import type { RequestHandler } from '@sveltejs/kit';
+import { db } from '$lib/server/db/seed-db';
+import { crimes } from '$lib/server/db/schema';
 import { eq, like, sql } from 'drizzle-orm';
+import { json } from '@sveltejs/kit';
+import type { InferInsertModel } from 'drizzle-orm';
 
-export async function GET({ url }) {
+// Polyfill for UUID (if crypto.randomUUID is not available)
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+type NewCrime = InferInsertModel<typeof crimes>;
+
+// GET /api/crimes - List crimes with pagination and search
+export const GET: RequestHandler = async ({ url }) => {
+  try {
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '10');
     const searchTerm = url.searchParams.get('search') || '';
-
     const offset = (page - 1) * limit;
 
-    let query = db.select({
-        crime: crimes,
-        criminal: criminals,
-        statute: statutes
-    })
-    .from(crimes)
-    .innerJoin(criminals, eq(crimes.criminalId, criminals.id))
-    .innerJoin(statutes, eq(crimes.statuteId, statutes.id))
-    .$dynamic();
-
-    let countQuery = db.select({ count: sql`count(*)` })
-    .from(crimes)
-    .innerJoin(criminals, eq(crimes.criminalId, criminals.id))
-    .innerJoin(statutes, eq(crimes.statuteId, statutes.id))
-    .$dynamic();
-
+    let query = db.select().from(crimes).$dynamic();
     if (searchTerm) {
-        const searchPattern = `%${searchTerm.toLowerCase()}%`;
-        query = query.where(
-            sql`${crimes.name} ILIKE ${searchPattern} OR ${crimes.description} ILIKE ${searchPattern} OR ${criminals.name} ILIKE ${searchPattern} OR ${statutes.code} ILIKE ${searchPattern} OR ${statutes.title} ILIKE ${searchPattern}`
-        );
-        countQuery = countQuery.where(
-            sql`${crimes.name} ILIKE ${searchPattern} OR ${crimes.description} ILIKE ${searchPattern} OR ${criminals.name} ILIKE ${searchPattern} OR ${statutes.code} ILIKE ${searchPattern} OR ${statutes.title} ILIKE ${searchPattern}`
-        );
+      query = query.where(like(crimes.name, `%${searchTerm}%`));
     }
-
-    const fetchedCrimes = await query.limit(limit).offset(offset);
-    const totalCrimesResult = await countQuery;
-    const totalCrimes = totalCrimesResult[0].count;
-
-    // Flatten the structure for easier consumption in Svelte component
-    const crimesWithDetails = fetchedCrimes.map(row => ({
-        ...row.crime,
-        criminal: row.criminal,
-        statute: row.statute
-    }));
-
-    return json({ crimes: crimesWithDetails, totalCrimes });
-}
-
-export async function POST({ request }) {
-    const { name, description, statuteId, criminalId } = await request.json();
-
-    if (!name || !statuteId || !criminalId) {
-        return json({ message: 'Name, statute ID, and criminal ID are required' }, { status: 400 });
+    const data = await query.limit(limit).offset(offset).all();
+    // Count total
+    let countQuery = db.select({ count: sql`count(*)` }).from(crimes).$dynamic();
+    if (searchTerm) {
+      countQuery = countQuery.where(like(crimes.name, `%${searchTerm}%`));
     }
+    const total = (await countQuery.all())[0]?.count || 0;
+    return json({ data, page, limit, total });
+  } catch (error) {
+    console.error('Error fetching crimes:', error);
+    return json({ error: 'Failed to fetch crimes' }, { status: 500 });
+  }
+};
 
-    try {
-        const newCrime = await db.insert(crimes).values({
-            name,
-            description,
-            statuteId,
-            criminalId
-        }).returning();
-        return json(newCrime[0], { status: 201 });
-    } catch (error) {
-        console.error('Error adding crime:', error);
-        return json({ message: 'Failed to add crime' }, { status: 500 });
+// POST /api/crimes - Create a new crime
+export const POST: RequestHandler = async ({ request }) => {
+  try {
+    const body = await request.json();
+    const { name, description, statuteId, caseId, criminalId, chargeLevel, status, incidentDate, arrestDate, filingDate, notes, aiSummary, metadata, createdBy } = body;
+    if (!name) {
+      return json({ error: 'Name is required' }, { status: 400 });
     }
-}
+    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : uuidv4();
+    const now = new Date();
+    const newCrime: NewCrime = {
+      id,
+      name,
+      description,
+      statuteId,
+      caseId,
+      criminalId,
+      chargeLevel,
+      status: status || 'pending',
+      incidentDate,
+      arrestDate,
+      filingDate,
+      notes,
+      aiSummary,
+      metadata: metadata || '{}',
+      createdBy,
+      createdAt: now,
+      updatedAt: now
+    };
+    const [crime] = await db.insert(crimes).values(newCrime).returning();
+    return json({ crime });
+  } catch (error) {
+    console.error('Error creating crime:', error);
+    return json({ error: 'Failed to create crime' }, { status: 500 });
+  }
+};

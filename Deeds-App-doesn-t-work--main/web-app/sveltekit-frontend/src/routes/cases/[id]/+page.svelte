@@ -3,20 +3,26 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { invalidate } from '$app/navigation';
-  import { enhance } from '$app/forms';
   import { writable } from 'svelte/store';
+  import EnhancedCaseForm from '$lib/components/EnhancedCaseForm.svelte';
+  import TextFragmentManager from '$lib/components/TextFragmentManager.svelte';
+  import CaseRelationshipAnalyzer from '$lib/components/CaseRelationshipAnalyzer.svelte';
+  import { recentCacheManager } from '$lib/stores/recentCasesCache';
+  import { getStateColor, getStateLabel, caseWorkflowManager } from '$lib/stores/caseStateMachine';
 
   export let data;
   
   let caseId = $page.params.id;
   let caseDetails = data.caseDetails;
-  let evidenceList = data.evidenceList;
+  let evidenceList = data.evidenceList || [];
   
-  // Form data
-  let newTitle = caseDetails.title;
-  let newDescription = caseDetails.description;
-  let newDangerScore = caseDetails.dangerScore;
-  let newStatus = caseDetails.status;
+  // Enhanced features
+  let viewMode: 'view' | 'edit' | 'fragments' | 'relationships' = 'view';
+  let showNLPInsights = false;
+  let nlpAnalysis: any = null;
+  let isAnalyzing = false;
+  let caseEvents: any[] = [];
+  let relatedCases: any[] = [];
   
   // Evidence upload
   let files: File[] = [];
@@ -24,10 +30,157 @@
   let isUploading = false;
   const uploadProgress = writable(0);
   const uploadSummary = writable('');
-  // Reactive danger score display
-  $: dangerLevel = (newDangerScore || 0) <= 3 ? 'Low' : (newDangerScore || 0) <= 7 ? 'Medium' : 'High';
-  $: dangerColor = (newDangerScore || 0) <= 3 ? 'text-success' : (newDangerScore || 0) <= 7 ? 'text-warning' : 'text-error';
 
+  onMount(async () => {
+    if (caseDetails) {
+      // Add case to recent cache
+      recentCacheManager.addCaseToCache({
+        id: caseDetails.id,
+        title: caseDetails.title || '',
+        description: caseDetails.description || '',
+        status: caseDetails.status || 'active',
+        tags: caseDetails.tags || []
+      });
+
+      // Load case events and NLP analysis
+      await Promise.all([
+        loadCaseEvents(),
+        loadNLPAnalysis(),
+        loadRelatedCases()
+      ]);
+    }
+  });
+
+  async function loadCaseEvents() {
+    try {
+      const response = await fetch(`/api/case-events?caseId=${caseId}&limit=10`);
+      if (response.ok) {
+        const result = await response.json();
+        caseEvents = result.events || [];
+      }
+    } catch (error) {
+      console.error('Failed to load case events:', error);
+    }
+  }
+
+  async function loadNLPAnalysis() {
+    if (!caseDetails?.description || caseDetails.description.length < 50) return;
+    
+    isAnalyzing = true;
+    try {
+      const response = await fetch('/api/nlp/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          description: caseDetails.description,
+          caseId: caseDetails.id
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        nlpAnalysis = result.analysis;
+        showNLPInsights = true;
+      }
+    } catch (error) {
+      console.error('Failed to load NLP analysis:', error);
+    } finally {
+      isAnalyzing = false;
+    }
+  }
+
+  async function loadRelatedCases() {
+    try {
+      const response = await fetch(`/api/cases/merge/suggestions?caseId=${caseId}`);
+      if (response.ok) {
+        const result = await response.json();
+        relatedCases = result.suggestions || [];
+      }
+    } catch (error) {
+      console.error('Failed to load related cases:', error);
+    }
+  }
+
+  function handleCaseUpdate(event: CustomEvent) {
+    const { title, description, data: caseData } = event.detail;
+    formData.title = title;
+    formData.description = description;
+    
+    // Update case details
+    if (caseDetails) {
+      caseDetails = { ...caseDetails, title, description, data: caseData };
+    }
+    
+    // Add to recent cache
+    recentCacheManager.addCaseToCache({
+      id: caseDetails.id,
+      title,
+      description,
+      status: caseData?.status || caseDetails.status,
+      tags: caseData?.tags || []
+    });
+  }
+
+  function handleTextMoved(event: CustomEvent) {
+    const { newDescription, targetTitle, movedText } = event.detail;
+    formData.description = newDescription;
+    if (caseDetails) {
+      caseDetails.description = newDescription;
+    }
+    
+    // Log this activity
+    recentCacheManager.addTextSnippet(caseId, `Moved text to "${targetTitle}": ${movedText.substring(0, 100)}...`);
+  }
+
+  function handleTextDropped(event: CustomEvent) {
+    const { newDescription, droppedText, sourceCaseId } = event.detail;
+    formData.description = newDescription;
+    if (caseDetails) {
+      caseDetails.description = newDescription;
+    }
+    
+    // Log this activity
+    recentCacheManager.addTextSnippet(caseId, `Received text from case ${sourceCaseId}: ${droppedText.substring(0, 100)}...`);
+  }
+
+  async function generateReport() {
+    try {
+      const response = await fetch(`/api/reports?type=case&id=${caseId}`);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `case-${caseId}-report.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Failed to generate report:', error);
+      alert('Failed to generate report');
+    }
+  }
+
+  function getStatusColor(status: string | null): string {
+    if (!status) return 'badge-neutral';
+    switch (status) {
+      case 'active': return 'badge-success';
+      case 'under_review': return 'badge-warning';
+      case 'closed': return 'badge-neutral';
+      case 'draft': return 'badge-ghost';
+      default: return 'badge-neutral';
+    }
+  }
+
+  function formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  // Evidence upload functions
   function handleDrop(event: DragEvent) {
     event.preventDefault();
     isDragOver = false;
@@ -52,6 +205,351 @@
       files = [...files, ...Array.from(target.files)];
     }
   }
+
+  async function uploadFiles() {
+    if (files.length === 0) return;
+    
+    isUploading = true;
+    const uploadFormData = new FormData();
+    
+    files.forEach(file => {
+      uploadFormData.append('files', file);
+    });
+    uploadFormData.append('caseId', caseId);
+    
+    try {
+      const response = await fetch('/api/evidence', {
+        method: 'POST',
+        body: uploadFormData
+      });
+      
+      if (response.ok) {
+        // Reload evidence list
+        await invalidate('/api/evidence');
+        files = [];
+        uploadSummary.set('Files uploaded successfully!');
+      } else {
+        uploadSummary.set('Upload failed');
+      }
+    } catch (error) {
+      uploadSummary.set('Upload error');
+    } finally {
+      isUploading = false;
+    }
+  }
+
+
+
+</script>
+
+<svelte:head>
+  <title>{caseDetails?.title || 'Case'} - WardenNet</title>
+</svelte:head>
+
+<div class="min-h-screen bg-base-200">
+  <div class="container mx-auto p-4">
+    
+    <!-- Header with Navigation -->
+    <div class="flex items-center justify-between mb-6">
+      <div class="breadcrumbs text-sm">
+        <ul>
+          <li><a href="/cases">Cases</a></li>
+          <li class="font-medium">{caseDetails?.title || 'Case Details'}</li>
+        </ul>
+      </div>
+      
+      <div class="flex gap-2">
+        <button 
+          class="btn btn-outline btn-sm"
+          on:click={() => viewMode = 'edit'}
+          class:btn-active={viewMode === 'edit'}
+        >
+          ✏️ Edit
+        </button>
+        <button 
+          class="btn btn-outline btn-sm"
+          on:click={() => viewMode = 'fragments'}
+          class:btn-active={viewMode === 'fragments'}
+        >
+          📝 Text Fragments
+        </button>
+        <button 
+          class="btn btn-outline btn-sm"
+          on:click={() => viewMode = 'relationships'}
+          class:btn-active={viewMode === 'relationships'}
+        >
+          🔗 Relationships
+        </button>
+        <button 
+          class="btn btn-primary btn-sm"
+          on:click={generateReport}
+        >
+          📄 Generate Report
+        </button>
+      </div>
+    </div>
+
+    <!-- Case Header -->
+    <div class="card bg-base-100 shadow-lg mb-6">
+      <div class="card-body">
+        <div class="flex items-start justify-between">
+          <div>
+            <h1 class="text-2xl font-bold mb-2">{caseDetails?.title || 'Untitled Case'}</h1>
+            <div class="flex items-center gap-2">
+              <div class="badge {getStatusColor(caseDetails?.status)} badge-lg">
+                {caseDetails?.status || 'active'}
+              </div>
+              {#if caseDetails?.dangerScore}
+                <div class="badge badge-outline">
+                  Risk: {caseDetails.dangerScore}/10
+                </div>
+              {/if}
+            </div>
+          </div>
+          
+          {#if relatedCases.length > 0}
+            <div class="alert alert-info">
+              <span class="text-sm">
+                🔗 {relatedCases.length} related case{relatedCases.length > 1 ? 's' : ''} found
+              </span>
+            </div>
+          {/if}
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Left Column - Case Content -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        {#if viewMode === 'edit'}
+          <!-- Enhanced Case Form -->
+          <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+              <h2 class="card-title">Edit Case</h2>
+              <EnhancedCaseForm 
+                existingCase={caseDetails}
+                isEditing={true}
+                on:saved={handleCaseUpdate}
+                on:cancel={() => viewMode = 'view'}
+              />
+            </div>
+          </div>
+        
+        {:else if viewMode === 'fragments'}
+          <!-- Text Fragment Manager -->
+          <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+              <h2 class="card-title">Manage Text Fragments</h2>
+              <TextFragmentManager 
+                {caseId}
+                description={formData.description}
+                canEdit={true}
+                on:textMoved={handleTextMoved}
+                on:textDropped={handleTextDropped}
+                on:descriptionChange={(e) => formData.description = e.detail.description}
+              />
+            </div>
+          </div>
+        
+        {:else if viewMode === 'relationships'}
+          <!-- Case Relationship Analyzer -->
+          <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+              <h2 class="card-title">Case Relationships</h2>
+              <CaseRelationshipAnalyzer 
+                {caseId}
+                userId={data.session?.user?.id}
+                on:merge={(e) => {
+                  console.log('Merge request:', e.detail);
+                  alert('Merge functionality would be implemented here');
+                }}
+              />
+            </div>
+          </div>
+        
+        {:else}
+          <!-- View Mode - Case Description -->
+          <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+              <h2 class="card-title">Case Description</h2>
+              <div class="prose max-w-none">
+                <p class="whitespace-pre-wrap">{caseDetails?.description || 'No description available.'}</p>
+              </div>
+              
+              {#if showNLPInsights && nlpAnalysis}
+                <div class="divider"></div>
+                <div class="bg-base-200 p-4 rounded-lg">
+                  <h3 class="font-semibold mb-2">🤖 AI Insights</h3>
+                  <div class="text-sm space-y-2">
+                    {#if nlpAnalysis.entities}
+                      <div>
+                        <strong>Entities:</strong> {nlpAnalysis.entities.join(', ')}
+                      </div>
+                    {/if}
+                    {#if nlpAnalysis.confidence}
+                      <div>
+                        <strong>Analysis Confidence:</strong> {Math.round(nlpAnalysis.confidence * 100)}%
+                      </div>
+                    {/if}
+                  </div>
+                </div>
+              {/if}
+            </div>
+          </div>
+        {/if}
+
+        <!-- Evidence Section -->
+        {#if viewMode === 'view'}
+          <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+              <h2 class="card-title">Evidence ({evidenceList.length})</h2>
+              
+              <!-- Evidence Upload -->
+              <div 
+                class="border-2 border-dashed border-base-300 rounded-lg p-8 text-center transition-colors"
+                class:border-primary={isDragOver}
+                class:bg-primary={isDragOver}
+                class:bg-opacity-10={isDragOver}
+                on:drop={handleDrop}
+                on:dragover={handleDragOver}
+                on:dragleave={handleDragLeave}
+                role="button"
+                tabindex="0"
+              >
+                {#if isUploading}
+                  <div class="loading loading-spinner loading-lg"></div>
+                  <p>Uploading files...</p>
+                {:else}
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-base-content/50 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <p class="text-lg font-medium mb-2">Drop files here or click to upload</p>
+                  <p class="text-sm text-base-content/70">Support for documents, images, and other evidence files</p>
+                  <input 
+                    type="file" 
+                    multiple 
+                    class="file-input file-input-bordered file-input-primary w-full max-w-xs mt-4"
+                    on:change={handleFileSelect}
+                  />
+                {/if}
+              </div>
+
+              {#if files.length > 0}
+                <div class="mt-4">
+                  <h3 class="font-medium mb-2">Selected Files ({files.length})</h3>
+                  <ul class="space-y-1">
+                    {#each files as file}
+                      <li class="text-sm">{file.name} ({formatFileSize(file.size)})</li>
+                    {/each}
+                  </ul>
+                  <button class="btn btn-primary btn-sm mt-2" on:click={uploadFiles}>
+                    Upload Files
+                  </button>
+                </div>
+              {/if}
+
+              <!-- Evidence List -->
+              {#if evidenceList.length > 0}
+                <div class="divider"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {#each evidenceList as evidence}
+                    <div class="card bg-base-200 shadow">
+                      <div class="card-body p-4">
+                        <h4 class="card-title text-sm">{evidence.filename || 'Unknown File'}</h4>
+                        <div class="text-xs space-y-1">
+                          <p>Uploaded: {evidence.createdAt ? new Date(evidence.createdAt).toLocaleDateString() : 'N/A'}</p>
+                          <p>By: {evidence.uploadedBy || 'Unknown'}</p>
+                        </div>
+                        <div class="card-actions justify-end mt-2">
+                          <button class="btn btn-primary btn-xs">
+                            View
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          </div>
+        {/if}
+      </div>
+
+      <!-- Right Column - Sidebar -->
+      <div class="space-y-6">
+        
+        <!-- Case Events Timeline -->
+        {#if caseEvents.length > 0}
+          <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+              <h3 class="card-title text-sm">📅 Recent Activity</h3>
+              <div class="space-y-3">
+                {#each caseEvents.slice(0, 5) as event}
+                  <div class="flex items-start gap-2">
+                    <div class="badge badge-xs badge-primary mt-1"></div>
+                    <div class="flex-1 text-xs">
+                      <div class="font-medium">{event.eventType.replace('_', ' ')}</div>
+                      <div class="text-base-content/70">
+                        {event.timestamp ? new Date(event.timestamp).toLocaleDateString() : ''}
+                      </div>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Related Cases -->
+        {#if relatedCases.length > 0}
+          <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+              <h3 class="card-title text-sm">🔗 Related Cases</h3>
+              <div class="space-y-2">
+                {#each relatedCases.slice(0, 3) as related}
+                  <div class="p-2 bg-base-200 rounded">
+                    <div class="font-medium text-sm truncate">{related.case.title}</div>
+                    <div class="text-xs text-base-content/70">
+                      {Math.round(related.similarity * 100)}% similarity
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Quick Actions -->
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <h3 class="card-title text-sm">⚡ Quick Actions</h3>
+            <div class="space-y-2">
+              <button class="btn btn-outline btn-sm w-full" on:click={() => goto(`/cases/${caseId}/edit`)}>
+                ✏️ Edit Case
+              </button>
+              <button class="btn btn-outline btn-sm w-full" on:click={generateReport}>
+                📄 Generate Report
+              </button>
+              <button class="btn btn-outline btn-sm w-full">
+                📋 Clone Case
+              </button>
+              <button class="btn btn-outline btn-sm w-full">
+                🗂️ Archive Case
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    if (target.files) {
+      files = [...files, ...Array.from(target.files)];
+    }
+  
 
   function removeFile(index: number) {
     files = files.filter((_, i) => i !== index);

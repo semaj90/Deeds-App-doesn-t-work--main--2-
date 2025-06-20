@@ -1,52 +1,207 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import type { ActionData } from './$types';
-  import { caseNLPParser, type CaseAnalysis, type CriminalRecord } from '$lib/nlp/caseParser';
+  import EnhancedCaseForm from '$lib/components/EnhancedCaseForm.svelte';
   import { onMount } from 'svelte';
 
   export let form: ActionData;
 
-  let isSubmitting = false;
-  let isAnalyzing = false;
-  let caseAnalysis: CaseAnalysis | null = null;
-  let suggestedCriminals: CriminalRecord[] = [];
-  let description = '';
-  let title = '';
-  let dangerScore = 1;
-  let showSuggestions = false;
-  let autoAnalyzeEnabled = true;
+  // Check for URL parameters that might indicate template or NLP suggestions
+  let templateData: any = null;
+  let nlpSuggestion: any = null;
 
-  let analysisTimeout: NodeJS.Timeout;
-
-  // Real-time analysis as user types
-  $: if (description && autoAnalyzeEnabled) {
-    clearTimeout(analysisTimeout);
-    analysisTimeout = setTimeout(async () => {
-      if (description.length > 50) { // Only analyze substantial descriptions
-        await analyzeDescription();
+  onMount(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const template = urlParams.get('template');
+    const nlpSuggestionId = urlParams.get('nlp_suggestion');
+    
+    if (template) {
+      try {
+        templateData = { suggestedTitle: template };
+      } catch (error) {
+        console.warn('Invalid template data:', error);
       }
-    }, 1000); // Debounce for 1 second
+    }
+
+    if (nlpSuggestionId) {
+      nlpSuggestion = { id: nlpSuggestionId };
+    }
+  });
+
+  function handleCaseCreated(event: CustomEvent) {
+    const { caseId } = event.detail;
+    // Redirect to the new case
+    goto(`/cases/${caseId}`);
   }
 
-  async function analyzeDescription() {
-    if (!description.trim()) return;
-    
-    isAnalyzing = true;
-    try {
-      const response = await fetch('/api/nlp/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ description })
-      });
+  function handleCancel() {
+    goto('/cases');
+  }
+</script>
 
-      if (response.ok) {
-        const data = await response.json();
-        caseAnalysis = data.analysis;
-        suggestedCriminals = data.suggestedCriminals;
-        showSuggestions = true;
+<svelte:head>
+  <title>Create New Case - WardenNet</title>
+</svelte:head>
+
+<div class="min-h-screen bg-base-200">
+  <div class="container mx-auto p-4">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div class="breadcrumbs text-sm">
+        <ul>
+          <li><a href="/cases" class="link link-hover">Cases</a></li>
+          <li class="font-medium">Create New Case</li>
+        </ul>
+      </div>
+      
+      <button 
+        class="btn btn-ghost btn-sm"
+        on:click={handleCancel}
+      >
+        ← Back to Cases
+      </button>
+    </div>
+
+    <!-- Page Title -->
+    <div class="mb-8">
+      <h1 class="text-4xl font-bold text-primary">Create New Case</h1>
+      <p class="text-base-content/70 mt-2">Fill out the details below to create a new case in the system.</p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      
+      <!-- Form Section -->
+      <div class="lg:col-span-3">
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <EnhancedCaseForm 
+              {templateData}
+              {nlpSuggestion}
+              on:saved={handleCaseCreated}
+              on:cancel={handleCancel}
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="space-y-6">
+        
+        <!-- Quick Templates -->
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <h3 class="card-title text-sm">📋 Quick Templates</h3>
+            <div class="space-y-2">
+              <button 
+                class="btn btn-outline btn-sm w-full" 
+                on:click={() => templateData = { suggestedTitle: 'Criminal Investigation' }}
+              >
+                🔍 Criminal Investigation
+              </button>
+              <button 
+                class="btn btn-outline btn-sm w-full"
+                on:click={() => templateData = { suggestedTitle: 'Civil Dispute' }}
+              >
+                ⚖️ Civil Dispute
+              </button>
+              <button 
+                class="btn btn-outline btn-sm w-full"
+                on:click={() => templateData = { suggestedTitle: 'Administrative Review' }}
+              >
+                📋 Administrative Review
+              </button>
+              <button 
+                class="btn btn-outline btn-sm w-full"
+                on:click={() => templateData = { suggestedTitle: 'Traffic Violation' }}
+              >
+                🚗 Traffic Violation
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <h3 class="card-title text-sm">💡 Tips</h3>
+            <div class="text-sm space-y-2">
+              <div class="flex items-start gap-2">
+                <span class="text-primary">•</span>
+                <span>Use descriptive titles that clearly identify the case</span>
+              </div>
+              <div class="flex items-start gap-2">
+                <span class="text-primary">•</span>
+                <span>Include relevant details in the description</span>
+              </div>
+              <div class="flex items-start gap-2">
+                <span class="text-primary">•</span>
+                <span>Set appropriate danger scores for risk assessment</span>
+              </div>
+              <div class="flex items-start gap-2">
+                <span class="text-primary">•</span>
+                <span>You can always edit case details later</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Cases -->
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <h3 class="card-title text-sm">📂 Recent Cases</h3>
+            <div class="text-sm space-y-2">
+              <div class="p-2 bg-base-200 rounded">
+                <div class="font-medium truncate">State v. Johnson</div>
+                <div class="text-xs text-base-content/70">Active • 2 days ago</div>
+              </div>
+              <div class="p-2 bg-base-200 rounded">
+                <div class="font-medium truncate">Traffic Citation #4429</div>
+                <div class="text-xs text-base-content/70">Pending • 5 days ago</div>
+              </div>
+              <div class="p-2 bg-base-200 rounded">
+                <div class="font-medium truncate">Administrative Appeal</div>
+                <div class="text-xs text-base-content/70">Closed • 1 week ago</div>
+              </div>
+            </div>
+            <div class="mt-4">
+              <a href="/cases" class="link link-primary text-sm">View all cases →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="mb-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-primary">Create New Case</h1>
+          <p class="text-base-content/70 mt-1">Use advanced features to create and organize your case</p>
+        </div>
+        <button 
+          class="btn btn-outline"
+          on:click={handleCancel}
+        >
+          ← Back to Cases
+        </button>
+      </div>
+    </div>
+
+    <!-- Enhanced Case Form -->
+    <EnhancedCaseForm 
+      {form}
+      {templateData}
+      {nlpSuggestion}
+      isEditing={false}
+      on:saved={handleCaseCreated}
+      on:cancel={handleCancel}
+    />
+  </div>
+</div>
         
         if (caseAnalysis && !title && caseAnalysis.suggestedTitle) {
           // Auto-populate fields if not already filled

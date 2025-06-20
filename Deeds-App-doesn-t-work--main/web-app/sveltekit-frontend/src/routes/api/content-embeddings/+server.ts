@@ -11,11 +11,13 @@ export async function POST({ request }) {
 
     try {
         const newEmbedding = await db.insert(contentEmbeddings).values({
+            id: crypto.randomUUID(),
             entityId,
             entityType,
             contentType,
             embedding,
             text,
+            createdAt: new Date()
         }).returning();
 
         return json(newEmbedding[0], { status: 201 });

@@ -1,48 +1,14 @@
-![image](https://github.com/user-attachments/assets/f10447a9-63b2-4d89-acd7-47658d87c237)
-<<<<<<< HEAD
-# sv
+# Legal Case Management System
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+## 🚨 IMPORTANT: User Model Requirements
 
-## Creating a project
+**Before using local LLM features, please read:** [USER_MODEL_REQUIREMENTS.md](./USER_MODEL_REQUIREMENTS.md)
 
-If you're seeing this, you've probably already done this step. Congrats!
+**This application does NOT provide, download, or bundle any LLM models. Users must provide their own GGUF models for local inference.**
 
-```bash
-# create a new project in the current directory
-npx sv create
+## Overview
 
-# create a new project in my-app
-npx sv create my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
-=======
-# Deeds-App-doesn-t-work-
-Case by Case App sveletekit postgres vercel? 
->>>>>>> 9df76b3fe3f284dcb62bbb20468507a2ee86553c
->>>>>>> # Comprehensive Architectural Plan for Advanced POI and Case Management System
+A comprehensive legal case management system with advanced NLP/LLM integration supporting multiple deployment targets:
 
 This plan outlines the architecture for the advanced features, focusing on a robust, scalable, and maintainable system.
 

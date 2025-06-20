@@ -5,6 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
+		"dev:local": "vite dev",
 		"dev:with-db": "npm run db:migrate && vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
@@ -39,7 +40,7 @@
 		"@types/bcrypt": "^5.0.2",
 		"@types/jsonwebtoken": "^9.0.9",
 		"@types/lodash": "^4.17.17",
-		"@types/node": "^22",
+		"@types/node": "^22.15.32",
 		"@types/pg": "^8.15.4",
 		"@types/uuid": "^10.0.0",
 		"autoprefixer": "10.4.x",
@@ -59,8 +60,7 @@
 		"vite": "^6.2.6",
 		"vite-plugin-devtools-json": "^0.2.0",
 		"vite-plugin-pwa": "^1.0.0"
-	},
-	"dependencies": {
+	},	"dependencies": {
 		"@auth/core": "^0.39.1",
 		"@auth/drizzle-adapter": "^1.9.1",
 		"@auth/sveltekit": "^1.9.2",
@@ -81,6 +81,7 @@
 		"drizzle-orm": "^0.44.2",
 		"jsonwebtoken": "^9.0.2",
 		"lodash-es": "^4.17.21",
+		"lokijs": "^1.5.12",
 		"lucia": "^3.2.2",
 		"marked": "^15.0.12",
 		"pdfkit": "^0.17.1",

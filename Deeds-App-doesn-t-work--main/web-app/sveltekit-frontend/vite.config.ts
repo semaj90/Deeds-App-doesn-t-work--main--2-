@@ -86,12 +86,11 @@ export default defineConfig(({ mode }) => {
       'process.env.NODE_ENV': JSON.stringify(mode),
     },
     server: {
-      port: 5173,
-      host: true,
+      port: 5174, // Match Playwright and your scripts
+      host: 'localhost', // Restrict to localhost only
     },
     preview: {
       port: 4173,
-      host: true,
     },
   };
 });

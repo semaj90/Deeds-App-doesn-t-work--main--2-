@@ -1,32 +1,17 @@
-import { defineConfig } from "drizzle-kit";
+import { defineConfig } from 'drizzle-kit';
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.DATABASE_URL || 'file:./dev.db';
 
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL is not defined in your environment.');
-}
-
-// Determine database type and schema from URL
-const isPostgres = databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://');
-const isSQLite = databaseUrl.startsWith('file:');
-
-let dialect: "postgresql" | "sqlite";
-let schema: string;
-
-if (isPostgres) {
-  dialect = "postgresql";
-  schema = "./web-app/sveltekit-frontend/src/lib/server/db/schema.ts";
-} else if (isSQLite) {
-  dialect = "sqlite";
-  schema = "./src/lib/server/db/schema-sqlite.ts";
-} else {
-  throw new Error('Unsupported DATABASE_URL format. Use postgresql:// or file: prefix.');
+if (!databaseUrl.startsWith('file:')) {
+  throw new Error(
+    `Unsupported DATABASE_URL: "${databaseUrl}". This configuration only supports SQLite (file:).`
+  );
 }
 
 export default defineConfig({
-  dialect,
-  schema,
-  out: "./drizzle",
+  dialect: 'sqlite',
+  schema: './web-app/sveltekit-frontend/src/lib/server/db/schema.ts',
+  out: './drizzle',
   dbCredentials: {
     url: databaseUrl,
   },

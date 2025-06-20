@@ -1,0 +1,178 @@
+# Python NLP Service Requirements (PyTorch-Safe Installation)
+# This requirements file is designed to NOT interfere with existing PyTorch installations
+# All PyTorch-dependent packages are handled separately by the setup script
+
+# ====================
+# CORE WEB FRAMEWORK
+# ====================
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.4.2
+python-multipart==0.0.6
+python-dotenv==1.0.0
+aiofiles==23.2.1
+jinja2==3.1.2
+
+# ====================
+# BASIC SCIENTIFIC COMPUTING (No PyTorch dependencies)
+# ====================
+numpy==1.24.3
+scikit-learn==1.3.2
+scipy==1.11.3
+
+# ====================
+# PYTORCH DETECTION & CONDITIONAL INSTALL
+# ====================
+# PyTorch will be detected from existing installation or installed separately
+# See setup-pytorch-isolated.ps1 for conditional installation logic
+
+# These will be installed conditionally if PyTorch is available:
+# - sentence-transformers==2.2.2
+# - transformers==4.35.2
+# - ultralytics==8.0.196 (YOLO)
+# - openai-whisper==20230918
+# - timm==0.9.7
+
+# ====================
+# LLAMA CPP (No PyTorch dependency - always safe to install)
+# ====================
+llama-cpp-python==0.2.20
+
+# ====================
+# VECTOR DATABASE & EMBEDDINGS
+# ====================
+qdrant-client==1.6.9
+chromadb==0.4.15
+faiss-cpu==1.7.4
+
+# ====================
+# COMPUTER VISION (CPU versions to avoid conflicts)
+# ====================
+opencv-python-headless==4.8.1.78
+Pillow==10.0.1
+scikit-image==0.21.0
+imageio==2.31.5
+
+# ====================
+# OCR PROCESSING (No PyTorch dependencies)
+# ====================
+pytesseract==0.3.10
+easyocr==1.7.0
+
+# ====================
+# AUDIO PROCESSING (No PyTorch core dependencies)
+# ====================
+librosa==0.10.1
+soundfile==0.12.1
+pydub==0.25.1
+speechrecognition==3.10.0
+
+# ====================
+# VIDEO PROCESSING
+# ====================
+ffmpeg-python==0.2.0
+moviepy==1.0.3
+
+# ====================
+# NLP UTILITIES (Non-PyTorch)
+# ====================
+spacy==3.7.2
+nltk==3.8.1
+textblob==0.17.1
+langdetect==1.0.9
+
+# ====================
+# DATABASE & ORM
+# ====================
+sqlalchemy==2.0.23
+alembic==1.12.1
+psycopg2-binary==2.9.7
+
+# ====================
+# UTILITY LIBRARIES
+# ====================
+requests==2.31.0
+httpx==0.25.2
+aiohttp==3.9.0
+tqdm==4.66.1
+colorama==0.4.6
+rich==13.7.0
+click==8.1.7
+
+# ====================
+# DATA PROCESSING
+# ====================
+pandas==2.1.3
+openpyxl==3.1.2
+xlsxwriter==3.1.9
+python-docx==0.8.11
+pypdf==3.17.0
+pdfplumber==0.10.0
+
+# ====================
+# SECURITY & VALIDATION
+# ====================
+cryptography==41.0.7
+bcrypt==4.1.1
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+
+# ====================
+# DEVELOPMENT & TESTING
+# ====================
+pytest==7.4.3
+pytest-asyncio==0.21.1
+black==23.10.1
+flake8==6.1.0
+mypy==1.7.0
+
+# ====================
+# MONITORING & LOGGING
+# ====================
+loguru==0.7.2
+prometheus-client==0.19.0
+
+# ====================
+# ENVIRONMENT ISOLATION HELPERS
+# ====================
+# These help ensure our environment doesn't interfere with user's setup
+virtualenv==20.24.6
+pip-tools==7.3.0
+# OBJECT DETECTION (Will detect PyTorch automatically)
+# ====================
+# ultralytics will be installed conditionally based on PyTorch availability
+
+# ====================
+# OCR PROCESSING
+# ====================
+pytesseract==0.3.10
+easyocr==1.7.0
+
+# ====================
+# AUDIO PROCESSING (No PyTorch dependency)
+# ====================
+# Whisper will be handled separately with PyTorch detection
+librosa==0.10.1
+soundfile==0.12.1
+pydub==0.25.1
+
+# ====================
+# VIDEO PROCESSING
+# ====================
+ffmpeg-python==0.2.0
+imageio==2.31.5
+
+# ====================
+# NLP UTILITIES
+# ====================
+spacy==3.7.2
+nltk==3.8.1
+textblob==0.17.1
+
+# ====================
+# MISC UTILITIES
+# ====================
+requests==2.31.0
+httpx==0.25.2
+tqdm==4.66.1
+colorama==0.4.6

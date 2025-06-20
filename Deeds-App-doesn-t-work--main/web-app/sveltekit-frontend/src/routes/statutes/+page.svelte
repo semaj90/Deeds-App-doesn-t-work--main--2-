@@ -4,6 +4,7 @@
 
     export let data: PageData;
 
+    // Use correct property names from Drizzle schema
     let statutes: Statute[] = data.statutes;
 
     // Placeholder for AI-generated summaries
@@ -23,9 +24,9 @@
         <div class="statutes-list">
             {#each statutes as statute (statute.id)}
                 <div class="statute-card">
-                    <h2>{statute.name}</h2>
-                    <p><strong>Section:</strong> {statute.sectionNumber}</p>
-                    <p>{statute.description}</p>
+                    <h2>{statute.title}</h2>
+                    <p><strong>Section:</strong> {statute.meta?.sectionNumber}</p>
+                    <div>{statute.content}</div>
                     
                     <div class="ai-summary">
                         <h4>AI-Generated Summary:</h4>

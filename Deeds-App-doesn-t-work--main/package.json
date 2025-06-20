@@ -9,7 +9,7 @@
 	],
 	"scripts": {
 		"// === Platform Scripts ===": "",
-		"dev": "npm run web:dev",
+		"dev": "cd web-app/sveltekit-frontend && npm install && npm run dev:local",
 		"web:dev": "powershell scripts/dev-web.ps1",
 		"web:build": "cd web-app/sveltekit-frontend && npm run build",
 		"web:preview": "cd web-app/sveltekit-frontend && npm run preview",

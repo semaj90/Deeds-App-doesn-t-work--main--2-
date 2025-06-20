@@ -1,0 +1,41 @@
+# PyTorch-dependent packages (installed conditionally)
+# This file is used by setup-pytorch-isolated.ps1 when PyTorch is available
+
+# ====================
+# PYTORCH-DEPENDENT PACKAGES
+# ====================
+
+# Transformers and embeddings (requires PyTorch)
+sentence-transformers==2.2.2
+transformers==4.35.2
+tokenizers==0.14.1
+huggingface-hub==0.17.3
+
+# Computer Vision AI (requires PyTorch)
+ultralytics==8.0.196
+timm==0.9.7
+torchvision>=0.15.0
+torchaudio>=2.0.0
+
+# Audio AI (requires PyTorch)
+openai-whisper==20230918
+
+# Additional ML models
+clip-by-openai==1.0
+
+# ====================
+# TORCH-SPECIFIC UTILITIES
+# ====================
+torch-audio==0.13.1
+torchdiffeq==0.2.3
+
+# ====================
+# GPU ACCELERATION (if CUDA available)
+# ====================
+# These will be installed based on GPU detection:
+# - torch with CUDA support
+# - torchvision with CUDA support
+# - torchaudio with CUDA support
+
+# Note: This file is NOT installed directly
+# It's used by the setup script to conditionally install packages

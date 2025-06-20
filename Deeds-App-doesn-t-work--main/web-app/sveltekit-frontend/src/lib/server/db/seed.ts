@@ -1,6 +1,6 @@
 // src/lib/server/db/seed.ts
 import 'dotenv/config';
-import { db } from './index'; // Use relative path for the db instance
+import { db } from './seed-db'; // Use standalone db connection for seeding
 import { users } from './schema';
 // The import path now includes the .ts extension, which is required
 // when running the script directly with a tool like tsx.
@@ -37,17 +37,15 @@ async function seedDefaultUsers() {
 	await db.insert(users).values([
 		{
 			email: adminEmail,
-			hashedPassword: adminPassword, // use hashedPassword
-			role: 'admin',
+			hashedPassword: adminPassword,
 			name: 'Admin User',
-			id: 'user_admin01' // Example static ID
+			id: 'user_admin01'
 		},
 		{
 			email: userEmail,
-			hashedPassword: userPassword, // use hashedPassword
-			role: 'user',
+			hashedPassword: userPassword,
 			name: 'Regular User',
-			id: 'user_regular01' // Example static ID
+			id: 'user_regular01'
 		}
 	]);
 

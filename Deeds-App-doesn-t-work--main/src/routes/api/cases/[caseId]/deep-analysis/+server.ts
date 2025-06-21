@@ -55,7 +55,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 				.select({ content: evidence.content })
 				.from(evidence)
 				.where(inArray(evidence.id, evidenceIds));
-			evidenceContent = evidenceResults.map((e) => e.content).join('\n\n');
+			evidenceContent = evidenceResults.map((e: { content: string | null }) => e.content).join('\n\n');
 		}
 
 		// Fetch statute content
@@ -65,7 +65,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 				.select({ fullText: statutes.fullText })
 				.from(statutes)
 				.where(inArray(statutes.id, statuteIds));
-			statuteContent = statuteResults.map((s) => s.fullText).join('\n\n');
+			statuteContent = statuteResults.map((s: { fullText: string | null }) => s.fullText).join('\n\n');
 		}
 
 		const context = `

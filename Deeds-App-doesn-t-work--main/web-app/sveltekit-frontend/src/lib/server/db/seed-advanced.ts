@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
-import * as schema from './schema';
+import * as schema from './schema-new';
 import { resolve } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -18,48 +18,50 @@ async function seedAdvancedData() {
   const case1Id = uuidv4();
   const case2Id = uuidv4();
   const case3Id = uuidv4();
-  
-  await db.insert(schema.cases).values([
+    await db.insert(schema.cases).values([
     {
       id: case1Id,
+      caseNumber: 'CASE-2024-001',
       title: 'Financial Fraud Investigation',
       description: 'Investigation into a complex financial fraud scheme involving multiple corporations and individuals. The scheme appears to involve fraudulent invoicing, money laundering, and tax evasion.',
       createdBy: adminUserId,
       status: 'active',
-      data: JSON.stringify({
+      data: {
         caseType: 'fraud',
         priority: 'high',
         state: 'under_review'
-      }),
-      tags: JSON.stringify(['fraud', 'financial', 'corporate', 'money-laundering']),
+      },
+      tags: ['fraud', 'financial', 'corporate', 'money-laundering'],
       dangerScore: 8
     },
     {
       id: case2Id,
+      caseNumber: 'CASE-2024-002',
       title: 'Cybercrime Network Takedown',
       description: 'Multi-jurisdictional operation to dismantle a cybercrime network engaged in ransomware attacks, data theft, and cryptocurrency fraud.',
       createdBy: adminUserId,
       status: 'active',
-      data: JSON.stringify({
+      data: {
         caseType: 'cybercrime',
         priority: 'critical',
         state: 'active'
-      }),
-      tags: JSON.stringify(['cybercrime', 'ransomware', 'cryptocurrency', 'international']),
+      },
+      tags: ['cybercrime', 'ransomware', 'cryptocurrency', 'international'],
       dangerScore: 9
     },
     {
       id: case3Id,
+      caseNumber: 'CASE-2024-003',
       title: 'Environmental Crime - Illegal Dumping',
       description: 'Investigation into illegal dumping of hazardous waste by industrial companies. Environmental impact assessment shows significant contamination of local water sources.',
       createdBy: regularUserId,
       status: 'draft',
-      data: JSON.stringify({
+      data: {
         caseType: 'environmental',
         priority: 'medium',
         state: 'draft'
-      }),
-      tags: JSON.stringify(['environmental', 'hazardous-waste', 'contamination', 'industrial']),
+      },
+      tags: ['environmental', 'hazardous-waste', 'contamination', 'industrial'],
       dangerScore: 6
     }
   ]);
@@ -98,20 +100,19 @@ async function seedAdvancedData() {
       timestamp: new Date()
     }
   ]);
-  
-  // Create case relationships to demonstrate AI-powered suggestions
+    // Create case relationships to demonstrate AI-powered suggestions
   await db.insert(schema.caseRelationships).values([
     {
       id: uuidv4(),
       parentCaseId: case1Id,
       relatedCaseId: case2Id,
       relationshipType: 'related',
-      confidence: 0.75,
-      aiAnalysis: JSON.stringify({
+      confidence: '0.75',
+      aiAnalysis: {
         sharedEntities: ['financial institutions', 'cryptocurrency'],
         similarPatterns: ['complex schemes', 'multi-jurisdictional'],
         nlpConfidence: 0.75
-      }),
+      },
       description: 'Both cases involve cryptocurrency and complex financial schemes',
       discoveredBy: 'nlp',
       createdBy: adminUserId

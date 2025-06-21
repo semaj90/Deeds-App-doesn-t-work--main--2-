@@ -3,12 +3,13 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db/index.js';
-import { evidence, contentEmbeddings, nlpAnalysisCache } from '$lib/server/db/schema.js';
+import { evidenceFiles, nlpAnalysisCache } from '$lib/server/db/schema-new.js'; // Use unified schema
+import { env } from '$env/dynamic/private';
 import { eq } from 'drizzle-orm';
 import { createHash } from 'crypto';
 
 // PDF processing with position data
-import * as pdfParse from 'pdf-parse';
+import pdfParse from 'pdf-parse';
 import * as fs from 'fs';
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -33,7 +34,7 @@ export const POST: RequestHandler = async ({ request }) => {
         const textElements = await extractPositionedText(tempPath);
         
         // Generate content hash for caching
-        const contentHash = createHash('sha256').update(pdfData.text).digest('hex');
+        const contentHash = createHash('sha256').update(pdfData.text).digest('hex'); // Use MD5 for shorter hash if needed
         
         // Check cache first
         const cached = await db.select()
@@ -47,40 +48,33 @@ export const POST: RequestHandler = async ({ request }) => {
         } else {
             // Call Python NLP service for entity extraction and analysis
             analysis = await processWithNLP(pdfData.text, textElements);
-            
-            // Cache the results
-            await db.insert(nlpAnalysisCache).values({
-                id: `cache_${Date.now()}`,
+              // Cache the results
+            await db.insert(nlpAnalysisCache).values({ // ID is auto-generated UUID
                 contentHash,
                 contentType: 'pdf_document',
                 originalText: pdfData.text,
-                analysis: JSON.stringify(analysis),
-                entities: JSON.stringify(analysis.entities || []),
-                confidence: analysis.confidence || 0.8,
-                createdAt: new Date(),
+                analysis: analysis,
+                entities: analysis.entities || [],                confidence: analysis.confidence ? analysis.confidence.toString() : null,
                 expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
             });
         }
-        
-        // Store in evidence table
-        const evidenceId = `evidence_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        await db.insert(evidence).values({
-            id: evidenceId,
+          // Store in evidence table
+        await db.insert(evidenceFiles).values({
             caseId,
-            filename: file.name,
-            aiSummary: analysis.summary || '',
-            embedding: JSON.stringify(analysis.embedding || []),
-            tags: JSON.stringify(analysis.tags || []),
-            createdAt: new Date(),
-            updatedAt: new Date()
+            fileName: file.name,
+            filePath: tempPath,
+            fileType: 'document',
+            fileSize: 0, // TODO: Calculate actual file size
+            mimeType: file.type,
+            aiSummary: (analysis as any)?.summary || '',
+            embedding: (analysis as any)?.embedding || [],
+            tags: (analysis as any)?.tags || [],
         });
         
         // Clean up temp file
         fs.unlinkSync(tempPath);
-        
-        return json({
+          return json({
             success: true,
-            evidenceId,
             textElements,
             analysis,
             metadata: {
@@ -97,10 +91,10 @@ export const POST: RequestHandler = async ({ request }) => {
 };
 
 // Extract positioned text elements from PDF
-async function extractPositionedText(pdfPath: string) {
+async function extractPositionedText(pdfPath: string): Promise<any[]> {
     // This would use a more advanced PDF parser like pdf2json or pdf-lib
     // For now, returning structured text with mock positions
-    const textElements = [];
+    const textElements: any[] = [];
     
     try {
         // Mock implementation - replace with actual PDF coordinate extraction
@@ -143,7 +137,7 @@ async function extractPositionedText(pdfPath: string) {
 async function processWithNLP(text: string, textElements: any[]) {
     try {
         // Call our Python NLP service
-        const response = await fetch('http://localhost:8001/extract-entities', {
+        const response = await fetch(`${env.LLM_SERVICE_URL || 'http://localhost:8000'}/extract-entities`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -159,7 +153,7 @@ async function processWithNLP(text: string, textElements: any[]) {
         const nlpResult = await response.json();
         
         // Generate embeddings
-        const embeddingResponse = await fetch('http://localhost:8001/embed', {
+        const embeddingResponse = await fetch(`${env.LLM_SERVICE_URL || 'http://localhost:8000'}/embed`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text })

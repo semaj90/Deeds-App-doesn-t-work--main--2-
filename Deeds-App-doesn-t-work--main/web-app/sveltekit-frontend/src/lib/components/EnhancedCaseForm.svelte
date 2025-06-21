@@ -3,11 +3,11 @@
   import { page } from '$app/stores';
   import { enhance } from '$app/forms';
   import SmartTextarea from '$lib/components/SmartTextarea.svelte';
-  import CaseRelationshipAnalyzer from '$lib/components/CaseRelationshipAnalyzer.svelte';
-  import { caseWorkflowManager, getStateColor, getStateLabel, type CaseState } from '$lib/stores/caseStateMachine';
-  import { predictiveAnalyzer } from '$lib/nlp/analyzer';
+  import CaseRelationshipAnalyzer from '$lib/components/CaseRelationshipAnalyzer.svelte';  import { caseWorkflowManager, getStateColor, getStateLabel, type CaseState } from '$lib/stores/caseStateMachine';
+  import { nlpClient } from '$lib/nlp/client.js';
+  import type { CaseAnalysis } from '$lib/nlp/types.js';
+  import type { Book } from '$lib/data/types';
 
-  export let form: any = null;
   export let existingCase: any = null;
   export let isEditing = false;
 
@@ -50,10 +50,19 @@
   });
 
   async function loadInitialData() {
-    try {
-      // Load recent cases for reference
+    try {      // Load recent cases for reference
       if (userId) {
-        recentCases = await predictiveAnalyzer.getRecentCases(userId, 5);
+        try {
+          const response = await fetch('/api/cases/recent');
+          if (response.ok) {
+            recentCases = await response.json();
+          } else {
+            recentCases = [];
+          }
+        } catch (error) {
+          console.warn('Failed to load recent cases:', error);
+          recentCases = [];
+        }
       }
 
       // Load available templates
@@ -76,7 +85,7 @@
     showRelationshipAnalyzer = true;
 
     try {
-      analysisResults = await predictiveAnalyzer.analyzeCaseDescription(description, caseId);
+      analysisResults = await nlpClient.analyzeCaseDescription(description, caseId);
       
       // Auto-suggest tags based on analysis
       if (analysisResults.entities) {
@@ -330,7 +339,7 @@
     </div>
 
     <div class="form-section">
-      <label class="form-label">Tags</label>
+      <label for="tags-input" class="form-label">Tags</label>
       <div class="tags-input">
         <div class="tags-list">
           {#each tags as tag}
@@ -341,6 +350,7 @@
           {/each}
         </div>
         <input
+          id="tags-input"
           type="text"
           bind:value={newTag}
           placeholder="Add tag..."
@@ -351,10 +361,18 @@
       </div>
     </div>
 
+    <div class="mb-3">
+      <label for="case-books-info" class="form-label">Case Books</label>
+      <!-- TODO: Implement book selection/management UI when backend is ready -->
+      <div id="case-books-info" class="alert alert-info p-2 small mb-0" aria-describedby="case-books-info">
+        Book linking and management coming soon.
+      </div>
+    </div>
+
     {#if isEditing && availableTransitions.length > 0}
       <div class="form-section">
-        <label class="form-label">Available Actions</label>
-        <div class="state-transitions">
+        <label for="state-transitions" class="form-label">Available Actions</label>
+        <div id="state-transitions" class="state-transitions">
           {#each availableTransitions as transition}
             <button 
               type="button" 
@@ -382,11 +400,9 @@
     </div>
   </form>
 
-  {#if showRelationshipAnalyzer && description.length > 20}
-    <CaseRelationshipAnalyzer
+  {#if showRelationshipAnalyzer && description.length > 20}    <CaseRelationshipAnalyzer
       {caseId}
       caseDescription={description}
-      {userId}
       on:generateSummary={handleRelationshipEvent}
       on:suggestMerge={handleRelationshipEvent}
     />

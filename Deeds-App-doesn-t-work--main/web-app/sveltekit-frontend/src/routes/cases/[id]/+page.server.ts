@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
-import { cases, evidence } from '$lib/server/db/schema';
-import { error, redirect } from '@sveltejs/kit';
+import { cases, evidenceFiles } from '$lib/server/db/schema-new'; // Use unified schema
+import { redirect } from '@sveltejs/kit'; // Removed error import as redirect is used
 import { eq, and } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -16,17 +16,16 @@ export const load: PageServerLoad = async ({ params, locals }) => {
   const userId = user.id;
 
   try {
-    const [caseDetails] = await db.select()
-      .from(cases)
-      .where(eq(cases.id, caseId));
+    const caseDetails = await db.query.cases.findFirst({ // Use findFirst for single record
+      where: eq(cases.id, caseId),
+      with: { evidenceFiles: true } // Eager load evidenceFiles
+    });
     
     if (!caseDetails) {
-      throw redirect(302, '/cases');
+      throw redirect(302, '/cases'); // Redirect if case not found
     }
 
-    const evidenceList = await db.select()
-      .from(evidence)
-      .where(eq(evidence.caseId, caseId));
+    // evidenceList is now part of caseDetails.evidenceFiles
     
     return { 
       session,

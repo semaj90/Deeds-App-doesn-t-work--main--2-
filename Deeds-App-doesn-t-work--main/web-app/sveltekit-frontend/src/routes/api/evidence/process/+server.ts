@@ -1,15 +1,15 @@
 // SvelteKit API Endpoint for Evidence Processing
 // Handles multimodal evidence uploads and analysis coordination
 
-import { json } from '@sveltejs/kit';
-import type { RequestEvent } from '@sveltejs/kit';
+import { json, type RequestHandler } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
-import { evidenceFiles, evidenceAnchorPoints, caseEvidenceSummaries } from '$lib/server/db/schema';
+import { evidenceFiles, evidenceAnchorPoints, caseEvidenceSummaries } from '$lib/server/db/schema-new'; // Use unified schema
 import { eq, count } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
 // Evidence processing endpoint
-export async function POST({ request, locals }: RequestEvent) {
+export const POST: RequestHandler = async ({ request, locals }) => {
   try {
     const { file_path, case_id, evidence_type, enhancement_level = 1, analysis_options = [] } = await request.json();
     
@@ -43,7 +43,7 @@ export async function POST({ request, locals }: RequestEvent) {
     }
     
     // Store evidence file record
-    const evidenceRecord = await db.insert(evidenceFiles).values({
+    const [evidenceRecord] = await db.insert(evidenceFiles).values({ // Destructure to get the inserted record
       id: evidence_id,
       caseId: case_id,
       fileName: extractFileName(file_path),
@@ -61,7 +61,7 @@ export async function POST({ request, locals }: RequestEvent) {
         enhancement_level,
         analysis_options
       }
-    }).returning();
+    }).returning(); // Add .returning() to get the inserted record
     
     // Call Python NLP service for AI analysis
     const pythonAnalysisResult = await callPythonNLPService('/evidence/process', {
@@ -82,7 +82,7 @@ export async function POST({ request, locals }: RequestEvent) {
     for (const anchor of pythonAnalysisResult.anchor_points || []) {
       const anchorId = nanoid();
       
-      await db.insert(evidenceAnchorPoints).values({
+      await db.insert(evidenceAnchorPoints).values({ // ID is auto-generated UUID
         id: anchorId,
         evidenceFileId: evidence_id,
         anchorType: anchor.type,
@@ -101,14 +101,11 @@ export async function POST({ request, locals }: RequestEvent) {
       
       anchorPoints.push({ id: anchorId, ...anchor });
     }
-    
-    // Generate scene summary if markdown content is available
+      // Generate scene summary if markdown content is available
     let summaryId = null;
     if (pythonAnalysisResult.markdown_summary) {
-      summaryId = nanoid();
       
       await db.insert(caseEvidenceSummaries).values({
-        id: summaryId,
         caseId: case_id,
         evidenceFileId: evidence_id,
         summaryType: 'scene_analysis',
@@ -117,7 +114,7 @@ export async function POST({ request, locals }: RequestEvent) {
         plainTextContent: pythonAnalysisResult.text_content || '',
         keyFindings: extractKeyFindings(pythonAnalysisResult.analysis_results),
         embedding: pythonAnalysisResult.embeddings,
-        confidence: calculateOverallConfidence(pythonAnalysisResult.anchor_points),
+        confidence: calculateOverallConfidence(pythonAnalysisResult.anchor_points).toString(),
         generatedBy: 'ai',
         modelVersion: 'multimodal-v1'
       });
@@ -140,7 +137,7 @@ export async function POST({ request, locals }: RequestEvent) {
     return json({
       success: true,
       evidence_id,
-      evidence_file: evidenceRecord[0],
+      evidence_file: evidenceRecord, // Use the destructured record
       anchor_points: anchorPoints,
       scene_summary_id: summaryId,
       processing_results: {
@@ -164,8 +161,8 @@ export async function POST({ request, locals }: RequestEvent) {
   }
 };
 
-// Get evidence files for a case
-export async function GET({ url, locals }: RequestEvent) {
+// Get evidence files for a case (using RequestHandler)
+export const GET: RequestHandler = async ({ url, locals }) => {
   try {
     if (!locals.user) {
       return json({ error: 'Authentication required' }, { status: 401 });
@@ -177,7 +174,7 @@ export async function GET({ url, locals }: RequestEvent) {
       return json({ error: 'case_id parameter required' }, { status: 400 });
     }
       // Get evidence files with anchor points and summaries
-    const evidenceWithDetails = await db
+    const evidenceWithDetails = await db // Use db.query.evidenceFiles.findMany for relations
       .select({
         evidence: evidenceFiles,
         anchorCount: count(evidenceAnchorPoints.id)
@@ -203,7 +200,7 @@ export async function GET({ url, locals }: RequestEvent) {
 
 async function callRustEvidenceProcessor(request: any) {
   try {
-    // This would invoke the Tauri command in a real desktop app
+    // This would invoke the Tauri command in a real desktop app (e.g., via IPC)
     // For web version, we simulate or use a different approach
     const response = await fetch('http://localhost:3000/tauri/evidence/process', {
       method: 'POST',
@@ -238,7 +235,7 @@ async function callRustEvidenceProcessor(request: any) {
 
 async function callPythonNLPService(endpoint: string, payload: any) {
   try {
-    const response = await fetch(`http://localhost:8001${endpoint}`, {
+    const response = await fetch(`${env.LLM_SERVICE_URL || 'http://localhost:8000'}${endpoint}`, { // Use env.LLM_SERVICE_URL
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

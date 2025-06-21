@@ -1,6 +1,6 @@
 import { json, type RequestEvent } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { cases } from '$lib/server/db/schema';
+import { cases } from '$lib/server/db/schema-new'; // Use unified schema
 import { eq, and } from 'drizzle-orm';
 
 // GET /api/cases/[id] - Get a single case for the logged-in user

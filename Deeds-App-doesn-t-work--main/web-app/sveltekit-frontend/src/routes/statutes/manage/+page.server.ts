@@ -1,8 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 import type { ServerLoad } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { statutes } from '$lib/server/db/schema';
-import { sql } from 'drizzle-orm';
+import { statutes } from '$lib/server/db/schema-new'; // Use unified schema
+import { sql, count, ilike } from 'drizzle-orm';
 
 export const load: ServerLoad = async ({ locals, fetch, url }) => {
     const user = locals.user;
@@ -17,16 +17,16 @@ export const load: ServerLoad = async ({ locals, fetch, url }) => {
 
     const offset = (page - 1) * limit;
 
-    let query = db.select().from(statutes).$dynamic();
-    let countQuery = db.select({ count: sql`count(*)` }).from(statutes).$dynamic();
+    let query = db.query.statutes.findMany().$dynamic(); // Use findMany
+    let countQuery = db.select({ count: count() }).from(statutes).$dynamic(); // Use count()
 
     if (searchTerm) {
         const searchPattern = `%${searchTerm.toLowerCase()}%`;
         query = query.where(
-            sql`${statutes.name} ILIKE ${searchPattern} OR ${statutes.description} ILIKE ${searchPattern} OR ${statutes.sectionNumber} ILIKE ${searchPattern}`
+            ilike(statutes.title, searchPattern) || ilike(statutes.description, searchPattern) || ilike(statutes.code, searchPattern) // Use ilike for search
         );
         countQuery = countQuery.where(
-            sql`${statutes.name} ILIKE ${searchPattern} OR ${statutes.description} ILIKE ${searchPattern} OR ${statutes.sectionNumber} ILIKE ${searchPattern}`
+            ilike(statutes.title, searchPattern) || ilike(statutes.description, searchPattern) || ilike(statutes.code, searchPattern)
         );
     }
 

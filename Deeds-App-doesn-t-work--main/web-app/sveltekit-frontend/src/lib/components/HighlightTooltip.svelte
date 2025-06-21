@@ -233,14 +233,14 @@
 					Cancel
 				</button>
 			</div>
-		{:else}
-			<!-- Case Selection -->
+		{:else}			<!-- Case Selection -->
 			<div class="mb-3">
-				<label class="form-label">Add to Case:</label>
+				<label class="form-label" for="case-selection">Add to Case:</label>
 				
 				<!-- Current Case Option -->
 				{#if currentCaseId}
 					<button 
+						id="case-selection"
 						class="btn btn-outline-primary btn-sm w-100 mb-2"
 						on:click={() => sendToCase(currentCaseId)}
 					>

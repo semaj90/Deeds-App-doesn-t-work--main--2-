@@ -91,7 +91,7 @@
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
-                                <th scope="col">Name</th>
+                                <th scope="col">Title</th>
                                 <th scope="col">Section Number</th>
                                 <th scope="col">Description</th>
                                 <th scope="col">Actions</th>

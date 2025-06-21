@@ -1,44 +1,87 @@
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import * as schema from './schema';
-import { DATABASE_URL } from '$env/static/private';
-import path from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from './schema-new'; // Ensure this points to the unified schema
+import { readFileSync } from 'fs';
+import { building } from '$app/environment';
+import { env } from '$env/dynamic/private';
 
-if (!DATABASE_URL) {
-	throw new Error(
-		'DATABASE_URL is not set. Please set it to a SQLite file path, e.g. "file:./dev.db" in your .env file.'
-	);
+let _db: ReturnType<typeof drizzle> | null = null;
+let _pool: Pool | null = null;
+
+function initializeDatabase() {
+	// Skip database initialization during SvelteKit build
+	if (building) {
+		console.log('Skipping database initialization during build');
+		return null;
+	}
+
+	if (_db) return _db;
+
+	// Use SvelteKit's env module within the app, which falls back to process.env in scripts
+	const DATABASE_URL = env.DATABASE_URL;
+	if (!DATABASE_URL) {
+		throw new Error('DATABASE_URL is not set. Please set it in your .env file.');
+	}
+
+	const poolConfig: PoolConfig = {
+		connectionString: DATABASE_URL,
+		ssl: env.PG_SSL_CA_PATH
+			? {
+				ca: readFileSync(env.PG_SSL_CA_PATH).toString(),
+				rejectUnauthorized: true
+			}
+			: false
+	};
+
+	console.log('Initializing PostgreSQL connection pool...');
+	_pool = new Pool(poolConfig);
+
+	_pool.on('error', (err) => {
+		console.error('Unexpected error on idle client', err);
+		process.exit(-1);
+	});
+
+	_db = drizzle(_pool, { schema, logger: true });
+	console.log('✅ PostgreSQL database connected successfully.');
+	return _db;
 }
 
-if (!DATABASE_URL.startsWith('file:')) {
-	throw new Error(
-		`\n❌ Unsupported DATABASE_URL: ${DATABASE_URL}\n\nThis app is configured for SQLite only in local development.\n\n- Postgres and Qdrant are NOT required for local dev.\n- Set DATABASE_URL to a SQLite file path, e.g. "file:./dev.db" in your .env.\n- If you want to use Postgres, see the documentation for production setup.\n\n`
-	);
-}
+export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+	get(target, prop) {
+		const actualDb = initializeDatabase();
+		if (!actualDb) {
+			// Return a mock object during build to prevent errors
+			return () => {
+				console.warn(`Database accessed during build phase. Method: ${String(prop)}`);
+				return Promise.resolve([]);
+			};
+		}
+		return (actualDb as any)[prop];
+	}
+});
 
-const sqlitePath = DATABASE_URL.replace('file:', '');
-const absoluteSqlitePath = path.join(process.cwd(), sqlitePath);
-
-// Ensure the directory exists before attempting to open the database
-const dbDir = path.dirname(absoluteSqlitePath);
-if (!existsSync(dbDir)) {
-	mkdirSync(dbDir, { recursive: true });
-}
-
-let sqlite;
-try {
-	sqlite = new Database(absoluteSqlitePath);
-	sqlite.exec('PRAGMA journal_mode = WAL;'); // Enable WAL mode for better concurrency
-	sqlite.exec('PRAGMA foreign_keys = ON;'); // Enable foreign key constraints
-	sqlite.loadExtension('./json1'); // Attempt to load the json1 extension
-	console.log('SQLite database connected and json1 extension loaded successfully.');
-} catch (error: any) {
-	console.error(`Failed to open SQLite database or load extension: ${error.message}`);
-	throw error;
-}
-
-export const db = drizzle(sqlite, { schema });
 export type DbClient = typeof db;
 
-export * from './schema';
+export * from './schema-new';
+
+/**
+ * Closes the database connection pool.
+ * This is intended to be used in scripts to allow the process to exit gracefully.
+ */
+export async function closeDbConnection() {
+	if (_pool) {
+		console.log('Closing database connection pool...');
+		await _pool.end();
+		_pool = null;
+		_db = null;
+		console.log('Database connection pool closed.');
+	}
+}
+
+interface PoolConfig {
+	connectionString: string;
+	ssl?: {
+		ca: string;
+		rejectUnauthorized: boolean;
+	} | boolean;
+}

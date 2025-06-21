@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
-import { statutes, lawParagraphs, caseLawLinks, cases } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { statutes } from '$lib/server/db/schema-new'; // Use unified schema
+import { eq } from 'drizzle-orm'; // Ensure eq is imported
 import { error } from '@sveltejs/kit';
 
 export const load = async ({ params }) => {
@@ -8,37 +8,14 @@ export const load = async ({ params }) => {
 
     if (!statuteId) {
         throw error(400, 'Invalid statute ID');
-    }const statute = await db.query.statutes.findFirst({
-        where: eq(statutes.id, statuteId),
-    });
+    }
+
+    const statuteArr = await db.select().from(statutes).where(eq(statutes.id, statuteId));
+    const statute = statuteArr[0];
 
     if (!statute) {
         throw error(404, 'Statute not found');
     }
 
-    const paragraphs = await db.query.lawParagraphs.findMany({
-        where: eq(lawParagraphs.statuteId, statuteId),
-        orderBy: lawParagraphs.id, // Order by ID to maintain consistent paragraph order
-    });
-
-    // Fetch linked cases for each paragraph
-    const paragraphsWithLinkedCases = await Promise.all(
-        paragraphs.map(async (paragraph) => {
-            const links = await db.query.caseLawLinks.findMany({
-                where: eq(caseLawLinks.lawParagraphId, paragraph.id),
-                with: {
-                    case: true, // Eager load the case details
-                },
-            });
-            return {
-                ...paragraph,
-                linkedCases: links.map(link => link.case).filter(Boolean), // Extract case objects
-            };
-        })
-    );
-
-    return {
-        statute,
-        paragraphs: paragraphsWithLinkedCases,
-    };
+    return { statute };
 };

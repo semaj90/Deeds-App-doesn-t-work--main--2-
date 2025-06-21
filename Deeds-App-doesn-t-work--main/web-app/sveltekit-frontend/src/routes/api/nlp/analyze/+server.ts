@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
-import { caseNLPParser } from '$lib/nlp/caseParser';
+import { PredictiveAnalyzer } from '$lib/server/nlp/analyzer.js';
 
 export async function POST({ request }) {
     try {
-        const { description } = await request.json();
+        const { description, caseId } = await request.json();
 
         if (!description || description.trim().length < 10) {
             return json({ 
@@ -11,15 +11,12 @@ export async function POST({ request }) {
             }, { status: 400 });
         }
 
-        // Perform NLP analysis
-        const analysis = await caseNLPParser.analyzeCaseDescription(description);
-        
-        // Search for similar criminals based on extracted entities
-        const suggestedCriminals = await caseNLPParser.searchSimilarCriminals(analysis.extractedEntities);
+        // Perform NLP analysis using the server-side analyzer
+        const analyzer = new PredictiveAnalyzer();
+        const analysis = await analyzer.analyzeCaseDescription(description, caseId);
 
         return json({
             analysis,
-            suggestedCriminals,
             success: true
         });
     } catch (error) {

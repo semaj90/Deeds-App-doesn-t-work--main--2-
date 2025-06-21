@@ -117,6 +117,7 @@ export const statutes = pgTable('statutes', {
   code: varchar('code', { length: 50 }).notNull().unique(),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
+  sectionNumber: varchar('section_number', { length: 50 }),
   fullText: text('full_text'),
   category: varchar('category', { length: 100 }),
   severity: varchar('severity', { length: 20 }),

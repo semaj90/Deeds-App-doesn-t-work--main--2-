@@ -89,10 +89,9 @@ export class CaseWorkflowManager {
   transition(caseId: string, currentState: CaseState, event: CaseEvent, userId?: string, reason?: string): CaseState | null {
     if (!this.canTransition(caseId, currentState, event)) {
       return null;
-    }
-
-    const stateConfig = caseStateMachine.states[currentState];
-    const newState = ('on' in stateConfig && stateConfig.on) ? stateConfig.on[event] as CaseState : undefined;
+    }    const stateConfig = caseStateMachine.states[currentState];
+    const newState = ('on' in stateConfig && stateConfig.on && event in stateConfig.on) ? 
+      (stateConfig.on as any)[event] as CaseState : undefined;
 
     if (!newState) return null;
 

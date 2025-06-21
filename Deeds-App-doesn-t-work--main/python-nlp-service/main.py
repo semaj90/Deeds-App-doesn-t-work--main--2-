@@ -99,9 +99,10 @@ except ImportError:
     print("Warning: sentence-transformers not installed. Embedding features disabled.")
 
 try:
-    from llama_cpp import Llama
+    from llama_cpp import Llama, LlamaGrammar
 except ImportError:
     Llama = None
+    LlamaGrammar = None
     print("Warning: llama-cpp-python not installed. Local LLM features disabled.")
 
 try:
@@ -217,6 +218,7 @@ class GenerateRequest(BaseModel):
     max_tokens: int = 512
     temperature: float = 0.7
     context: Optional[str] = None
+    grammar: Optional[str] = None  # For GBNF grammar to force structured output
 
 class SearchRequest(BaseModel):
     query_text: str
@@ -381,7 +383,7 @@ async def generate_embedding(request: EmbedRequest):
 
 @app.post("/generate")
 async def generate_text(request: GenerateRequest):
-    """Generate text using local LLM"""
+    """Generate text using local LLM with optional GBNF grammar constraint"""
     if LLM_MODEL is None:
         raise HTTPException(status_code=503, detail="LLM model not available")
     
@@ -391,24 +393,42 @@ async def generate_text(request: GenerateRequest):
         if request.context:
             full_prompt = f"Context: {request.context}\n\n{request.prompt}"
         
+        # Prepare generation parameters
+        generate_params = {
+            "max_tokens": request.max_tokens,
+            "temperature": request.temperature,
+            "echo": False
+        }
+        
+        # Add GBNF grammar if provided
+        if request.grammar and LlamaGrammar is not None:
+            try:
+                grammar = LlamaGrammar.from_string(request.grammar)
+                generate_params["grammar"] = grammar
+                logger.info("Using GBNF grammar for constrained generation")
+            except Exception as grammar_error:
+                logger.warning(f"Failed to parse GBNF grammar: {grammar_error}")
+                # Continue without grammar constraint
+        
         # Generate response
         start_time = datetime.now()
         
         response = LLM_MODEL(
             full_prompt,
-            max_tokens=request.max_tokens,
-            temperature=request.temperature,
-            echo=False
+            **generate_params
         )
         
         end_time = datetime.now()
         processing_time = (end_time - start_time).total_seconds()
         
+        generated_text = response["choices"][0]["text"].strip()
+        
         return {
-            "response": response["choices"][0]["text"].strip(),
+            "response": generated_text,
             "tokens_used": response["usage"]["total_tokens"],
             "processing_time_seconds": processing_time,
-            "model": "local_llm"
+            "model": "local_llm",
+            "grammar_used": bool(request.grammar and LlamaGrammar is not None)
         }
     except Exception as e:
         logger.error(f"Error generating text: {e}")

@@ -3,7 +3,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db/index.js';
-import { evidence, contentEmbeddings, nlpAnalysisCache } from '$lib/server/db/schema.js';
+import { evidenceFiles } from '$lib/server/db/schema-new.js'; // Use unified schema
+import { env } from '$env/dynamic/private';
 import { eq } from 'drizzle-orm';
 import { createHash } from 'crypto';
 import * as fs from 'fs';
@@ -24,7 +25,7 @@ export const POST: RequestHandler = async ({ request }) => {
         fs.writeFileSync(tempPath, Buffer.from(buffer));
 
         // Call Python NLP service for image processing
-        const response = await fetch('http://localhost:8001/evidence/process', {
+        const response = await fetch(`${env.LLM_SERVICE_URL || 'http://localhost:8000'}/evidence/process`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -45,26 +46,24 @@ export const POST: RequestHandler = async ({ request }) => {
         // Transform results for highlighting
         const textElements = extractTextElements(processingResult);
         const objectElements = extractObjectElements(processingResult);
-        
-        // Store in evidence table
-        const evidenceId = processingResult.evidence_id || `evidence_${Date.now()}`;
-        await db.insert(evidence).values({
-            id: evidenceId,
+          // Store in evidence table
+        await db.insert(evidenceFiles).values({
             caseId,
-            filename: file.name,
+            fileName: file.name,
+            filePath: tempPath,
+            fileType: 'image',
+            fileSize: 0, // TODO: Calculate actual file size
             aiSummary: processingResult.markdown_summary || '',
-            embedding: JSON.stringify(processingResult.embeddings || []),
-            tags: JSON.stringify(['image', 'ocr', 'objects']),
+            embedding: processingResult.embeddings || [],
+            tags: ['image', 'ocr', 'objects'],
             createdAt: new Date(),
             updatedAt: new Date()
         });
         
         // Clean up temp file
         fs.unlinkSync(tempPath);
-        
-        return json({
+          return json({
             success: true,
-            evidenceId,
             textElements,
             objectElements,
             anchorPoints: processingResult.anchor_points || [],
@@ -84,8 +83,8 @@ export const POST: RequestHandler = async ({ request }) => {
 };
 
 // Extract text elements with bounding boxes for highlighting
-function extractTextElements(processingResult: any) {
-    const textElements = [];
+function extractTextElements(processingResult: any): any[] {
+    const textElements: any[] = [];
     
     if (processingResult.analysis_results?.text) {
         const textAnalysis = processingResult.analysis_results.text;
@@ -116,8 +115,8 @@ function extractTextElements(processingResult: any) {
 }
 
 // Extract object elements for highlighting
-function extractObjectElements(processingResult: any) {
-    const objectElements = [];
+function extractObjectElements(processingResult: any): any[] {
+    const objectElements: any[] = [];
     
     if (processingResult.analysis_results?.objects) {
         processingResult.analysis_results.objects.forEach((obj: any) => {

@@ -20,12 +20,11 @@
 	let currentTime = 0;
 	let duration = 0;
 	let isPlaying = false;
-	
-	// Reactive statements
-	$: isVideo = evidenceFile.fileType === 'video';
-	$: isImage = evidenceFile.fileType === 'image';
-	$: isAudio = evidenceFile.fileType === 'audio';
-	$: isDocument = evidenceFile.fileType === 'document';
+		// Reactive statements
+	$: isVideo = evidenceFile.fileType === 'video' || evidenceFile.mimeType?.startsWith('video/');
+	$: isImage = evidenceFile.fileType === 'image' || evidenceFile.mimeType?.startsWith('image/');
+	$: isAudio = evidenceFile.fileType === 'audio' || evidenceFile.mimeType?.startsWith('audio/');
+	$: isDocument = evidenceFile.fileType === 'document' || evidenceFile.mimeType?.includes('pdf');
 	
 	$: visibleAnchors = anchorPoints.filter(anchor => {
 		if (!isVideo && !isAudio) return true;
@@ -85,8 +84,7 @@
 		hoveredAnchor = anchor;
 		dispatchAnchorEvent('hover', anchor);
 	}
-	
-	function handleTimelineClick(event: MouseEvent) {
+		function handleTimelineClick(event: MouseEvent) {
 		if (!isVideo && !isAudio) return;
 		
 		const timeline = event.currentTarget as HTMLElement;
@@ -97,6 +95,20 @@
 		
 		if (mediaElement) {
 			(mediaElement as HTMLVideoElement | HTMLAudioElement).currentTime = clickTime;
+		}
+	}
+
+	function handleTimelineKeydown(event: KeyboardEvent) {
+		if (event.key === 'Enter' && isVideo || isAudio) {
+			// Simulate a click at the center of the timeline
+			const timeline = event.currentTarget as HTMLElement;
+			const rect = timeline.getBoundingClientRect();
+			const centerX = rect.width / 2;
+			const clickTime = (centerX / rect.width) * duration;
+			
+			if (mediaElement) {
+				(mediaElement as HTMLVideoElement | HTMLAudioElement).currentTime = clickTime;
+			}
 		}
 	}
 	
@@ -124,9 +136,8 @@
 		const secs = Math.floor(seconds % 60);
 		return `${mins}:${secs.toString().padStart(2, '0')}`;
 	}
-	
-	function getAnchorIconClass(anchorType: string): string {
-		const icons = {
+		function getAnchorIconClass(anchorType: string): string {
+		const icons: Record<string, string> = {
 			object: 'i-heroicons-eye',
 			text: 'i-heroicons-document-text',
 			audio_segment: 'i-heroicons-speaker-wave',
@@ -151,8 +162,7 @@
 			});
 			
 			if (response.ok) {
-				const analysis = await response.json();
-				// Update scene summary or create new one
+				const analysis = await response.json();				// Update scene summary or create new one
 				sceneSummary = {
 					id: analysis.analysis_id || 'temp',
 					caseId,
@@ -165,7 +175,11 @@
 					confidence: 0.85,
 					generatedBy: 'ai',
 					createdAt: new Date(),
-					updatedAt: new Date()
+					updatedAt: new Date(),
+					evidenceCount: 1,
+					totalFiles: 1,
+					categories: [],
+					timeline: []
 				} as CaseEvidenceSummary;
 			}
 		} catch (error) {
@@ -178,12 +192,11 @@
 	<!-- Evidence Header -->
 	<div class="evidence-header p-4 bg-gray-50 dark:bg-gray-700 border-b">
 		<div class="flex items-center justify-between">
-			<div>
-				<h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-					{evidenceFile.fileName}
+			<div>				<h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+					{evidenceFile.fileName || evidenceFile.filename}
 				</h3>
 				<p class="text-sm text-gray-600 dark:text-gray-300">
-					{evidenceFile.fileType.toUpperCase()} • {Math.round(evidenceFile.fileSize / 1024)} KB
+					{(evidenceFile.fileType || evidenceFile.mimeType)?.toUpperCase()} • {Math.round(evidenceFile.fileSize / 1024)} KB
 					{#if evidenceFile.duration}
 						• {formatTime(evidenceFile.duration)}
 					{/if}
@@ -213,11 +226,10 @@
 				<source src={evidenceFile.filePath} type="video/mp4" />
 				<track kind="captions" />
 			</video>
-		{:else if isImage}
-			<img
+		{:else if isImage}			<img
 				bind:this={mediaElement}
 				src={evidenceFile.filePath}
-				alt={evidenceFile.fileName}
+				alt={evidenceFile.fileName || evidenceFile.filename}
 				class="w-full h-auto max-h-96 object-contain bg-gray-100 dark:bg-gray-700"
 			/>
 		{:else if isAudio}
@@ -236,10 +248,9 @@
 				<div class="i-heroicons-document-text w-16 h-16 mx-auto text-gray-400 mb-4"></div>
 				<p class="text-gray-600 dark:text-gray-300">
 					Document preview not available. Click to download.
-				</p>
-				<a
+				</p>				<a
 					href={evidenceFile.filePath}
-					download={evidenceFile.fileName}
+					download={evidenceFile.fileName || evidenceFile.filename}
 					class="inline-block mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
 				>
 					Download Document
@@ -252,8 +263,7 @@
 			<div
 				bind:this={overlayContainer}
 				class="anchor-overlay absolute inset-0 pointer-events-none"
-			>
-				{#each visibleAnchors as anchor (anchor.id)}
+			>				{#each visibleAnchors as anchor (anchor.id)}
 					<button
 						class="anchor-point absolute w-6 h-6 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all transform hover:scale-110 pointer-events-auto z-10"
 						style="left: {anchor.positionX * 100}%; top: {anchor.positionY * 100}%; transform: translate(-50%, -50%)"
@@ -261,6 +271,7 @@
 						on:mouseenter={() => handleAnchorHover(anchor)}
 						on:mouseleave={() => handleAnchorHover(null)}
 						title={anchor.description}
+						aria-label={`Anchor point: ${anchor.description}`}
 					>
 						<span class="{getAnchorIconClass(anchor.anchorType)} w-3 h-3 block m-auto"></span>
 					</button>
@@ -272,25 +283,28 @@
 	<!-- Timeline (for video/audio) -->
 	{#if showTimeline && (isVideo || isAudio) && duration > 0}
 		<div class="timeline-container p-4 bg-gray-50 dark:bg-gray-700 border-t">
-			<div class="timeline-wrapper relative">
-				<!-- Timeline track -->
-				<div
-					class="timeline-track w-full h-2 bg-gray-300 dark:bg-gray-600 rounded-full cursor-pointer relative"
-					on:click={handleTimelineClick}
+			<div class="timeline-wrapper relative">				<!-- Timeline track -->
+				<div					class="timeline-track w-full h-2 bg-gray-300 dark:bg-gray-600 rounded-full cursor-pointer relative"					on:click={handleTimelineClick}
+					on:keydown={handleTimelineKeydown}
+					role="slider"
+					aria-label="Timeline scrubber"
+					aria-valuenow={currentTime}
+					aria-valuemin={0}
+					aria-valuemax={duration}
+					tabindex="0"
 				>
 					<!-- Progress indicator -->
 					<div
 						class="timeline-progress h-full bg-blue-600 rounded-full"
 						style="width: {duration > 0 ? (currentTime / duration) * 100 : 0}%"
 					></div>
-					
-					<!-- Timeline anchor points -->
-					{#each anchorPoints.filter(a => a.timestamp) as anchor}
+							<!-- Timeline anchor points -->					{#each anchorPoints.filter(a => a.timestamp !== null && a.timestamp !== undefined) as anchor}
 						<button
 							class="timeline-anchor absolute w-3 h-3 bg-red-500 rounded-full transform -translate-y-0.5 hover:bg-red-600 transition-colors"
-							style="left: {duration > 0 ? (anchor.timestamp / duration) * 100 : 0}%"
+							style="left: {duration > 0 && anchor.timestamp ? (anchor.timestamp / duration) * 100 : 0}%"
 							on:click|stopPropagation={() => handleAnchorClick(anchor)}
-							title="{formatTime(anchor.timestamp)}: {anchor.label}"
+							title="{anchor.timestamp ? formatTime(anchor.timestamp) : '0:00'}: {anchor.label}"
+							aria-label="Timeline anchor at {anchor.timestamp ? formatTime(anchor.timestamp) : '0:00'}: {anchor.label}"
 						></button>
 					{/each}
 				</div>
@@ -323,15 +337,15 @@
 					</p>
 					<div class="flex gap-4 text-xs text-blue-600 dark:text-blue-300">
 						<span>Type: {selectedAnchor.anchorType}</span>
-						<span>Confidence: {Math.round(selectedAnchor.confidence * 100)}%</span>
+						<span>Confidence: {Math.round((selectedAnchor.confidence || 0) * 100)}%</span>
 						{#if selectedAnchor.timestamp}
 							<span>Time: {formatTime(selectedAnchor.timestamp)}</span>
 						{/if}
 					</div>
-				</div>
-				<button
+				</div>				<button
 					on:click={() => selectedAnchor = null}
 					class="text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100"
+					aria-label="Close anchor details"
 				>
 					<span class="i-heroicons-x-mark w-5 h-5"></span>
 				</button>
@@ -364,11 +378,10 @@
 				</div>
 			{/if}
 			
-			<div class="analysis-meta mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-xs text-gray-600 dark:text-gray-300">
-				<div class="flex justify-between">
-					<span>Confidence: {Math.round(sceneSummary.confidence * 100)}%</span>
-					<span>Generated by: {sceneSummary.generatedBy}</span>
-					<span>Created: {new Date(sceneSummary.createdAt).toLocaleDateString()}</span>
+			<div class="analysis-meta mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-xs text-gray-600 dark:text-gray-300">				<div class="flex justify-between">
+					<span>Confidence: {Math.round((sceneSummary.confidence || 0) * 100)}%</span>
+					<span>Generated by: {sceneSummary.generatedBy || 'unknown'}</span>
+					<span>Created: {sceneSummary.createdAt ? new Date(sceneSummary.createdAt).toLocaleDateString() : 'unknown'}</span>
 				</div>
 			</div>
 		</div>
@@ -406,9 +419,8 @@
 										{formatTime(anchor.timestamp)}
 									</p>
 								{/if}
-							</div>
-							<span class="text-xs text-gray-500">
-								{Math.round(anchor.confidence * 100)}%
+							</div>							<span class="text-xs text-gray-500">
+								{Math.round((anchor.confidence || 0) * 100)}%
 							</span>
 						</div>
 					</button>
@@ -428,43 +440,6 @@
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 	}
 	
-	.timeline-anchor {
-		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-	}
-	
-	.prose {
-		max-width: none;
-	}
-	
-	.prose h1, .prose h2, .prose h3, .prose h4 {
-		margin-top: 1em;
-		margin-bottom: 0.5em;
-	}
-	
-	.prose p {
-		margin-bottom: 0.75em;
-	}
-	
-	.prose ul, .prose ol {
-		margin-bottom: 0.75em;
-		padding-left: 1.5em;
-	}
-	
-	.prose blockquote {
-		border-left: 4px solid #3b82f6;
-		padding-left: 1em;
-		margin: 1em 0;
-		font-style: italic;
-	}
-	
-	.prose code {
-		background-color: #f3f4f6;
-		padding: 0.125em 0.25em;
-		border-radius: 0.25em;
-		font-size: 0.875em;
-	}
-	
-	.dark .prose code {
-		background-color: #374151;
+	.timeline-anchor {		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 	}
 </style>

@@ -1,11 +1,10 @@
-<script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
-  import { predictiveAnalyzer } from '$lib/nlp/analyzer';
+<script lang="ts">  import { createEventDispatcher, onMount } from 'svelte';
+  import { nlpClient } from '$lib/nlp/client.js';
+  import type { CaseAnalysis } from '$lib/nlp/types.js';
   import { page } from '$app/stores';
   
   export let caseId: string;
   export let caseDescription: string = '';
-  export let userId: string;
 
   const dispatch = createEventDispatcher();
 
@@ -28,7 +27,7 @@
     isAnalyzing = true;
     
     try {
-      analysisResults = await predictiveAnalyzer.analyzeCaseDescription(caseDescription, caseId);
+      analysisResults = await nlpClient.analyzeCaseDescription(caseDescription, caseId);
       relatedCases = analysisResults.relatedCases || [];
       
       // Find high-confidence suggestions for merging
@@ -198,7 +197,7 @@
                 🔄 Suggest Case Merge
               </button>
             {/if}
-            <button class="btn btn-ghost" on:click={() => selectedCases.clear() && (selectedCases = new Set())}>
+            <button class="btn btn-ghost" on:click={() => { selectedCases.clear(); selectedCases = new Set(); }}>
               Clear Selection
             </button>
           </div>
@@ -207,6 +206,8 @@
     </div>
   </div>
 {/if}
+
+<!-- TODO: Add book relationship analysis UI if needed in future -->
 
 <style>
   .analyzing-banner {

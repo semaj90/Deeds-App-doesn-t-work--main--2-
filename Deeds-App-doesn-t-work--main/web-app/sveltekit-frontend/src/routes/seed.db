@@ -1,0 +1,29 @@
+// scripts/seed-demo-case.ts
+import { db } from '../web-app/sveltekit-frontend/src/lib/server/db/index.js';
+import { cases } from '../web-app/sveltekit-frontend/src/lib/server/db/schema.js';
+
+async function seedDemoCase() {
+  const demoCase = {
+    id: 'seeded-demo-case-1',
+    title: 'Seeded Example Case: Stolen Bicycle',
+    description: 'A real seeded case for demo and testing. The bicycle was stolen from the city park.',
+    status: 'active',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  // Upsert: only insert if not already present
+  const existing = await db.select().from(cases).where(cases.id.eq(demoCase.id));
+  if (existing.length === 0) {
+    await db.insert(cases).values(demoCase);
+    console.log('Demo case seeded!');
+  } else {
+    console.log('Demo case already exists.');
+  }
+  process.exit(0);
+}
+
+seedDemoCase().catch((err) => {
+  console.error('Error seeding demo case:', err);
+  process.exit(1);
+});

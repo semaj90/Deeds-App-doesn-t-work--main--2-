@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { caseRelationshipFeedback } from '$lib/server/db/schema';
+import { caseRelationshipFeedback } from '$lib/server/db/schema-new'; // Use unified schema
 import { cache, invalidateCacheByTags } from '$lib/server/cache/cache';
 import { eq, and } from 'drizzle-orm';
 
@@ -53,8 +53,7 @@ export async function POST({ params, request }: { params: { caseId: string }, re
                 .returning();
         } else {
             // Create new feedback
-            result = await db.insert(caseRelationshipFeedback).values({
-                id: crypto.randomUUID(),
+            result = await db.insert(caseRelationshipFeedback).values({ // ID is auto-generated UUID
                 parentCaseId: caseId,
                 relatedCaseId,
                 userId,

@@ -1,8 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import type { Criminal, Statute, Crime } from '$lib/data/types';
 import { db } from '$lib/server/db';
-import { crimes, statutes } from '$lib/server/db/schema';
+import { criminals, statutes, caseCriminals } from '$lib/server/db/schema-new'; // Use unified schema
 import { eq } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ params, fetch, request }) => {
@@ -17,15 +16,15 @@ export const load: PageServerLoad = async ({ params, fetch, request }) => {
         throw error(criminalResponse.status, 'Criminal not found');
     }
 
-    const criminalItem: Criminal = await criminalResponse.json();
+    const criminalItem = await criminalResponse.json();
 
-    const allStatutes: Statute[] = await db.select().from(statutes);
-    const criminalCrimes: Crime[] = await db.select().from(crimes).where(eq(crimes.criminalId, criminalId));
+    const allStatutes = await db.query.statutes.findMany(); // Use findMany
+    const criminalCaseLinks = await db.query.caseCriminals.findMany({ where: eq(caseCriminals.criminalId, criminalId) }); // Use findMany
 
     return {
         criminal: criminalItem,
         statutes: allStatutes,
-        criminalCrimes: criminalCrimes
+        criminalCaseLinks
     };
 };
 
@@ -75,35 +74,7 @@ export const actions: Actions = {
       };
     }
   },
-  addCrime: async ({ request, params }) => {
-    const criminalId = parseInt(params.id); // Parse criminalId to number
-    const data = await request.formData();
-    const crimeName = data.get('crimeName')?.toString();
-    const crimeDescription = data.get('crimeDescription')?.toString();
-    const statuteId = data.get('statuteId')?.toString();
-
-    if (!crimeName || !statuteId) {
-      return {
-        status: 400,
-        body: {
-          message: 'Crime name and statute are required'
-        }
-      };
-    }
-
-    try {
-      await db.insert(crimes).values({
-        name: crimeName,
-        description: crimeDescription || null,
-        criminalId: criminalId,
-        statuteId: parseInt(statuteId)
-      } as any);
-      return { status: 201, body: { message: 'Crime added successfully' } };
-    } catch (error) {
-      console.error('Error adding crime:', error);
-      return { status: 500, body: { message: 'Failed to add crime' } };
-    }
-  },  delete: async ({ params, request }) => {
+  delete: async ({ params, request }) => {
     const criminalId = params.id;
     const response = await fetch(`http://localhost:5173/api/criminals/${criminalId}`, {
       method: 'DELETE',

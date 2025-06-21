@@ -1,5 +1,6 @@
 // API route for creating and managing highlights
 import { json } from '@sveltejs/kit';
+import type { RequestHandler } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index.js';
 import { contentEmbeddings, caseTextFragments, nlpAnalysisCache } from '$lib/server/db/schema.js';
 import { eq, and } from 'drizzle-orm';
@@ -84,10 +85,7 @@ export const POST = async ({ request }: { request: Request }) => {
         
         // Cache analysis if entity data is provided
         if (entity) {
-            const contentHash = createHash('sha256').update(text).digest('hex');
-            
-            await db.insert(nlpAnalysisCache).values({
-                id: `cache_${highlightId}`,
+            const contentHash = createHash('sha256').update(text).digest('hex');              await db.insert(nlpAnalysisCache).values({
                 contentHash,
                 contentType: 'highlight',
                 originalText: text,
@@ -99,7 +97,7 @@ export const POST = async ({ request }: { request: Request }) => {
                     timestamp: new Date().toISOString()
                 }),
                 entities: JSON.stringify([entity]),
-                confidence,
+                confidence: confidence.toString(), // Convert to string for decimal field
                 createdAt: new Date(),
                 expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
             });
@@ -145,13 +143,12 @@ export const GET = async ({ url }: { url: URL }) => {
             )
         )
         .limit(limit);
-        
-        const highlights = await query;
+          const highlights = await query;
         
         // Filter by entity type if specified
         const filteredHighlights = entityType 
             ? highlights.filter(h => {
-                const tags = JSON.parse(h.tags || '[]');
+                const tags = JSON.parse((h.tags as string) || '[]');
                 return tags.includes(entityType.toLowerCase());
             })
             : highlights;

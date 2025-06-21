@@ -160,7 +160,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <h4>Aliases</h4>
-                                    {#if data.criminal.aliases && data.criminal.aliases.length > 0}
+                                    {#if data.criminal.aliases && Array.isArray(data.criminal.aliases) && data.criminal.aliases.length > 0}
                                         <ul>
                                             {#each data.criminal.aliases as alias}
                                                 <li>{alias}</li>
@@ -182,9 +182,11 @@
                                         <h5 class="card-title">{item.title}</h5>
                                         <p class="card-text">{item.description}</p>
                                         <div class="tags">
-                                            {#each item.tags as tag}
-                                                <span class="badge bg-secondary me-1">{tag}</span>
-                                            {/each}
+                                            {#if Array.isArray(item.tags)}
+                                                {#each item.tags as tag}
+                                                    <span class="badge bg-secondary me-1">{tag}</span>
+                                                {/each}
+                                            {/if}
                                         </div>
                                     </div>
                                 </div>

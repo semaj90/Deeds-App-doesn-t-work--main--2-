@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { lawParagraphs, cases } from '$lib/server/db/schema';
+import { lawParagraphs, cases } from '$lib/server/db/schema-new'; // Use unified schema
 import { cache, invalidateCacheByTags } from '$lib/server/cache/cache';
 import { sql, inArray } from 'drizzle-orm';
 
@@ -15,7 +15,7 @@ export async function GET() {
 
     try {
         // Fetch all law paragraphs with advanced fields
-        const allLawParagraphs = await db.select().from(lawParagraphs);
+        const allLawParagraphs = await db.query.lawParagraphs.findMany(); // Use findMany
         
         // Safe JSON parsing helper
         const getArray = (val: any): any[] => {
@@ -40,7 +40,7 @@ export async function GET() {
 
         // Fetch related cases if we have valid case IDs
         let casesMap: { [key: string]: any } = {};
-        if (caseIds.length > 0) {
+        if (caseIds.length > 0) { // Check if caseIds is not empty
             const relatedCases = await db.select().from(cases).where(inArray(cases.id, caseIds));
             casesMap = Object.fromEntries(relatedCases.map(c => [c.id, c]));
         }
@@ -108,7 +108,7 @@ export async function POST({ request }: { request: Request }) {
             crimeSuggestions: safeStringify(crimeSuggestions),
             createdAt: new Date(),
             updatedAt: new Date(),
-        }).returning();
+        }).returning(); // Add .returning()
 
         // Invalidate cache after successful insertion
         invalidateCacheByTags(['law-paragraphs', 'statutes']);

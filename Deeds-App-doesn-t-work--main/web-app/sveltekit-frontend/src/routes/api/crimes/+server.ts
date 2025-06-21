@@ -1,5 +1,5 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import { db } from '$lib/server/db/seed-db';
+import { db } from '$lib/server/db';
 import { crimes } from '$lib/server/db/schema';
 import { eq, like, sql } from 'drizzle-orm';
 import { json } from '@sveltejs/kit';
@@ -27,13 +27,13 @@ export const GET: RequestHandler = async ({ url }) => {
     if (searchTerm) {
       query = query.where(like(crimes.name, `%${searchTerm}%`));
     }
-    const data = await query.limit(limit).offset(offset).all();
+    const data = await query.limit(limit).offset(offset);
     // Count total
-    let countQuery = db.select({ count: sql`count(*)` }).from(crimes).$dynamic();
+    let countQuery = db.select({ count: sql<number>`count(*)` }).from(crimes).$dynamic();
     if (searchTerm) {
       countQuery = countQuery.where(like(crimes.name, `%${searchTerm}%`));
     }
-    const total = (await countQuery.all())[0]?.count || 0;
+    const total = (await countQuery)[0]?.count || 0;
     return json({ data, page, limit, total });
   } catch (error) {
     console.error('Error fetching crimes:', error);

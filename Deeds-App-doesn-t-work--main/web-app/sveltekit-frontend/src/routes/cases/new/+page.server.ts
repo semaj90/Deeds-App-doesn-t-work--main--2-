@@ -26,6 +26,7 @@ export const actions: Actions = {
     try {
       await db.insert(cases).values({
         id,
+        caseNumber: `CASE-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`, // Generate unique case number
         title,
         description,
         dangerScore,

@@ -3,7 +3,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db/index.js';
-import { evidence, contentEmbeddings, nlpAnalysisCache } from '$lib/server/db/schema.js';
+import { evidenceFiles } from '$lib/server/db/schema-new.js'; // Use unified schema
+import { env } from '$env/dynamic/private';
 import { eq } from 'drizzle-orm';
 import { createHash } from 'crypto';
 import * as fs from 'fs';
@@ -48,7 +49,7 @@ export const POST: RequestHandler = async ({ request }) => {
         }
 
         // Call Python NLP service for video processing
-        const response = await fetch('http://localhost:8001/evidence/process', {
+        const response = await fetch(`${env.LLM_SERVICE_URL || 'http://localhost:8000'}/evidence/process`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -71,18 +72,15 @@ export const POST: RequestHandler = async ({ request }) => {
         const timelineElements = extractTimelineElements(processingResult);
         const audioSegments = extractAudioSegments(processingResult);
         const objectEvents = extractObjectEvents(processingResult);
-        
-        // Store in evidence table
-        const evidenceId = processingResult.evidence_id || `evidence_${Date.now()}`;
-        await db.insert(evidence).values({
-            id: evidenceId,
+          // Store in evidence table
+        await db.insert(evidenceFiles).values({
             caseId,
-            filename: file.name,
+            fileName: file.name,
+            filePath: tempPath,
+            fileType: 'video',
+            fileSize: 0, // TODO: Calculate actual file size
             aiSummary: processingResult.markdown_summary || '',
-            embedding: JSON.stringify(processingResult.embeddings || []),
-            tags: JSON.stringify(['video', 'timeline', 'audio', 'objects']),
-            createdAt: new Date(),
-            updatedAt: new Date()
+            embedding: processingResult.embeddings || [],            tags: ['video', 'multimedia', 'timeline', 'audio', 'objects'],
         });
         
         // Clean up temp files
@@ -90,10 +88,8 @@ export const POST: RequestHandler = async ({ request }) => {
         if (preprocessedPath !== tempPath && fs.existsSync(preprocessedPath)) {
             fs.unlinkSync(preprocessedPath);
         }
-        
-        return json({
+          return json({
             success: true,
-            evidenceId,
             timelineElements,
             audioSegments,
             objectEvents,

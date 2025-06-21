@@ -9,9 +9,12 @@ export const GET = async ({ params }) => {
     return new Response(JSON.stringify({ error: 'Invalid criminal ID' }), { status: 400 });
   }
 
-  const criminal = await db.query.criminals.findFirst({
-    where: eq(criminals.id, criminalId),
-  });
+  const criminalResults = await db.select().from(criminals).where(eq(criminals.id, criminalId)).limit(1);
+  const criminal = criminalResults[0];
+
+  if (!criminal) {
+    return new Response(JSON.stringify({ error: 'Criminal not found' }), { status: 404 });
+  }
 
   const summary = generateSummaryFromCriminal(criminal); // could use priors + convictions
 

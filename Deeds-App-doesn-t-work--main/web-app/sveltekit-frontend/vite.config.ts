@@ -85,6 +85,14 @@ export default defineConfig(({ mode }) => {
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode),
     },
+    build: {
+      rollupOptions: {
+        external: ['pdf-parse']
+      }
+    },
+    ssr: {
+      noExternal: []
+    },
     server: {
       port: 5174, // Match Playwright and your scripts
       host: 'localhost', // Restrict to localhost only

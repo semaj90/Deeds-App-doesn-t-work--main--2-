@@ -1,12 +1,11 @@
-<script lang="ts">
-  import { createEventDispatcher, onMount, tick } from 'svelte';
-  import { predictiveAnalyzer } from '$lib/nlp/analyzer';
-  
-  export let value: string = '';
+<script lang="ts">  import { createEventDispatcher, onMount, tick } from 'svelte';
+  import { nlpClient } from '$lib/nlp/client.js';
+  import type { CaseAnalysis } from '$lib/nlp/types.js';
+    export let value: string = '';
   export let placeholder: string = 'Start typing...';
   export let category: string = ''; // 'opening', 'closing', 'evidence_description', etc.
-  export let caseId: string = '';
-  export let userId: string = '';
+  export const caseId: string = '';
+  export const userId: string = '';
   export let maxSuggestions: number = 5;
   export let minQueryLength: number = 2;
   export let disabled: boolean = false;
@@ -24,13 +23,24 @@
   onMount(async () => {
     await loadData();
   });
-
   async function loadData() {
     if (userId) {
-      recentCases = await predictiveAnalyzer.getRecentCases(userId, 5);
+      // TODO: Replace with API call to /api/cases/recent
+      try {
+        const response = await fetch('/api/cases/recent');
+        if (response.ok) {
+          recentCases = await response.json();
+        } else {
+          recentCases = [];
+        }
+      } catch (error) {
+        console.warn('Failed to load recent cases:', error);
+        recentCases = [];
+      }
     }
     if (category) {
-      savedStatements = await predictiveAnalyzer.getSavedStatements(category, userId);
+      // TODO: Create API endpoint for saved statements
+      savedStatements = [];
     }
   }
 

@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { cases, caseRelationships, caseRelationshipFeedback } from '$lib/server/db/schema';
+import { cases, caseRelationships, caseRelationshipFeedback } from '$lib/server/db/schema-new'; // Use unified schema
 import { cache } from '$lib/server/cache/cache';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
@@ -26,10 +26,10 @@ export async function GET({ params }: { params: { caseId: string } }) {
         // Get related cases based on relationships and user feedback
         const relatedCases = await db
             .select({
-                case: cases,
-                relationship: caseRelationships,
+                case: cases, // Select the entire case object
+                relationship: caseRelationships, // Select the entire relationship object
                 feedbackScore: sql<number>`COALESCE(AVG(${caseRelationshipFeedback.userScore}), 0)`,
-                feedbackCount: sql<number>`COUNT(${caseRelationshipFeedback.id})`
+                feedbackCount: sql<number>`COUNT(${caseRelationshipFeedback.id})` // Count feedback entries
             })
             .from(caseRelationships)
             .innerJoin(cases, eq(cases.id, caseRelationships.relatedCaseId))
@@ -47,10 +47,10 @@ export async function GET({ params }: { params: { caseId: string } }) {
         // Also get reverse relationships
         const reverseRelatedCases = await db
             .select({
-                case: cases,
-                relationship: caseRelationships,
+                case: cases, // Select the entire case object
+                relationship: caseRelationships, // Select the entire relationship object
                 feedbackScore: sql<number>`COALESCE(AVG(${caseRelationshipFeedback.userScore}), 0)`,
-                feedbackCount: sql<number>`COUNT(${caseRelationshipFeedback.id})`
+                feedbackCount: sql<number>`COUNT(${caseRelationshipFeedback.id})` // Count feedback entries
             })
             .from(caseRelationships)
             .innerJoin(cases, eq(cases.id, caseRelationships.parentCaseId))
@@ -119,18 +119,14 @@ export async function POST({ params, request }: { params: { caseId: string }, re
         } else if (action === 'create') {
             // Create a new relationship
             const { relationshipType, description } = body;
-            
-            const newRelationship = await db.insert(caseRelationships).values({
-                id: crypto.randomUUID(),
+              const newRelationship = await db.insert(caseRelationships).values({
                 parentCaseId: caseId,
                 relatedCaseId,
                 relationshipType: relationshipType || 'related',
-                confidence: 0.8, // Default confidence for manual relationships
+                confidence: '0.8', // Default confidence for manual relationships
                 description,
                 discoveredBy: 'user',
                 createdBy: userId,
-                createdAt: new Date(),
-                updatedAt: new Date()
             }).returning();
 
             // Invalidate cache

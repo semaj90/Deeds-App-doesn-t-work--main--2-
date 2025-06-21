@@ -43,14 +43,13 @@
 </script>
 
 <svelte:head>
-    <title>Statute: {statuteItem.name} - WardenNet</title>
+    <title>Statute: {statuteItem.title} - WardenNet</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 </svelte:head>
 
 <div class="container mt-4 text-dark">
     {#if statuteItem}
-        <h1 class="mb-4 text-primary">Statute: {statuteItem.name}</h1>
-        <p><strong>Section Number:</strong> {statuteItem.sectionNumber}</p>
+        <h1 class="mb-4 text-primary">Statute: {statuteItem.title}</h1>
         <p><strong>Description:</strong> {statuteItem.description || 'No description provided.'}</p>
         <p><strong>Created At:</strong> {new Date(statuteItem.createdAt).toLocaleDateString()}</p>
         
@@ -73,7 +72,7 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        Are you sure you want to delete statute: <strong>{statuteItem.name} ({statuteItem.sectionNumber})</strong>? This action cannot be undone.
+                        Are you sure you want to delete statute: <strong>{statuteItem.title}</strong>? This action cannot be undone.
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" on:click={() => showDeleteConfirmation = false}>Cancel</button>

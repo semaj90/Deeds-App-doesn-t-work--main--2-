@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { cache } from '$lib/server/cache/cache';
 import { db } from '$lib/server/db';
-import { cases, caseRelationshipFeedback } from '$lib/server/db/schema';
+import { cases, caseRelationshipFeedback } from '$lib/server/db/schema-new'; // Use unified schema
 import { eq } from 'drizzle-orm';
 
 const LLM_SERVICE_URL = env.LLM_SERVICE_URL;

@@ -9,6 +9,7 @@
   import DraggableItem from '$lib/components/DraggableItem.svelte';
   import DropZone from '$lib/components/DropZone.svelte';
   import { dragDropManager } from '$lib/stores/dragDrop';
+  import type { Case, Book } from '$lib/data/types';
 
   export let data: any;
 
@@ -297,15 +298,17 @@
               <h3 class="card-title text-sm">📈 Recently Accessed</h3>
               <div class="space-y-2">
                 {#each recentCasesList as recentCase}
-                  <div 
-                    class="p-2 bg-base-200 rounded cursor-pointer hover:bg-base-300 transition-colors"
+                  <button
+                    type="button"
+                    class="p-2 bg-base-200 rounded cursor-pointer hover:bg-base-300 transition-colors w-full text-left"
+                    aria-label="Open recent case {recentCase.title}"
                     on:click={() => openCaseInNew(recentCase.id)}
                   >
                     <div class="text-xs font-medium truncate">{recentCase.title}</div>
                     <div class="text-xs text-base-content/70">
                       Accessed {recentCase.accessCount} times
                     </div>
-                  </div>
+                  </button>
                 {/each}
               </div>
             </div>
@@ -424,7 +427,7 @@
                     <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square">
                       ⋮
                     </div>
-                    <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                    <ul class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
                       <li>
                         <button on:click={() => analyzeCaseRelationships(case_.id)}>
                           🔍 Analyze Relationships
@@ -494,6 +497,29 @@
                     </span>
                   {/if}
                 </div>
+
+                <!-- Case Books Feature -->
+                <div class="mt-2">
+                  <h6>Case Books</h6>
+                  {#if case_.books && case_.books.length > 0}
+                    <ul class="list-group list-group-flush mb-2">
+                      {#each case_.books as book}
+                        <li class="list-group-item px-0 py-1">
+                          <strong>{book.title}</strong>{book.author ? ` by ${book.author}` : ''}
+                          {#if book.publishedAt}
+                            <span class="text-muted small ms-2">({book.publishedAt})</span>
+                          {/if}
+                          {#if book.description}
+                            <div class="small text-muted">{book.description}</div>
+                          {/if}
+                        </li>
+                      {/each}
+                    </ul>
+                  {:else}
+                    <div class="text-muted small">No books linked.</div>
+                  {/if}
+                  <!-- TODO: Add UI to add/remove books when backend is ready -->
+                </div>
               </div>
             </div>
           {/each}
@@ -525,10 +551,8 @@
   <div class="modal modal-open">
     <div class="modal-box max-w-4xl">
       <h3 class="font-bold text-lg mb-4">Case Relationship Analysis</h3>
-      
-      <CaseRelationshipAnalyzer 
+        <CaseRelationshipAnalyzer 
         caseId={analyzingCaseId}
-        userId={$page.data.session?.user?.id}
         on:close={() => showRelationshipAnalyzer = false}
         on:merge={(event) => {
           showRelationshipAnalyzer = false;
@@ -573,9 +597,9 @@
               </div>
               <input 
                 type="checkbox" 
-                class="checkbox checkbox-primary"
-                on:change={(e) => {
-                  if (e.target.checked) {
+                class="checkbox checkbox-primary"                on:change={(e) => {
+                  const target = e.target as HTMLInputElement;
+                  if (target?.checked) {
                     selectedCases = [...selectedCases, suggestion.case.id];
                   } else {
                     selectedCases = selectedCases.filter(id => id !== suggestion.case.id);
@@ -609,5 +633,6 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    line-clamp: 3; /* Add standard property for compatibility */
   }
 </style>

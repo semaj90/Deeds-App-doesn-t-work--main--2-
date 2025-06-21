@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { statutes } from '$lib/server/db/schema';
-import { sql } from 'drizzle-orm';
+import { db, statutes } from '$lib/server/db';
+import { sql, ilike } from 'drizzle-orm';
 import { cache, invalidateCacheByTags } from '$lib/server/cache/cache';
 
 export async function GET({ url }) {
@@ -20,46 +19,47 @@ export async function GET({ url }) {
 
     const offset = (page - 1) * limit;
 
-    let query = db.select().from(statutes).$dynamic();
-    let countQuery = db.select({ count: sql`count(*)` }).from(statutes).$dynamic();
-
+    let fetchedStatutes, totalStatutesResult;
     if (searchTerm) {
         const searchPattern = `%${searchTerm.toLowerCase()}%`;
-        query = query.where(
-            sql`${statutes.title} LIKE ${searchPattern} OR ${statutes.content} LIKE ${searchPattern}`
-        );
-        countQuery = countQuery.where(
-            sql`${statutes.title} LIKE ${searchPattern} OR ${statutes.content} LIKE ${searchPattern}`
-        );
+        fetchedStatutes = await db.query.statutes.findMany({
+            where: sql`${statutes.title} ILIKE ${searchPattern} OR ${statutes.description} ILIKE ${searchPattern} OR ${statutes.fullText} ILIKE ${searchPattern}`,
+            .limit(limit).offset(offset);
+        totalStatutesResult = await db.select({ count: sql<number>`count(*)` }).from(statutes)
+            .where(ilike(statutes.title, searchPattern) || ilike(statutes.description, searchPattern) || ilike(statutes.fullText, searchPattern));
+    } else {
+        fetchedStatutes = await db.query.statutes.findMany({ limit, offset });
+        totalStatutesResult = await db.select({ count: sql`count(*)` }).from(statutes);
     }
-
-    const fetchedStatutes = await query.limit(limit).offset(offset);
-    const totalStatutesResult = await countQuery;
     const totalStatutes = totalStatutesResult[0].count;
 
     const result = { statutes: fetchedStatutes, totalStatutes };
     
-    // Cache the result with tags for invalidation
-    cache.set(cacheKey, result, {
-        ttl: 600000, // 10 minutes (statutes change less frequently)
-        tags: ['statutes', 'statutes:list']
-    });
+    // Cache the result with a 10 min TTL (600000 ms)
+    cache.set(cacheKey, result, 600000);
 
     return json(result);
 }
 
 export async function POST({ request }) {
-    const { title, content } = await request.json();
+    const { title, code, description, fullText, category, severity, minPenalty, maxPenalty, jurisdiction, effectiveDate } = await request.json();
 
-    if (!title) {
-        return json({ message: 'Title is required' }, { status: 400 });
+    if (!title || !code) {
+        return json({ message: 'Title and code are required' }, { status: 400 });
     }
 
     try {
-        const newStatute = await db.insert(statutes).values({
-            id: crypto.randomUUID(),
+        const newStatute = await db.insert(statutes).values({ // ID is auto-generated UUID
             title,
-            content
+            code,
+            description,
+            fullText,
+            category,
+            severity,
+            minPenalty,
+            maxPenalty,
+            jurisdiction,
+            effectiveDate: effectiveDate ? new Date(effectiveDate) : undefined
         }).returning();
         
         // Invalidate cache after successful insertion

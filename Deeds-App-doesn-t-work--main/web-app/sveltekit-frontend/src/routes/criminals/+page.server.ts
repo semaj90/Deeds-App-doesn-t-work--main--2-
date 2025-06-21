@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
-import { criminals } from '$lib/server/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { criminals } from '$lib/server/db/schema-new'; // Use unified schema
+import { eq, sql, count } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import type { ServerLoad } from '@sveltejs/kit';
 import type { Criminal } from '$lib/data/types';
@@ -14,15 +14,15 @@ export const load: ServerLoad = async ({ locals, fetch, url }) => {
     const searchTerm = url.searchParams.get('search') || '';
 
     const list = await db
-        .select()
-        .from(criminals)
+        .query.criminals.findMany({ // Use findMany
+            // where: eq(criminals.createdBy, user.id), // Assuming criminals are created by user
+            // For now, fetch all criminals, as createdBy might not be set for all
+        })
         .where(eq(criminals.createdBy, user.id))
         .limit(limit)
         .offset((page - 1) * limit);
 
-    // SQLite-compatible count query (returns string, so parseInt)
-    const countResult = await db.select({ count: sql`count(*)` }).from(criminals).where(eq(criminals.createdBy, user.id));
-    const totalCriminals = countResult[0]?.count ? parseInt(countResult[0].count as string) : 0;
+    const totalCriminals = (await db.select({ count: count() }).from(criminals).where(eq(criminals.createdBy, user.id)))[0].count;
 
     return {
         userId: user.id,
@@ -39,19 +39,17 @@ export const actions = {
     create: async ({ request, locals }) => {
         const user = locals.user;
         if (!user) return fail(401, { error: 'Not authenticated' });
-        const form = await request.formData();
-        const firstName = form.get('firstName')?.toString();
-        const lastName = form.get('lastName')?.toString();
-        if (!firstName || !lastName) return fail(400, { error: 'First and last name required' });
-        await db.insert(criminals).values({ firstName, lastName, createdBy: user.id });
+        const { firstName, lastName } = Object.fromEntries(await request.formData()) as { firstName: string, lastName: string };
+        if (!firstName || !lastName) return fail(400, { message: 'First and last name required' });
+        await db.insert(criminals).values({ firstName, lastName, createdBy: user.id }); // ID is auto-generated UUID
         return { success: true };
     },
     delete: async ({ request, locals }) => {
         const user = locals.user;
         if (!user) return fail(401, { error: 'Not authenticated' });
-        const id = (await request.formData()).get('id');
-        if (!id || typeof id !== 'string') return fail(400, { error: 'ID required' });
-        await db.delete(criminals).where(eq(criminals.id, id));
+        const { id } = Object.fromEntries(await request.formData()) as { id: string };
+        if (!id) return fail(400, { message: 'ID required' });
+        await db.delete(criminals).where(eq(criminals.id, id)); // Ensure ID is UUID
         return { success: true };
     }
 };

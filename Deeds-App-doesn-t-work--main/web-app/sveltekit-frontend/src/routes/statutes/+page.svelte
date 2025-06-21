@@ -1,38 +1,76 @@
 <script lang="ts">
     import type { PageData } from './$types';
-    import type { Statute } from '$lib/server/db/schema';
+    import { onMount } from 'svelte';
+    import { writable } from 'svelte/store';
+    import { statutes } from '$lib/server/db/schema-new';
+    // Use typeof statutes.$inferSelect for type-safe Statute
+    type Statute = typeof statutes.$inferSelect;
 
     export let data: PageData;
+    let statutesList: Statute[] = data.statutes;
 
-    // Use correct property names from Drizzle schema
-    let statutes: Statute[] = data.statutes;
+    // Store for AI summaries and loading/error states
+    let aiSummaries = writable<Record<string, { summary: string; loading: boolean; error: string | null }>>({});
 
-    // Placeholder for AI-generated summaries
-    // In a real application, this would involve fetching from an API
-    // or a reactive store that gets updated with AI summaries.
-    function getAiSummary(statuteId: string): string {
-        // This is a mock function. In a real scenario, you'd fetch this from an AI service.
-        // For now, it returns a generic placeholder.
-        return `AI-generated summary for statute ID ${statuteId}: This statute broadly covers legal principles related to... [More detailed summary here]`;
+    async function fetchAiSummary(statute: Statute) {
+        aiSummaries.update((s) => ({
+            ...s,
+            [statute.id]: { summary: '', loading: true, error: null }
+        }));
+        try {
+            // SSR: This is a client-side API call to SvelteKit endpoint, which proxies to Python NLP
+            const res = await fetch('/api/nlp/summarize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: statute.fullText || statute.description || '', contextType: 'statute', maxLength: 400, style: 'brief' })
+            });
+            const data = await res.json();
+            if (res.ok && data.summary) {
+                aiSummaries.update((s) => ({ ...s, [statute.id]: { summary: data.summary, loading: false, error: null } }));
+            } else {
+                aiSummaries.update((s) => ({ ...s, [statute.id]: { summary: '', loading: false, error: data.error || 'NLP error' } }));
+            }
+        } catch (e) {
+            aiSummaries.update((s) => ({ ...s, [statute.id]: { summary: '', loading: false, error: 'Network error' } }));
+        }
     }
+
+    onMount(() => {
+        statutesList.forEach(fetchAiSummary);
+    });
 </script>
 
-<div class="container mt-4">
-    <h1 class="mb-4">Statutes</h1>
-
-    {#if statutes.length > 0}
-        <div class="statutes-list">
-            {#each statutes as statute (statute.id)}
-                <div class="statute-card">
-                    <h2>{statute.title}</h2>
-                    <p><strong>Section:</strong> {statute.meta?.sectionNumber}</p>
-                    <div>{statute.content}</div>
-                    
-                    <div class="ai-summary">
-                        <h4>AI-Generated Summary:</h4>
-                        <p>{getAiSummary(statute.id)}</p>
+<div class="container-fluid mt-4">
+    <h1 class="mb-4 text-center">Statutes</h1>
+    <!-- SSR: statutesList is provided by SvelteKit load function -->
+    {#if statutesList.length > 0}
+        <div class="row g-4">
+            {#each statutesList as statute (statute.id)}
+                <div class="col-12 col-md-6 col-lg-4 d-flex">
+                    <div class="card flex-fill shadow-sm">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">{statute.title || 'Statute Name Placeholder'}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Section: {statute.code || 'Section Placeholder'}</h6>
+                            <p class="card-text">{statute.description || 'Statute description placeholder.'}</p>
+                            <div class="ai-summary mt-3">
+                                <h6 class="text-success">AI-Generated Summary:</h6>
+                                <!-- API JSON request to /api/nlp/summarize -->
+                                {#if $aiSummaries[statute.id]?.loading}
+                                    <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                {:else if $aiSummaries[statute.id]?.error}
+                                    <div class="text-danger">{$aiSummaries[statute.id].error}</div>
+                                {:else if $aiSummaries[statute.id]?.summary}
+                                    <p class="fst-italic">{$aiSummaries[statute.id].summary}</p>
+                                {:else}
+                                    <div class="text-muted">No summary available.</div>
+                                {/if}
+                            </div>
+                            <!-- SvelteKit component: link to detail page -->
+                            <a href="/statutes/{statute.id}" class="btn btn-primary mt-3">View Details</a>
+                        </div>
                     </div>
-                    <a href="/statutes/{statute.id}" class="btn btn-primary mt-3">View Details</a>
                 </div>
             {/each}
         </div>
@@ -42,67 +80,27 @@
 </div>
 
 <style>
-    .container {
-        max-width: 900px;
+    .container-fluid {
+        max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
     }
-
-    h1 {
-        color: #333;
-        text-align: center;
-        margin-bottom: 30px;
+    .row.g-4 {
+        row-gap: 2rem;
     }
-
-    .statutes-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-    }
-
-    .statute-card {
-        background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        padding: 20px;
+    .card {
+        min-height: 350px;
         display: flex;
         flex-direction: column;
+        justify-content: stretch;
     }
-
-    .statute-card h2 {
-        font-size: 1.5rem;
+    .card-title {
+        font-size: 1.3rem;
         color: #007bff;
-        margin-bottom: 10px;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 10px;
     }
-
-    .statute-card p {
-        font-size: 1rem;
-        color: #555;
-        line-height: 1.6;
-        margin-bottom: 10px;
-    }
-
-    .statute-card p strong {
-        color: #333;
-    }
-
     .ai-summary {
-        margin-top: 15px;
+        margin-top: auto;
         padding-top: 15px;
         border-top: 1px dashed #eee;
-    }
-
-    .ai-summary h4 {
-        font-size: 1.1rem;
-        color: #28a745; /* Green color for AI summary */
-        margin-bottom: 5px;
-    }
-
-    .ai-summary p {
-        font-size: 0.9rem;
-        color: #666;
-        font-style: italic;
     }
 </style>

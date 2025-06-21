@@ -100,20 +100,16 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const embedding = null; // TODO: Call embedding service
 
     const newEvidence = {
-      id: uuidv4(),
+      title: file.name,
+      evidenceType: file.type.split('/')[0] || 'document',
       filename: file.name,
       filePath,
       fileType: file.type,
       fileSize: file.size,
-      tags: JSON.stringify(tags),
-      uploadedBy: userId,
-      caseId: caseId as string, // Must not be null based on schema
-      poiId: poiId as string || null,
+      tags: tags,
+      caseId: caseId as string,
       aiSummary: summary,
-      originalContent: extractedText,
-      embedding: embedding ? JSON.stringify(embedding) : null,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      embedding: embedding ? embedding : null,
     };
 
     // Only insert if we have a valid caseId

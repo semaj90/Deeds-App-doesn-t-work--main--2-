@@ -20,8 +20,8 @@
     let selectedCriminalId: string | null = crimeItem.criminalId;
 
     async function handleSubmit() {
-        if (!crimeItem.name || selectedStatuteId === undefined || selectedCriminalId === undefined) {
-            alert('Please provide a crime name, select a statute, and select a criminal.');
+        if (!crimeItem.title || selectedStatuteId === undefined || selectedCriminalId === undefined) {
+            alert('Please provide a crime title, select a statute, and select a criminal.');
             return;
         }
 
@@ -31,7 +31,7 @@
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                name: crimeItem.name,
+                title: crimeItem.title,
                 description: crimeItem.description,
                 statuteId: selectedStatuteId,
                 criminalId: selectedCriminalId
@@ -49,16 +49,16 @@
 </script>
 
 <svelte:head>
-    <title>WardenNet - Edit Crime: {crimeItem.name}</title>
+    <title>WardenNet - Edit Crime: {crimeItem.title}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 </svelte:head>
 
 <div class="container mt-4 text-dark">
-    <h1 class="mb-4 text-center text-primary">Edit Crime: {crimeItem.name}</h1>
+    <h1 class="mb-4 text-center text-primary">Edit Crime: {crimeItem.title}</h1>
     <form on:submit|preventDefault={handleSubmit} use:enhance>
         <div class="mb-3">
-            <label for="name" class="form-label">Crime Name</label>
-            <input type="text" class="form-control" id="name" name="name" bind:value={crimeItem.name} required />
+            <label for="title" class="form-label">Crime Title</label>
+            <input type="text" class="form-control" id="title" name="title" bind:value={crimeItem.title} required />
         </div>
 
         <div class="mb-3">
@@ -71,7 +71,7 @@
             <select class="form-select" id="statuteSelect" bind:value={selectedStatuteId} required>
                 <option value={undefined} disabled>Select a Statute</option>
                 {#each statutes as statute}
-                    <option value={statute.id}>{statute.name} ({statute.sectionNumber})</option>
+                    <option value={statute.id}>{statute.title}</option>
                 {/each}
             </select>
         </div>

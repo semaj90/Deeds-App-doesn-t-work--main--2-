@@ -2,8 +2,8 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types'; // Correct type
 import type { Crime, Criminal, Statute } from '$lib/data/types';
 import { db } from '$lib/server/db';
-import { crimes, criminals, statutes } from '$lib/server/db/schema';
-import { sql, eq } from 'drizzle-orm';
+import { crimes, criminals, statutes } from '$lib/server/db/schema-new'; // Use unified schema
+import { sql, eq, count } from 'drizzle-orm';
 
 export const load: PageServerLoad = async (event) => {
     const user = event.locals.user;
@@ -18,22 +18,22 @@ export const load: PageServerLoad = async (event) => {
     const searchTerm = event.url.searchParams.get('search') || '';    const offset = (page - 1) * limit;
 
     let query = db
-    .select({
-        crime: crimes,
-        criminal: criminals,
-        statute: statutes
-    })
-    .from(crimes)
-    .innerJoin(criminals, eq(crimes.criminalId, criminals.id))
-    .innerJoin(statutes, eq(crimes.statuteId, statutes.id))
-    .$dynamic();
+        .select({
+            crime: crimes,
+            criminal: criminals,
+            statute: statutes
+        })
+        .from(crimes)
+        .innerJoin(criminals, eq(crimes.criminalId, criminals.id))
+        .innerJoin(statutes, eq(crimes.statuteId, statutes.id))
+        .$dynamic();
 
     let countQuery = db
-    .select({ count: sql`count(*)` })
-    .from(crimes)
-    .innerJoin(criminals, eq(crimes.criminalId, criminals.id))
-    .innerJoin(statutes, eq(crimes.statuteId, statutes.id))
-    .$dynamic();    if (searchTerm) {
+        .select({ count: count() }) // Use count()
+        .from(crimes)
+        .innerJoin(criminals, eq(crimes.criminalId, criminals.id))
+        .innerJoin(statutes, eq(crimes.statuteId, statutes.id))
+        .$dynamic();    if (searchTerm) {
         const searchPattern = `%${searchTerm.toLowerCase()}%`;
         query = query.where(
             sql`${criminals.firstName} ILIKE ${searchPattern} OR ${criminals.lastName} ILIKE ${searchPattern} OR ${statutes.code} ILIKE ${searchPattern} OR ${statutes.title} ILIKE ${searchPattern}`

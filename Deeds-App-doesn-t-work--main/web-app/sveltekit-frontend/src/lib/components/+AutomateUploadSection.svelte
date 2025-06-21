@@ -90,14 +90,6 @@
     display: block;
   }
 
-  .form-control {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-  }
-
   .btn-primary {
     background-color: #007bff;
     color: #fff;

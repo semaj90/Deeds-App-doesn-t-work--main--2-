@@ -1,5 +1,6 @@
 import { db } from '$lib/server/db';
 import { users } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid'; // Import uuid
@@ -23,9 +24,8 @@ export const actions: Actions = {
 		}
 
 		try {
-			const existingUser = await db.query.users.findFirst({
-				where: (usersTable, { eq }) => eq(usersTable.email, email),
-			});
+			const existingUserResults = await db.select().from(users).where(eq(users.email, email)).limit(1);
+			const existingUser = existingUserResults[0];
 
 			if (existingUser) {
 				return fail(400, { error: 'User with this email already exists.' });

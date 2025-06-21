@@ -122,7 +122,7 @@
                 {#if data.recentCases?.length}
                     <div class="grid gap-4">
                         {#each data.recentCases as caseItem}
-                            <CaseCard {caseItem} />
+                            <CaseCard caseItem={caseItem as any} />
                         {/each}
                     </div>
                 {:else}

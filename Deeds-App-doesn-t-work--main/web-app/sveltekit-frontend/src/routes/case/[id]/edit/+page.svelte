@@ -21,7 +21,7 @@
         description: caseItem.description,
         summary: caseItem.summary,
         status: caseItem.status,
-        date_opened: caseItem.date_opened
+        date_opened: caseItem.dateOpened
       });
       alert('Case updated successfully!');
       await goto(`/case/${caseItem.id}`);
@@ -74,7 +74,7 @@
 
     <div class="mb-3">
       <label for="date_opened" class="form-label">Date Opened</label>
-      <input type="date" class="form-control" id="date_opened" name="date_opened" bind:value={caseItem.date_opened} required />
+      <input type="date" class="form-control" id="date_opened" name="date_opened" bind:value={caseItem.dateOpened} required />
     </div>
 
     <div class="mb-3">

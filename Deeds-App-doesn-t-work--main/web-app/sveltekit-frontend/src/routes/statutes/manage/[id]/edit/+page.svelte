@@ -13,7 +13,7 @@
     let statute = data.statute;
     let statuteTitle = statute.title;
     let statuteContent = statute.content;
-    let statuteSectionNumber = statute.meta?.sectionNumber;
+    let statuteSectionNumber = statute.sectionNumber;
 
     async function handleSubmit() {
         const response = await fetch(`/api/statutes/${statute.id}`, {
@@ -24,7 +24,7 @@
             body: JSON.stringify({
                 title: statuteTitle,
                 content: statuteContent,
-                meta: { ...statute.meta, sectionNumber: statuteSectionNumber }
+                sectionNumber: statuteSectionNumber
             })
         });
 

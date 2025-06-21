@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
-import { cache } from '$lib/server/cache/cache';
+import { cache } from '$lib/server/cache/cache'; // Ensure cache is imported
 
 const LLM_SERVICE_URL = env.LLM_SERVICE_URL;
 const GEMINI_API_KEY = env.GEMINI_API_KEY;

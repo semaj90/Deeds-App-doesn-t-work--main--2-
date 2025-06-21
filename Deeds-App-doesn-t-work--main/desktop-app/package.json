@@ -10,7 +10,8 @@
     "dev": "cd sveltekit-frontend && npm run dev",
     "build": "cd sveltekit-frontend && npm run build",
     "rust:build": "cd src-tauri && cargo build",
-    "rust:check": "cd src-tauri && cargo check"
+    "rust:check": "cd src-tauri && cargo check",
+    "check": "node -e \"const fs=require('fs'),p=require('path');const d=fs.readdirSync('..').find(x=>/sveltekit-frontend/i.test(x));if(!d){console.error('No sveltekit-frontend dir');process.exit(1);}require('child_process').spawnSync('npm',['run','check'],{cwd:p.join('..',d),stdio:'inherit'});\""
   },
   "keywords": ["tauri", "prosecutor", "case-management", "desktop"],
   "author": "Your Name",

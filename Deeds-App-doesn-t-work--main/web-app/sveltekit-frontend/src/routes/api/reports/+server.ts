@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
-import { cases, statutes, lawParagraphs, criminals, evidence } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { cases, statutes, lawParagraphs, criminals, evidenceFiles, caseCriminals } from '$lib/server/db/schema-new'; // Use unified schema
+import { eq, inArray } from 'drizzle-orm';
 import PDFDocument from 'pdfkit';
 
 export async function GET({ url }) {
@@ -36,7 +36,7 @@ export async function GET({ url }) {
             const currentCase = caseItem[0];
 
             doc.fontSize(25).text(`Case Report: ${currentCase.title}`, { align: 'center' });
-            doc.moveDown();
+            doc.moveDown(); // Use currentCase properties from schema-new.ts
             doc.fontSize(12).text(`Case Name: ${currentCase.name}`);
             doc.text(`Status: ${currentCase.status}`);
             doc.text(`Date Opened: ${currentCase.dateOpened?.toDateString()}`);
@@ -50,31 +50,34 @@ export async function GET({ url }) {
             doc.moveDown();
 
             // Linked Criminals
-            if (currentCase.linkedCriminals) {
-                const criminalIds = JSON.parse(currentCase.linkedCriminals as string);
-                if (criminalIds.length > 0) {
-                    doc.fontSize(16).text('Linked People of Interest:', { underline: true });
+            const linkedCriminals = await db.query.caseCriminals.findMany({
+                where: eq(caseCriminals.caseId, caseId),
+                with: { criminal: true }
+            });
+
+            if (linkedCriminals.length > 0) {
+                doc.fontSize(16).text('Linked People of Interest:', { underline: true });
+                doc.moveDown();
+                for (const link of linkedCriminals) {
+                    const criminal = link.criminal;
+                    doc.fontSize(12).text(`- ${criminal.firstName} ${criminal.lastName} (Role: ${link.role}, Threat Level: ${criminal.threatLevel || 'N/A'})`);
+                    doc.text(`  Aliases: ${criminal.aliases?.join(', ') || 'N/A'}`);
+                    doc.text(`  Charges: ${link.charges?.map((c: any) => c.name).join(', ') || 'N/A'}`);
+                    doc.text(`  Conviction: ${link.conviction ? 'Yes' : 'No'}`);
                     doc.moveDown();
-                    for (const criminalId of criminalIds) {
-                        const criminalItem = await db.select().from(criminals).where(eq(criminals.id, criminalId)).limit(1);
-                        if (criminalItem.length > 0) {
-                            const criminal = criminalItem[0];
-                            doc.fontSize(12).text(`- ${criminal.firstName} ${criminal.lastName} (Threat Level: ${criminal.threatLevel || 'N/A'})`);
-                            doc.text(`  Aliases: ${(criminal.aliases as string[]).join(', ') || 'N/A'}`);
-                            doc.text(`  Conviction Status: ${criminal.convictionStatus || 'N/A'}`);
-                            doc.moveDown();
-                        }
-                    }
                 }
             }
 
             // Linked Evidence
-            const caseEvidence = await db.select().from(evidence).where(eq(evidence.caseId, caseId));
+            const caseEvidence = await db.query.evidenceFiles.findMany({
+                where: eq(evidenceFiles.caseId, caseId)
+            });
+
             if (caseEvidence.length > 0) {
                 doc.fontSize(16).text('Linked Evidence:', { underline: true });
                 doc.moveDown();
                 caseEvidence.forEach(item => {
-                    doc.fontSize(12).text(`- ${item.fileName} (${item.fileType}, ${item.fileSize} bytes)`);
+                    doc.fontSize(12).text(`- ${item.fileName} (${item.fileType}, ${item.fileSize} bytes)`); // Use evidenceFiles properties
                     doc.text(`  Summary: ${item.summary || 'N/A'}`);
                     doc.text(`  Tags: ${(item.tags as string[]).join(', ') || 'N/A'}`);
                     doc.moveDown();
@@ -90,9 +93,9 @@ export async function GET({ url }) {
             }
 
             const currentStatute = statuteItem[0];
-            doc.fontSize(25).text(`Statute Report: ${currentStatute.name}`, { align: 'center' });
+            doc.fontSize(25).text(`Statute Report: ${currentStatute.title}`, { align: 'center' }); // Use title
             doc.moveDown();
-            doc.fontSize(14).text(`Section Number: ${currentStatute.sectionNumber}`);
+            doc.fontSize(14).text(`Code: ${currentStatute.code}`); // Use code
             doc.text(`Description: ${currentStatute.description || 'N/A'}`);
             doc.moveDown();
 
@@ -101,7 +104,7 @@ export async function GET({ url }) {
                 doc.fontSize(16).text('Law Paragraphs:', { underline: true });
                 doc.moveDown();
                 paragraphs.forEach(paragraph => {
-                    doc.fontSize(12).text(`Anchor ID: ${paragraph.anchorId || 'N/A'}`);
+                    doc.fontSize(12).text(`Paragraph Number: ${paragraph.paragraphNumber || 'N/A'}`); // Use paragraphNumber
                     doc.text(paragraph.paragraphText || 'No content available');
                     doc.text(`Linked Cases: ${(paragraph.linkedCaseIds as number[]).join(', ') || 'N/A'}`);
                     doc.text(`Crime Suggestions: ${(paragraph.crimeSuggestions as string[]).join(', ') || 'N/A'}`);

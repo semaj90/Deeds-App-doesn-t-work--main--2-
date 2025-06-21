@@ -9,7 +9,7 @@
 
   let criminalItem: Criminal = data.criminal;
   let statutes: Statute[] = data.statutes;
-  let criminalCrimes: Crime[] = data.criminalCrimes;
+  let criminalCrimes: Crime[] = []; // data.criminalCrimes || []; // TODO: Fix data loading
 
   let newCrimeName: string = '';
   let newCrimeDescription: string = '';

@@ -37,12 +37,6 @@
     background-color: #f0f2f5; /* Light gray background */
   }
 
-  .header-title {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #333;
-  }
-
   .canvas-sections {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

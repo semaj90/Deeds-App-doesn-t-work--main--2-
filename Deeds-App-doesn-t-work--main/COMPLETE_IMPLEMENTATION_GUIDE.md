@@ -10,6 +10,14 @@
 7. [Flutter Architecture Planning](#flutter-planning)
 8. [Next Steps to Completion](#next-steps)
 
+# Complete Multimodal Legal Scene Understanding Implementation
+
+## 🎯 Overview
+
+This implementation provides a robust, multi-platform legal NLP/LLM backend with advanced multimodal scene understanding capabilities. The system strictly enforces user-provided model requirements and never auto-downloads or bundles LLMs.
+
+## 🏗️ Architecture
+
 ## 🏠 Local-Only Development Setup {#local-only-development}
 
 ### Vite Configuration (Localhost Only)

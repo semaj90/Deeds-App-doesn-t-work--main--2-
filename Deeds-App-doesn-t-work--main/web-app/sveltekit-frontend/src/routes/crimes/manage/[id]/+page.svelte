@@ -43,15 +43,15 @@
 </script>
 
 <svelte:head>
-    <title>Crime: {crimeItem.name} - WardenNet</title>
+    <title>Crime: {crimeItem.title} - WardenNet</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 </svelte:head>
 
 <div class="container mt-4 text-dark">
     {#if crimeItem}
-        <h1 class="mb-4 text-primary">Crime: {crimeItem.name}</h1>
+        <h1 class="mb-4 text-primary">Crime: {crimeItem.title}</h1>
         <p><strong>Description:</strong> {crimeItem.description || 'No description provided.'}</p>
-        <p><strong>Statute:</strong> {crimeItem.statute.name} ({crimeItem.statute.sectionNumber})</p>
+        <p><strong>Statute:</strong> {crimeItem.statute.title}</p>
         <p><strong>Criminal:</strong> {crimeItem.criminal.firstName} {crimeItem.criminal.lastName}</p>
         <p><strong>Created At:</strong> {new Date(crimeItem.createdAt).toLocaleDateString()}</p>
         
@@ -74,7 +74,7 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        Are you sure you want to delete crime: <strong>{crimeItem.name}</strong>? This action cannot be undone.
+                        Are you sure you want to delete crime: <strong>{crimeItem.title}</strong>? This action cannot be undone.
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" on:click={() => showDeleteConfirmation = false}>Cancel</button>

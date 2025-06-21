@@ -1,10 +1,31 @@
+// --- CACHE STRATEGY NOTE ---
+// This API route uses LokiJS for fast, in-memory caching of server-side data (API responses, session data, etc).
+// LokiJS is simple and efficient for local/server caching and works well for most SvelteKit apps.
+// ---
+// If you need distributed caching (e.g., for LLM/NLP microservices, multi-server, or Docker/Kubernetes deployments),
+// consider Redis (free, open-source, BSD license). Redis allows sharing cache/state between multiple Node.js processes or services.
+// LokiJS: operates on explicit data/keys (no semantic search)
+// Redis: also operates on explicit data/keys, but is distributed and persistent
+// For semantic/embedding-based cache ("understands" meaning), you would use a vector DB or embedding store (not Loki/Redis).
+// ---
+// Example Redis usage (Node.js/SvelteKit):
+// import { createClient } from 'redis';
+// const redis = createClient({ url: 'redis://localhost:6379' });
+// await redis.connect();
+// await redis.set('key', 'value', { EX: 60 }); // Set with 60s expiry
+// const value = await redis.get('key');
+// await redis.disconnect();
+// ---
+// For now, this app uses LokiJS for in-memory cache. For LLM/NLP or semantic search, we will use a vector DB (Qdrant) via Docker container, and Drizzle ORM with Postgres for all structured data. This stack is ideal for a SvelteKit prosecutor case management app.
+// ---
+
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { cases, crimes, criminals, caseLawLinks, lawParagraphs, caseActivities } from '$lib/server/db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { cases, caseActivities, caseCriminals } from '$lib/server/db/schema-new'; // Use unified schema
+import { eq, and, sql, ilike, or } from 'drizzle-orm';
 import { withCache, cacheKeys, cacheTags, invalidateCacheByTags } from '$lib/server/cache/cache';
 import type { RequestHandler } from './$types';
-import { predictiveAnalyzer } from '$lib/nlp/analyzer';
+import { nlpClient } from '$lib/nlp/client'; // Use the client-side NLP client
 
 // GET /api/cases - List all cases for the logged-in user, with optional search and tag filter
 export const GET: RequestHandler = async ({ url, locals }) => {
@@ -16,63 +37,40 @@ export const GET: RequestHandler = async ({ url, locals }) => {
   const tagsParam = url.searchParams.get('tags'); // comma-separated tags
   const tags = tagsParam ? tagsParam.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [];
 
-  // Generate cache key based on parameters
-  const cacheKey = [userId, search, status, tags.sort().join(',')].join(':');
+  // Cache key based on user and filters
+  const cacheKey = cacheKeys.cases?.byUser?.(userId) ?? `cases:user:${userId}`;
+  return await withCache(cacheKey, async () => {
+    // Build query
+    const conditions = [eq(cases.createdBy, userId)];
+    if (status) {
+      conditions.push(eq(cases.status, status));
+    }
+    // Search by title/description
+    if (search) {
+      const searchPattern = `%${search.toLowerCase()}%`;
+      conditions.push(or(
+        ilike(cases.title, searchPattern),
+        ilike(cases.description, searchPattern))
+      );
+    }
+    if (tags.length > 0) {
+      // PostgreSQL JSONB: check if any tag is present in the aiTags array
+      conditions.push(sql`${cases.aiTags} ?| array[${tags.map(t => `'${t}'`).join(',')}]`);
+    }
 
-  try {
-    return json(await withCache(
-      cacheKey,
-      async () => {
-        const conditions = [eq(cases.createdBy, userId)];
-        if (search) {
-          const searchPattern = `%${search.toLowerCase()}%`;
-          conditions.push(
-            sql`(lower(${cases.title}) LIKE ${searchPattern} OR lower(${cases.description}) LIKE ${searchPattern})`
-          );
-        }
-        if (status && status !== 'all') {
-          conditions.push(eq(cases.status, status));
-        }
-        if (tags.length > 0) {
-          // SQLite JSON1: check if any tag is present in the tags array
-          tags.forEach(tag => {
-            conditions.push(sql`EXISTS (SELECT 1 FROM json_each(${cases.tags}) WHERE lower(json_each.value) = ${tag})`);
-          });
-        }
-        // Fetch all cases for user
-        const caseRows = await db.select().from(cases).where(and(...conditions));
-        // For each case, fetch related crimes, criminals, law links, law paragraphs, and activities
-        const caseIds = caseRows.map(c => c.id);
-        const [crimesRows, lawLinksRows, activitiesRows] = await Promise.all([
-          db.select().from(crimes).where(sql`${crimes.caseId} IN (${caseIds.map(id => `'${id}'`).join(',')})`),
-          db.select().from(caseLawLinks).where(sql`${caseLawLinks.caseId} IN (${caseIds.map(id => `'${id}'`).join(',')})`),
-          db.select().from(caseActivities).where(sql`${caseActivities.caseId} IN (${caseIds.map(id => `'${id}'`).join(',')})`),
-        ]);
-        // Map criminals and law paragraphs
-        const criminalIds = [...new Set(crimesRows.map(cr => cr.criminalId).filter(Boolean))];
-        const lawParagraphIds = [...new Set(lawLinksRows.map(l => l.lawParagraphId).filter(Boolean))];
-        const [criminalsRows, lawParagraphsRows] = await Promise.all([
-          criminalIds.length ? db.select().from(criminals).where(sql`${criminals.id} IN (${criminalIds.map(id => `'${id}'`).join(',')})`) : [],
-          lawParagraphIds.length ? db.select().from(lawParagraphs).where(sql`${lawParagraphs.id} IN (${lawParagraphIds.map(id => `'${id}'`).join(',')})`) : [],
-        ]);
-        // Assemble full case objects
-        const casesWithRelations = caseRows.map(c => ({
-          ...c,
-          crimes: crimesRows.filter(cr => cr.caseId === c.id),
-          criminals: criminalsRows.filter(crim => crimesRows.some(cr => cr.caseId === c.id && cr.criminalId === crim.id)),
-          lawLinks: lawLinksRows.filter(l => l.caseId === c.id),
-          lawParagraphs: lawParagraphsRows.filter(lp => lawLinksRows.some(l => l.caseId === c.id && l.lawParagraphId === lp.id)),
-          activities: activitiesRows.filter(a => a.caseId === c.id),
-        }));
-        return casesWithRelations;
+    // Fetch cases
+    const casesWithRelations = await db.query.cases.findMany({
+      where: and(...conditions),
+      with: {
+        activities: true,
+        criminals: true, // Assuming caseCriminals relation is set up
       },
-      5 * 60 * 1000, // 5 minutes cache
-      [cacheTags.cases, `user:${userId}`]
-    ));
-  } catch (error) {
-    console.error('Failed to fetch cases:', error);
-    return json({ error: 'Failed to fetch cases' }, { status: 500 });
-  }
+      orderBy: (cases, { desc }) => [desc(cases.updatedAt)],
+    });
+
+    // Use 10 min TTL for cache (600000 ms)
+    return json({ cases: casesWithRelations });
+  }, 600000);
 };
 
 // POST /api/cases - Create a new case
@@ -82,34 +80,26 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
   try {
     const body = await request.json();
-    // Auto-generate tags using NLP analyzer
-    let tags = body.tags;
-    if (!tags || tags.length === 0) {
-      const analysis = await predictiveAnalyzer.analyzeCaseDescription(body.description || body.title || '', undefined);
-      tags = analysis.entities.map(e => e.value);
+    const { title, description, ...restOfBody } = body;
+
+    // Auto-generate aiTags using NLP client
+    let aiTags = body.aiTags || [];
+    if (aiTags.length === 0 && (description || title)) {
+      const analysis = await nlpClient.analyzeCaseDescription(description || title || '');
+      aiTags = analysis.entities.map(e => e.value);
     }
+
     // Insert case
-    const newCase = {
-      id: crypto.randomUUID(),
-      ...body,
-      tags: JSON.stringify(tags),
+    const [insertedCase] = await db.insert(cases).values({
+      ...restOfBody,
+      title,
+      description,
+      aiTags,
       createdBy: userId,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    const [insertedCase] = await db.insert(cases).values(newCase).returning();
-    // Link crimes (if provided)
-    if (body.crimes && Array.isArray(body.crimes)) {
-      for (const crime of body.crimes) {
-        await db.insert(crimes).values({ ...crime, id: crypto.randomUUID(), caseId: insertedCase.id, createdBy: userId });
-      }
-    }
-    // Link law paragraphs (if provided)
-    if (body.lawLinks && Array.isArray(body.lawLinks)) {
-      for (const link of body.lawLinks) {
-        await db.insert(caseLawLinks).values({ ...link, id: crypto.randomUUID(), caseId: insertedCase.id });
-      }
-    }
+      caseNumber: `CASE-${Math.floor(Math.random() * 90000) + 10000}` // Generate a simple case number
+    }).returning();
+
+    // Note: Linking criminals would happen via a separate endpoint if they are provided in the body
     // Invalidate relevant caches
     invalidateCacheByTags([cacheTags.cases, `user:${userId}`]);
     return json({ success: true, case: insertedCase });

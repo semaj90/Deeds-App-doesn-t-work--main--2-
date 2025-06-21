@@ -18,11 +18,9 @@ async function seedDefaultUsers() {
 	const userEmail = 'user@example.com';
 
 	// Check if the admin user already exists
-	const existingAdmin = await db.query.users.findFirst({
-		where: eq(users.email, adminEmail)
-	});
+	const existingAdmin = await db.select().from(users).where(eq(users.email, adminEmail)).limit(1);
 
-	if (existingAdmin) {
+	if (existingAdmin.length > 0) {
 		console.log('Database has already been seeded. Exiting.');
 		return { message: 'Database has already been seeded.' };
 	}

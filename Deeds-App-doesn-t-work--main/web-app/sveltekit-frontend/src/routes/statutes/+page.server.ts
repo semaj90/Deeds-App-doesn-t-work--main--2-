@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
-import { statutes } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { statutes } from '$lib/server/db/schema-new'; // Use unified schema
+import { eq, count } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 
 export const load = async ({ locals }) => {
@@ -15,18 +15,17 @@ export const actions = {
     const user = locals.user;
     if (!user) return fail(401, { error: 'Not authenticated' });
     const form = await request.formData();
-    const title = form.get('title')?.toString();
-    const code = form.get('code')?.toString();
-    if (!title || !code) return fail(400, { error: 'Title and code required' });
-    await db.insert(statutes).values({ title, code });
+    const { title, code } = Object.fromEntries(form) as { title: string, code: string };
+    if (!title || !code) return fail(400, { message: 'Title and code required' });
+    await db.insert(statutes).values({ title, code }); // ID is auto-generated UUID
     return { success: true };
   },
   delete: async ({ request, locals }) => {
     const user = locals.user;
     if (!user) return fail(401, { error: 'Not authenticated' });
-    const id = (await request.formData()).get('id');
-    if (!id || typeof id !== 'string') return fail(400, { error: 'ID required' });
-    await db.delete(statutes).where(eq(statutes.id, id));
+    const { id } = Object.fromEntries(await request.formData()) as { id: string };
+    if (!id) return fail(400, { message: 'ID required' });
+    await db.delete(statutes).where(eq(statutes.id, id)); // Ensure ID is UUID
     return { success: true };
   }
 };

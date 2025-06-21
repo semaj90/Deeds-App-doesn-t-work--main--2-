@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
 import { db } from './db';
-import { sessions, users } from './db/schema';
+import { sessions, users } from './db/shared-db';
 import { eq } from 'drizzle-orm';
 import type { RequestEvent } from '@sveltejs/kit';
 

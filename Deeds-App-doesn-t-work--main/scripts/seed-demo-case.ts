@@ -1,19 +1,19 @@
 import { db, closeDbConnection } from '../web-app/sveltekit-frontend/src/lib/server/db';
-import { cases, users } from '../web-app/sveltekit-frontend/src/lib/server/db/schema-new'; // Use unified schema
-import { eq } from 'drizzle-orm'; // Ensure eq is imported
+import { cases, users } from '../web-app/sveltekit-frontend/src/lib/server/db/schema-new';
+import { eq } from 'drizzle-orm';
 
 async function seedDemoCase() {
 	// Find an admin or fallback user for createdBy
-	let adminUser = await db.query.users.findFirst({ where: eq(users.email, 'admin@example.com') });
+	let adminUser = await db.select().from(users).where(eq(users.email, 'admin@example.com')).then(rows => rows[0]);
 	if (!adminUser) {
-		adminUser = await db.query.users.findFirst();
+		adminUser = await db.select().from(users).then(rows => rows[0]);
 	}
 	if (!adminUser) {
 		throw new Error('No user found to assign as case creator. Please seed users first.');
 	}
 	const createdBy = adminUser.id;
 
-	const existing = await db.query.cases.findFirst({ where: eq(cases.title, 'State v. John Doe') });
+	const existing = await db.select().from(cases).where(eq(cases.title, 'State v. John Doe')).then(rows => rows[0]);
 	if (existing) {
 		console.log('ℹ️ Demo case "State v. John Doe" already exists.');
 		return;
@@ -22,6 +22,7 @@ async function seedDemoCase() {
 	console.log('🌱 Seeding demo case "State v. John Doe"...');
 	await db.insert(cases).values({
 		title: 'State v. John Doe',
+		caseNumber: 'DEMO-001',
 		description:
 			'A high-profile case involving alleged financial fraud by John Doe, a local business owner. The case includes multiple pieces of evidence and several witness testimonies.',
 		createdBy,

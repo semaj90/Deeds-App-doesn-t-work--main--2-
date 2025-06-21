@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { db, statutes } from '$lib/server/db';
-import { sql, ilike } from 'drizzle-orm';
+import { sql, ilike, or } from 'drizzle-orm';
 import { cache, invalidateCacheByTags } from '$lib/server/cache/cache';
 
 export async function GET({ url }) {
@@ -23,10 +23,20 @@ export async function GET({ url }) {
     if (searchTerm) {
         const searchPattern = `%${searchTerm.toLowerCase()}%`;
         fetchedStatutes = await db.query.statutes.findMany({
-            where: sql`${statutes.title} ILIKE ${searchPattern} OR ${statutes.description} ILIKE ${searchPattern} OR ${statutes.fullText} ILIKE ${searchPattern}`,
-            .limit(limit).offset(offset);
+            where: or(
+                ilike(statutes.title, searchPattern),
+                ilike(statutes.description, searchPattern),
+                ilike(statutes.fullText, searchPattern)
+            ),
+            limit: limit,
+            offset: offset
+        });
         totalStatutesResult = await db.select({ count: sql<number>`count(*)` }).from(statutes)
-            .where(ilike(statutes.title, searchPattern) || ilike(statutes.description, searchPattern) || ilike(statutes.fullText, searchPattern));
+            .where(or(
+                ilike(statutes.title, searchPattern),
+                ilike(statutes.description, searchPattern),
+                ilike(statutes.fullText, searchPattern)
+            ));
     } else {
         fetchedStatutes = await db.query.statutes.findMany({ limit, offset });
         totalStatutesResult = await db.select({ count: sql`count(*)` }).from(statutes);
@@ -59,7 +69,7 @@ export async function POST({ request }) {
             minPenalty,
             maxPenalty,
             jurisdiction,
-            effectiveDate: effectiveDate ? new Date(effectiveDate) : undefined
+            effectiveDate: effectiveDate ? new Date(effectiveDate) : null
         }).returning();
         
         // Invalidate cache after successful insertion

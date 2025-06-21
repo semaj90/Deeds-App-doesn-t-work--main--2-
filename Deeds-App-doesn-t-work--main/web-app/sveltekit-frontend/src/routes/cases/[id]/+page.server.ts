@@ -1,7 +1,7 @@
 import { db } from '$lib/server/db';
-import { cases, evidenceFiles } from '$lib/server/db/schema-new'; // Use unified schema
-import { redirect } from '@sveltejs/kit'; // Removed error import as redirect is used
-import { eq, and } from 'drizzle-orm';
+import { cases, evidence } from '$lib/server/db/schema-new'; // Use unified schema
+import { redirect } from '@sveltejs/kit';
+import { eq } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -12,25 +12,21 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     throw redirect(302, '/login');
   }
 
-  const caseId = params.id; // Keep as string since schema uses varchar
-  const userId = user.id;
+  const caseId = params.id;
 
   try {
-    const caseDetails = await db.query.cases.findFirst({ // Use findFirst for single record
+    const caseDetails = await db.query.cases.findFirst({
       where: eq(cases.id, caseId),
-      with: { evidenceFiles: true } // Eager load evidenceFiles
+      with: { evidence: true, criminals: { with: { criminal: true } } } // Eager load evidence and criminals
     });
     
     if (!caseDetails) {
       throw redirect(302, '/cases'); // Redirect if case not found
     }
 
-    // evidenceList is now part of caseDetails.evidenceFiles
-    
     return { 
       session,
-      caseDetails, 
-      evidenceList 
+      caseDetails,
     };
   } catch (error) {
     console.error('Error loading case:', error);
@@ -39,7 +35,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 };
 
 export const actions: Actions = {
-  default: async ({ request, params, locals }) => {
+  updateCase: async ({ request, params, locals }) => {
     const user = locals.user;
     const session = locals.session;
     
@@ -51,14 +47,17 @@ export const actions: Actions = {
     
     try {
       const data = await request.formData();
+      const status = data.get('status') as string;
       
       await db.update(cases)
         .set({
           title: data.get('title') as string,
           description: data.get('description') as string,
           dangerScore: parseInt(data.get('dangerScore') as string) || 0,
-          status: data.get('status') as string,
-          aiSummary: data.get('notes') as string || null
+          status: status,
+          aiSummary: data.get('aiSummary') as string || null,
+          updatedAt: new Date(),
+          closedAt: status === 'closed' ? new Date() : null
         })
         .where(eq(cases.id, caseId));
       

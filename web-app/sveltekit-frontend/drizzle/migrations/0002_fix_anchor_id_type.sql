@@ -1,0 +1,1 @@
+ALTER TABLE "law_paragraphs" ALTER COLUMN "anchor_id" SET DATA TYPE uuid USING "anchor_id"::uuid;

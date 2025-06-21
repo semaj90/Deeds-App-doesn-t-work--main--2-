@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
-import { db } from '$lib/server/db/index.js';
-import { cases, evidenceFiles, nlpAnalysisCache, criminals, crimes } from '$lib/server/db/schema-new.js'; // Use unified schema
+import { db } from '$lib/server/db';
+import { cases, evidence, evidenceFiles, nlpAnalysisCache, criminals, crimes } from '$lib/server/db/schema-new';
 import { eq, count, gte } from 'drizzle-orm';
 
 export const GET: RequestHandler = async () => {

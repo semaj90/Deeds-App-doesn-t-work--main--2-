@@ -1,6 +1,6 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 
-import type { User, Session } from '$lib/server/db/schema';
+import type { User, Session } from '$lib/server/db/shared-db';
 
 // for information about these interfaces
 declare global {
@@ -18,6 +18,10 @@ declare global {
 		interface Platform {}
 	}
 }
+
+/// <reference types="@sveltejs/kit" />
+
+declare module 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 // Environment variable types
 declare module '$env/static/private' {

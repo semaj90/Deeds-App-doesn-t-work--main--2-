@@ -4,6 +4,13 @@
  * Simple Login Test for WardenNet
  */
 
+// Polyfill fetch for Node.js if not available
+// @ts-ignore
+if (typeof fetch === 'undefined') {
+  // @ts-ignore
+  global.fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+}
+
 const baseUrl = 'http://localhost:5173';
 
 async function testLogin() {

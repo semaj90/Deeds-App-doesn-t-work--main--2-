@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
-import { db } from '$lib/server/db/index';
-import { cases, evidence, statutes } from '$lib/server/db/schema';
+import { db } from '$lib/server/db';
+import { cases, evidence, statutes } from '$lib/server/db/schema-new';
 import { eq } from 'drizzle-orm';
 
 // GBNF Grammar for structured legal analysis output

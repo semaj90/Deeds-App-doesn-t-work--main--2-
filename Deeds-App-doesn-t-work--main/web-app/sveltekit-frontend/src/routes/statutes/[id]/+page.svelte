@@ -2,9 +2,7 @@
   import type { PageData } from './$types';
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
-  import { statutes } from '$lib/server/db/schema-new';
-  // Use typeof statutes.$inferSelect for type-safe Statute
-  type Statute = typeof statutes.$inferSelect;
+  import type { Statute } from '$lib/types';
 
   export let data: PageData;
   // SSR: statute is provided by SvelteKit load function

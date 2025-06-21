@@ -18,8 +18,8 @@ export const load: PageServerLoad = async ({ params, fetch, request }) => {
 
     const criminalItem = await criminalResponse.json();
 
-    const allStatutes = await db.query.statutes.findMany(); // Use findMany
-    const criminalCaseLinks = await db.query.caseCriminals.findMany({ where: eq(caseCriminals.criminalId, criminalId) }); // Use findMany
+    const allStatutes = await db.select().from(statutes);
+    const criminalCaseLinks = await db.select().from(caseCriminals).where(eq(caseCriminals.criminalId, criminalId));
 
     return {
         criminal: criminalItem,

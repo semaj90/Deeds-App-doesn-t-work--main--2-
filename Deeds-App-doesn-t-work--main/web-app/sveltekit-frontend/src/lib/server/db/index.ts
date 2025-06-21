@@ -1,14 +1,13 @@
 import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from './schema-new'; // Ensure this points to the unified schema
-import { readFileSync } from 'fs';
+import { type NodePgDatabase, drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from '../../../../../../db/schema'; // Use shared monorepo schema
 import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
 
-let _db: ReturnType<typeof drizzle> | null = null;
+let _db: NodePgDatabase<typeof schema> | null = null;
 let _pool: Pool | null = null;
 
-function initializeDatabase() {
+function initializeDatabase(): NodePgDatabase<typeof schema> | null {
 	// Skip database initialization during SvelteKit build
 	if (building) {
 		console.log('Skipping database initialization during build');
@@ -18,39 +17,44 @@ function initializeDatabase() {
 	if (_db) return _db;
 
 	// Use SvelteKit's env module within the app, which falls back to process.env in scripts
-	const DATABASE_URL = env.DATABASE_URL;
-	if (!DATABASE_URL) {
-		throw new Error('DATABASE_URL is not set. Please set it in your .env file.');
+	const connectionString = env.DATABASE_URL || process.env.DATABASE_URL;
+
+	if (!connectionString) {
+		throw new Error('DATABASE_URL environment variable is not set.');
 	}
 
-	const poolConfig: PoolConfig = {
-		connectionString: DATABASE_URL,
-		ssl: env.PG_SSL_CA_PATH
-			? {
-				ca: readFileSync(env.PG_SSL_CA_PATH).toString(),
-				rejectUnauthorized: true
-			}
-			: false
-	};
-
-	console.log('Initializing PostgreSQL connection pool...');
-	_pool = new Pool(poolConfig);
-
-	_pool.on('error', (err) => {
-		console.error('Unexpected error on idle client', err);
-		process.exit(-1);
+	console.log('Connecting to database...');
+	_pool = new Pool({
+		connectionString,
+		ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false }
 	});
 
-	_db = drizzle(_pool, { schema, logger: true });
-	console.log('✅ PostgreSQL database connected successfully.');
+	_db = drizzle(_pool, { schema }); // Pass schema to drizzle
+
+	console.log('Database connection established.');
 	return _db;
 }
 
-export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+export const db: NodePgDatabase<typeof schema> = new Proxy({} as NodePgDatabase<typeof schema>, {
 	get(target, prop) {
 		const actualDb = initializeDatabase();
 		if (!actualDb) {
 			// Return a mock object during build to prevent errors
+			if (prop === 'query') {
+				return new Proxy(
+					{},
+					{
+						get: (target, prop) => {
+							return () => {
+								console.warn(
+									`Database accessed during build phase. Method: query.${String(prop)}`
+								);
+								return Promise.resolve([]);
+							};
+						}
+					}
+				);
+			}
 			return () => {
 				console.warn(`Database accessed during build phase. Method: ${String(prop)}`);
 				return Promise.resolve([]);
@@ -60,9 +64,9 @@ export const db = new Proxy({} as ReturnType<typeof drizzle>, {
 	}
 });
 
-export type DbClient = typeof db;
+export type DbClient = NodePgDatabase<typeof schema>;
 
-export * from './schema-new';
+export * from '../../../../../../db/schema';
 
 /**
  * Closes the database connection pool.
@@ -76,12 +80,4 @@ export async function closeDbConnection() {
 		_db = null;
 		console.log('Database connection pool closed.');
 	}
-}
-
-interface PoolConfig {
-	connectionString: string;
-	ssl?: {
-		ca: string;
-		rejectUnauthorized: boolean;
-	} | boolean;
 }

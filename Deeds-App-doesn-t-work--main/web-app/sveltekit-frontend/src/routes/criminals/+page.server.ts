@@ -1,11 +1,10 @@
 import { db } from '$lib/server/db';
 import { criminals } from '$lib/server/db/schema-new'; // Use unified schema
-import { eq, sql, count } from 'drizzle-orm';
+import { eq, sql, count, ilike, or } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
-import type { ServerLoad } from '@sveltejs/kit';
-import type { Criminal } from '$lib/data/types';
+import type { PageServerLoad } from './$types';
 
-export const load: ServerLoad = async ({ locals, fetch, url }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
     const user = locals.user;
     if (!user) throw redirect(302, '/login');
 
@@ -13,16 +12,20 @@ export const load: ServerLoad = async ({ locals, fetch, url }) => {
     const limit = parseInt(url.searchParams.get('limit') || '10');
     const searchTerm = url.searchParams.get('search') || '';
 
-    const list = await db
-        .query.criminals.findMany({ // Use findMany
-            // where: eq(criminals.createdBy, user.id), // Assuming criminals are created by user
-            // For now, fetch all criminals, as createdBy might not be set for all
-        })
-        .where(eq(criminals.createdBy, user.id))
-        .limit(limit)
-        .offset((page - 1) * limit);
+    const whereClause = or(
+        eq(criminals.createdBy, user.id),
+        ilike(criminals.firstName, `%${searchTerm}%`),
+        ilike(criminals.lastName, `%${searchTerm}%`)
+    );
 
-    const totalCriminals = (await db.select({ count: count() }).from(criminals).where(eq(criminals.createdBy, user.id)))[0].count;
+    const list = await db.query.criminals.findMany({
+        where: whereClause,
+        limit: limit,
+        offset: (page - 1) * limit,
+    });
+
+    const totalCriminalsResult = await db.select({ count: count() }).from(criminals).where(whereClause);
+    const totalCriminals = totalCriminalsResult[0].count;
 
     return {
         userId: user.id,

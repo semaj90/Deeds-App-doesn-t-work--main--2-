@@ -68,6 +68,28 @@ export class NLPClient {
       throw error;
     }
   }
+
+  async suggestTags(text: string): Promise<string[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}/suggest-tags`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ text })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Tag suggestion failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      return result.tags || [];
+    } catch (error) {
+      console.error('Tag suggestion failed:', error);
+      throw error;
+    }
+  }
 }
 
 // Export a singleton instance

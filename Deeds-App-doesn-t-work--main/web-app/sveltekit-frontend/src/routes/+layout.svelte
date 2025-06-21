@@ -1,10 +1,24 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
   import { page } from '$app/stores';
+  import { browser } from '$app/environment';
   import 'bootstrap/dist/css/bootstrap.min.css';
-  import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-    let user = $page.data.user || $page.data.session?.user;
-  let avatar = (user as any)?.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user?.name || user?.email || 'U') + '&background=0D8ABC&color=fff';
+
+  onMount(async () => {
+    if (browser) {
+      // Import Bootstrap JS only in the browser
+      const { default: bootstrap } = await import('bootstrap');
+      
+      // Initialize all Bootstrap components that require JS, like dropdowns
+      const dropdownElementList = Array.from(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
+      dropdownElementList.forEach(dropdownToggleEl => {
+        new bootstrap.Dropdown(dropdownToggleEl);
+      });
+    }
+  });
+
+  $: user = $page.data.user || $page.data.session?.user;
+  $: avatar = (user as any)?.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user?.name || user?.email || 'U') + '&background=0D8ABC&color=fff';
 </script>
 
 <svelte:head>

@@ -91,7 +91,7 @@ export const criminals = pgTable('criminals', {
 
 export const cases = pgTable('cases', {
   id: uuid('id').primaryKey().defaultRandom(),
-  caseNumber: varchar('case_number', { length: 50 }).notNull().unique(),
+  caseNumber: varchar('case_number', { length: 50 }),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
   incidentDate: timestamp('incident_date', { mode: 'date' }),
@@ -107,22 +107,22 @@ export const cases = pgTable('cases', {
   aiSummary: text('ai_summary'),
   aiTags: jsonb('ai_tags').default([]).notNull(),
   metadata: jsonb('metadata').default({}).notNull(),
-  // Legacy/compatibility fields
-  data: jsonb('data').default({}).notNull(), // for compatibility
-  tags: jsonb('tags').default([]).notNull(), // for compatibility
-  embedding: jsonb('embedding'), // for compatibility
-  name: varchar('name', { length: 255 }), // for compatibility (alias for title)
-  summary: text('summary'), // for compatibility (alias for aiSummary)
-  dateOpened: timestamp('date_opened', { mode: 'date' }), // for compatibility
-  verdict: varchar('verdict', { length: 100 }), // for compatibility
-  courtDates: text('court_dates'), // for compatibility
-  linkedCriminals: text('linked_criminals'), // for compatibility
-  linkedCrimes: text('linked_crimes'), // for compatibility
-  notes: text('notes'), // for compatibility
+  data: jsonb('data').default({}).notNull(), // <-- Added for compatibility with SQLite schema and app queries
   createdBy: uuid('created_by').references(() => users.id),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
   closedAt: timestamp('closed_at', { mode: 'date' }),
+  // Compatibility/legacy fields (optional, add if needed by app logic)
+  tags: jsonb('tags').default([]),
+  embedding: jsonb('embedding'),
+  name: varchar('name', { length: 255 }),
+  summary: text('summary'),
+  dateOpened: timestamp('date_opened', { mode: 'date' }),
+  verdict: varchar('verdict', { length: 100 }),
+  courtDates: text('court_dates'),
+  linkedCriminals: text('linked_criminals'),
+  linkedCrimes: text('linked_crimes'),
+  notes: text('notes'),
 });
 
 // === CASE-CRIMINAL RELATIONSHIPS ===
@@ -153,7 +153,7 @@ export const evidence = pgTable('evidence', {
   fileUrl: text('file_url'),
   fileName: varchar('file_name', { length: 255 }),
   filename: varchar('filename', { length: 255 }), // alias for compatibility
-  fileType: varchar('file_type', { length: 50 }), // added for compatibility
+  fileType: varchar('file_type', { length: 100 }), // added for compatibility - increased for MIME types
   fileSize: integer('file_size'),
   filePath: text('file_path'), // added for compatibility
   mimeType: varchar('mime_type', { length: 100 }),
@@ -581,7 +581,7 @@ export const evidenceFiles = pgTable('evidence_files', {
   caseId: uuid('case_id').notNull().references(() => cases.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
   fileName: text('file_name').notNull(),
   filePath: text('file_path').notNull(),
-  fileType: varchar('file_type', { length: 50 }).notNull(), // 'image', 'video', 'audio', 'document'
+  fileType: varchar('file_type', { length: 100 }).notNull(), // 'image', 'video', 'audio', 'document' - increased for MIME types
   fileSize: integer('file_size').notNull(),
   mimeType: varchar('mime_type', { length: 255 }),
   duration: decimal('duration', { precision: 10, scale: 2 }), // for video/audio files in seconds

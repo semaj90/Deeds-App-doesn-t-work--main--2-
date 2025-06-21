@@ -1,6 +1,6 @@
-// --- All SQLite code below is commented out for PostgreSQL unification ---
-// Re-export everything from schema-new.ts to maintain compatibility
-export * from './schema-new';
+// Main schema export - now uses shared monorepo schema
+// Re-export everything from the shared schema to maintain compatibility
+export * from '../../../../../../db/schema';
 
 // import {
 //   sqliteTable,

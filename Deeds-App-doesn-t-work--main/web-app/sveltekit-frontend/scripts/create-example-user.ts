@@ -1,7 +1,7 @@
 import 'dotenv/config';
-import { db } from '../src/lib/server/db/index.js';
-import { users } from '../src/lib/server/db/schema.js';
-import { hashPassword } from '../src/lib/server/authUtils.js';
+import { db } from '../src/lib/server/db';
+import { users } from '../src/lib/server/db/schema-new';
+import { hashPassword } from '../src/lib/server/authUtils';
 import { eq } from 'drizzle-orm';
 
 async function createExampleUser() {
@@ -12,9 +12,7 @@ async function createExampleUser() {
   
   try {
     // Check if user already exists
-    const existingUser = await db.query.users.findFirst({
-      where: eq(users.email, email)
-    });
+    const existingUser = await db.select().from(users).where(eq(users.email, email)).then(rows => rows[0]);
 
     if (existingUser) {
       console.log('User already exists:', email);
@@ -22,7 +20,8 @@ async function createExampleUser() {
     }
 
     // Hash the password
-    const hashedPassword = await hashPassword(password);    // Create the user
+    const hashedPassword = await hashPassword(password);
+    // Create the user
     const newUser = await db.insert(users).values({
       email,
       hashedPassword,

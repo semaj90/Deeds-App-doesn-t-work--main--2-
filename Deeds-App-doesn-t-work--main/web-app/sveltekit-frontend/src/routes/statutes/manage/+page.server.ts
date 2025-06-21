@@ -1,10 +1,10 @@
 import { redirect } from '@sveltejs/kit';
-import type { ServerLoad } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { statutes } from '$lib/server/db/schema-new'; // Use unified schema
-import { sql, count, ilike } from 'drizzle-orm';
+import { sql, count, ilike, or, and } from 'drizzle-orm';
 
-export const load: ServerLoad = async ({ locals, fetch, url }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
     const user = locals.user;
     const session = locals.session;
     if (!user || !session) {
@@ -17,25 +17,32 @@ export const load: ServerLoad = async ({ locals, fetch, url }) => {
 
     const offset = (page - 1) * limit;
 
-    let query = db.query.statutes.findMany().$dynamic(); // Use findMany
-    let countQuery = db.select({ count: count() }).from(statutes).$dynamic(); // Use count()
-
+    const whereConditions = [];
     if (searchTerm) {
         const searchPattern = `%${searchTerm.toLowerCase()}%`;
-        query = query.where(
-            ilike(statutes.title, searchPattern) || ilike(statutes.description, searchPattern) || ilike(statutes.code, searchPattern) // Use ilike for search
-        );
-        countQuery = countQuery.where(
-            ilike(statutes.title, searchPattern) || ilike(statutes.description, searchPattern) || ilike(statutes.code, searchPattern)
+        whereConditions.push(
+            or(
+                ilike(statutes.title, searchPattern),
+                ilike(statutes.description, searchPattern),
+                ilike(statutes.code, searchPattern)
+            )
         );
     }
 
-    const fetchedStatutes = await query.limit(limit).offset(offset);
-    const totalStatutesResult = await countQuery;
+    const query = db.query.statutes.findMany({
+        where: and(...whereConditions),
+        limit: limit,
+        offset: offset,
+    });
+
+    const countQuery = db.select({ count: count() }).from(statutes).where(and(...whereConditions));
+
+    const [fetchedStatutes, totalStatutesResult] = await Promise.all([query, countQuery]);
+    
     const totalStatutes = totalStatutesResult[0].count;
 
     return {
-        userId: user.id, // Changed from user.userId to user.id
+        userId: user.id,
         username: user.username,
         statutes: fetchedStatutes,
         currentPage: page,

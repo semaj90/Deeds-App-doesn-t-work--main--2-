@@ -1,32 +1,14 @@
 import { defineConfig } from 'drizzle-kit';
-import 'dotenv/config';
+import pgConfig from './pg.config';
+import commonConfig from './common.config';
 
-// Read from environment variable, default to pg
-const dialect = (process.env.DB_DIALECT as 'sqlite' | 'pg') || 'pg';
-
-const commonConfig = {
-  schema: './web-app/sveltekit-frontend/src/lib/server/db/schema-new.ts',
-  strict: true,
-  verbose: true,
-};
-
-const sqliteConfig = {
-  dialect: 'sqlite',
-  out: './drizzle/sqlite',
-  dbCredentials: {
-    url: process.env.DATABASE_URL || 'file:./dev.db',
-  },
-};
-
-const pgConfig = {
-  dialect: 'postgresql',
-  out: './drizzle/pg',
-  dbCredentials: {
-    url: process.env.DATABASE_URL || '', // Must be set for PostgreSQL
-  },
-};
-
+// Enforce Postgres only
 export default defineConfig({
   ...commonConfig,
-  ...(dialect === 'pg' ? pgConfig : sqliteConfig),
+  ...pgConfig,
+  schema: './web-app/sveltekit-frontend/src/lib/server/db/schema-new.ts',
+  out: './drizzle',
+  dialect: 'postgresql',
+  strict: true,
+  verbose: true,
 });

@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
-import { cases, statutes, lawParagraphs, criminals, evidenceFiles, caseCriminals } from '$lib/server/db/schema-new'; // Use unified schema
-import { eq, inArray } from 'drizzle-orm';
+import { cases, statutes, criminals, evidence, caseCriminals } from '$lib/server/db/schema-new'; // Use unified schema
+import { eq } from 'drizzle-orm';
 import PDFDocument from 'pdfkit';
 
 export async function GET({ url }) {
@@ -14,39 +14,38 @@ export async function GET({ url }) {
     const doc = new PDFDocument();
     const buffers: Buffer[] = [];
     doc.on('data', buffers.push.bind(buffers));
-    doc.on('end', () => {
-        const pdfData = Buffer.concat(buffers);
-        return new Response(pdfData, {
-            headers: {
-                'Content-Type': 'application/pdf',
-                'Content-Disposition': `attachment; filename="${type}-report-${id}.pdf"`,
-            },
-        });
+    
+    const stream = doc as NodeJS.ReadableStream;
+    
+    // Use a promise to handle the stream completion
+    const pdfPromise = new Promise<Buffer>((resolve) => {
+        stream.on('end', () => resolve(Buffer.concat(buffers)));
     });
 
     try {
         if (type === 'case') {
             const caseId = id;
-            const caseItem = await db.select().from(cases).where(eq(cases.id, caseId)).limit(1);
+            const caseItem = await db.query.cases.findFirst({
+                where: eq(cases.id, caseId),
+            });
 
-            if (!caseItem.length) {
+            if (!caseItem) {
                 return new Response('Case not found', { status: 404 });
             }
 
-            const currentCase = caseItem[0];
+            const currentCase = caseItem;
 
             doc.fontSize(25).text(`Case Report: ${currentCase.title}`, { align: 'center' });
-            doc.moveDown(); // Use currentCase properties from schema-new.ts
-            doc.fontSize(12).text(`Case Name: ${currentCase.name}`);
+            doc.moveDown();
+            doc.fontSize(12).text(`Case Title: ${currentCase.title}`);
             doc.text(`Status: ${currentCase.status}`);
-            doc.text(`Date Opened: ${currentCase.dateOpened?.toDateString()}`);
-            doc.text(`Summary: ${currentCase.summary || 'N/A'}`);
+            doc.text(`Date Opened: ${currentCase.createdAt?.toDateString()}`);
             doc.text(`Description: ${currentCase.description || 'N/A'}`);
             doc.text(`Verdict: ${currentCase.verdict || 'N/A'}`);
-            doc.text(`Court Dates: ${currentCase.courtDates || 'N/A'}`);
             doc.text(`Danger Score: ${currentCase.dangerScore || 0}`);
             doc.text(`AI Summary: ${currentCase.aiSummary || 'N/A'}`);
-            doc.text(`Tags: ${(currentCase.tags as string[]).join(', ') || 'N/A'}`);
+            const tags = Array.isArray(currentCase.aiTags) ? currentCase.aiTags : [];
+            doc.text(`Tags: ${tags.join(', ') || 'N/A'}`);
             doc.moveDown();
 
             // Linked Criminals
@@ -60,73 +59,68 @@ export async function GET({ url }) {
                 doc.moveDown();
                 for (const link of linkedCriminals) {
                     const criminal = link.criminal;
-                    doc.fontSize(12).text(`- ${criminal.firstName} ${criminal.lastName} (Role: ${link.role}, Threat Level: ${criminal.threatLevel || 'N/A'})`);
-                    doc.text(`  Aliases: ${criminal.aliases?.join(', ') || 'N/A'}`);
-                    doc.text(`  Charges: ${link.charges?.map((c: any) => c.name).join(', ') || 'N/A'}`);
-                    doc.text(`  Conviction: ${link.conviction ? 'Yes' : 'No'}`);
-                    doc.moveDown();
+                    if (criminal) {
+                        doc.fontSize(12).text(`- ${criminal.firstName} ${criminal.lastName} (Role: ${link.role}, Threat Level: ${criminal.threatLevel || 'N/A'})`);
+                        const aliases = Array.isArray(criminal.aliases) ? criminal.aliases : [];
+                        doc.text(`  Aliases: ${aliases.join(', ') || 'N/A'}`);
+                        const charges = Array.isArray(link.charges) ? link.charges.map((c: any) => (typeof c === 'string' ? c : c.name)).join(', ') : 'N/A';
+                        doc.text(`  Charges: ${charges}`);
+                        doc.text(`  Conviction: ${link.conviction ? 'Yes' : 'No'}`);
+                        doc.moveDown();
+                    }
                 }
             }
 
             // Linked Evidence
-            const caseEvidence = await db.query.evidenceFiles.findMany({
-                where: eq(evidenceFiles.caseId, caseId)
+            const caseEvidence = await db.query.evidence.findMany({
+                where: eq(evidence.caseId, caseId)
             });
 
             if (caseEvidence.length > 0) {
                 doc.fontSize(16).text('Linked Evidence:', { underline: true });
                 doc.moveDown();
                 caseEvidence.forEach(item => {
-                    doc.fontSize(12).text(`- ${item.fileName} (${item.fileType}, ${item.fileSize} bytes)`); // Use evidenceFiles properties
-                    doc.text(`  Summary: ${item.summary || 'N/A'}`);
-                    doc.text(`  Tags: ${(item.tags as string[]).join(', ') || 'N/A'}`);
+                    doc.fontSize(12).text(`- ${item.fileName} (${item.fileType}, ${item.fileSize} bytes)`);
+                    doc.text(`  Summary: ${item.aiSummary || 'N/A'}`);
+                    const evidenceTags = Array.isArray(item.aiTags) ? item.aiTags : [];
+                    doc.text(`  Tags: ${evidenceTags.join(', ') || 'N/A'}`);
                     doc.moveDown();
                 });
             }
 
         } else if (type === 'statute') {
             const statuteId = id;
-            const statuteItem = await db.select().from(statutes).where(eq(statutes.id, statuteId)).limit(1);
+            const statuteItem = await db.query.statutes.findFirst({
+                where: eq(statutes.id, statuteId),
+            });
 
-            if (!statuteItem.length) {
+            if (!statuteItem) {
                 return new Response('Statute not found', { status: 404 });
             }
 
-            const currentStatute = statuteItem[0];
-            doc.fontSize(25).text(`Statute Report: ${currentStatute.title}`, { align: 'center' }); // Use title
+            const currentStatute = statuteItem;
+            doc.fontSize(25).text(`Statute Report: ${currentStatute.title}`, { align: 'center' });
             doc.moveDown();
-            doc.fontSize(14).text(`Code: ${currentStatute.code}`); // Use code
+            doc.fontSize(14).text(`Code: ${currentStatute.code}`);
             doc.text(`Description: ${currentStatute.description || 'N/A'}`);
             doc.moveDown();
-
-            const paragraphs = await db.select().from(lawParagraphs).where(eq(lawParagraphs.statuteId, statuteId));
-            if (paragraphs.length > 0) {
-                doc.fontSize(16).text('Law Paragraphs:', { underline: true });
-                doc.moveDown();
-                paragraphs.forEach(paragraph => {
-                    doc.fontSize(12).text(`Paragraph Number: ${paragraph.paragraphNumber || 'N/A'}`); // Use paragraphNumber
-                    doc.text(paragraph.paragraphText || 'No content available');
-                    doc.text(`Linked Cases: ${(paragraph.linkedCaseIds as number[]).join(', ') || 'N/A'}`);
-                    doc.text(`Crime Suggestions: ${(paragraph.crimeSuggestions as string[]).join(', ') || 'N/A'}`);
-                    doc.moveDown();
-                });
-            }
-
+            doc.fontSize(12).text(currentStatute.fullText || 'Full text not available.');
         } else {
             return new Response('Invalid report type', { status: 400 });
         }
 
         doc.end();
-        // Return the response after the 'end' event has fired
-        return new Promise(resolve => doc.on('end', () => resolve(new Response(Buffer.concat(buffers), {
+        const pdfData = await pdfPromise;
+
+        return new Response(pdfData, {
             headers: {
                 'Content-Type': 'application/pdf',
                 'Content-Disposition': `attachment; filename="${type}-report-${id}.pdf"`,
             },
-        }))));
+        });
 
     } catch (error) {
-        console.error('Error generating PDF report:', error);
-        return new Response('Failed to generate PDF report', { status: 500 });
+        console.error('Report generation failed:', error);
+        return new Response('Failed to generate report', { status: 500 });
     }
 }

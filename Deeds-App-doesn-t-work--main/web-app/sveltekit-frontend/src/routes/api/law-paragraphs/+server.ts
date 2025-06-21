@@ -15,7 +15,7 @@ export async function GET() {
 
     try {
         // Fetch all law paragraphs with advanced fields
-        const allLawParagraphs = await db.query.lawParagraphs.findMany(); // Use findMany
+        const allLawParagraphs = await db.select().from(lawParagraphs); // Use findMany
         
         // Safe JSON parsing helper
         const getArray = (val: any): any[] => {

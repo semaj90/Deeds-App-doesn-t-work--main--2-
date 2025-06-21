@@ -22,10 +22,11 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { cases, caseActivities, caseCriminals } from '$lib/server/db/schema-new'; // Use unified schema
-import { eq, and, sql, ilike, or } from 'drizzle-orm';
+import { eq, and, sql, ilike, or, type SQL } from 'drizzle-orm';
 import { withCache, cacheKeys, cacheTags, invalidateCacheByTags } from '$lib/server/cache/cache';
 import type { RequestHandler } from './$types';
 import { nlpClient } from '$lib/nlp/client'; // Use the client-side NLP client
+import { randomUUID } from 'crypto';
 
 // GET /api/cases - List all cases for the logged-in user, with optional search and tag filter
 export const GET: RequestHandler = async ({ url, locals }) => {
@@ -41,33 +42,29 @@ export const GET: RequestHandler = async ({ url, locals }) => {
   const cacheKey = cacheKeys.cases?.byUser?.(userId) ?? `cases:user:${userId}`;
   return await withCache(cacheKey, async () => {
     // Build query
-    const conditions = [eq(cases.createdBy, userId)];
+    const conditions: (SQL | undefined)[] = [eq(cases.createdBy, userId)];
     if (status) {
       conditions.push(eq(cases.status, status));
     }
     // Search by title/description
     if (search) {
       const searchPattern = `%${search.toLowerCase()}%`;
-      conditions.push(or(
-        ilike(cases.title, searchPattern),
-        ilike(cases.description, searchPattern))
+      conditions.push(
+        or(
+          ilike(cases.title, searchPattern),
+          ilike(cases.description, searchPattern)
+        )
       );
     }
     if (tags.length > 0) {
       // PostgreSQL JSONB: check if any tag is present in the aiTags array
-      conditions.push(sql`${cases.aiTags} ?| array[${tags.map(t => `'${t}'`).join(',')}]`);
+      conditions.push(sql`${cases.aiTags} ?| ${tags}`);
     }
 
-    // Fetch cases
-    const casesWithRelations = await db.query.cases.findMany({
-      where: and(...conditions),
-      with: {
-        activities: true,
-        criminals: true, // Assuming caseCriminals relation is set up
-      },
-      orderBy: (cases, { desc }) => [desc(cases.updatedAt)],
-    });
+    const definedConditions = conditions.filter((c): c is SQL => !!c);
 
+    // Fetch cases
+    const casesWithRelations = await db.select().from(cases).where(and(...definedConditions));
     // Use 10 min TTL for cache (600000 ms)
     return json({ cases: casesWithRelations });
   }, 600000);
@@ -80,31 +77,45 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
   try {
     const body = await request.json();
-    const { title, description, ...restOfBody } = body;
-
-    // Auto-generate aiTags using NLP client
-    let aiTags = body.aiTags || [];
-    if (aiTags.length === 0 && (description || title)) {
-      const analysis = await nlpClient.analyzeCaseDescription(description || title || '');
-      aiTags = analysis.entities.map(e => e.value);
+    const { title, description, aiTags: inputAiTags, status: bodyStatus } = body;
+    let aiTags = inputAiTags || [];
+    if (!aiTags.length && (description || title)) {
+      // Use NLP client to generate tags if not provided
+      try {
+        aiTags = await nlpClient.suggestTags(description || title);
+      } catch (err) {
+        console.error("NLP Error:", err);
+        aiTags = [];
+      }
     }
-
+    // Generate a robust unique case number using UUID
+    const caseNumber = `CASE-${randomUUID()}`;
     // Insert case
     const [insertedCase] = await db.insert(cases).values({
-      ...restOfBody,
       title,
       description,
       aiTags,
       createdBy: userId,
-      caseNumber: `CASE-${Math.floor(Math.random() * 90000) + 10000}` // Generate a simple case number
+      caseNumber,
+      status: bodyStatus || 'new',
+      updatedAt: new Date()
     }).returning();
-
-    // Note: Linking criminals would happen via a separate endpoint if they are provided in the body
     // Invalidate relevant caches
-    invalidateCacheByTags([cacheTags.cases, `user:${userId}`]);
-    return json({ success: true, case: insertedCase });
+    await invalidateCacheByTags([cacheTags.cases, `user:${userId}`]);
+
+    // Log activity
+    await db.insert(caseActivities).values({
+      caseId: insertedCase.id,
+      createdBy: userId,
+      activityType: 'case_created',
+      title: 'Case Created',
+      description: `Case '${insertedCase.title}' created.`,
+      metadata: { details: `Case created by user ${userId}` }
+    });
+
+    return json(insertedCase, { status: 201 });
   } catch (error) {
-    console.error('Failed to create case:', error);
+    console.error('Error creating case:', error);
     return json({ error: 'Failed to create case' }, { status: 500 });
   }
 };

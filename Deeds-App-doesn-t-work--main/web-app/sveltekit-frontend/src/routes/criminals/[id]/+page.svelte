@@ -3,7 +3,7 @@
     import { goto } from '$app/navigation';
     import type { PageData } from './$types';
     import type { Criminal } from '$lib/data/types';
-    import type { Evidence } from '$lib/server/db/schema';
+    import type { Evidence } from '$lib/types';
     import { invoke } from '@tauri-apps/api/tauri';
     import FileUploadSection from '$lib/components/+FileUploadSection.svelte';
 

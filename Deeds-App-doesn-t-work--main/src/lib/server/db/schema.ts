@@ -1,34 +1,18 @@
-import { 
-  pgTable as pgTableOriginal, 
-  sqliteTable,
-  text, 
-  varchar, 
-  integer, 
-  timestamp, 
+import {
+  pgTable,
+  text,
+  varchar,
+  integer,
+  timestamp,
   jsonb,
   boolean,
   decimal,
   uuid,
   primaryKey
 } from 'drizzle-orm/pg-core';
-import { 
-  text as sqliteText,
-  integer as sqliteInteger,
-  real as sqliteReal
-} from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
-// Determine which table function to use based on DATABASE_URL
-const isPostgres = process.env.DATABASE_URL?.startsWith('postgres') || false;
-
-// Create a table function that works with both databases
-const table = isPostgres ? pgTableOriginal : sqliteTable;
-const textField = isPostgres ? text : sqliteText;
-const integerField = isPostgres ? integer : sqliteInteger;
-const realField = isPostgres ? decimal : sqliteReal;
-
 // === AUTHENTICATION & USER MANAGEMENT ===
-
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 255 }).notNull().unique(),
@@ -38,7 +22,6 @@ export const users = pgTable('users', {
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
-  
   // Profile fields (merged for simplicity)
   firstName: varchar('first_name', { length: 100 }),
   lastName: varchar('last_name', { length: 100 }),
@@ -54,13 +37,12 @@ export const users = pgTable('users', {
 
 export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  expiresAt: timestamp('expires_at', { mode: 'date' }).notNull(),
-  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').notNull().$defaultFn(() => new Date()),
 });
 
 // === CRIMINAL RECORDS ===
-
 export const criminals = pgTable('criminals', {
   id: uuid('id').primaryKey().defaultRandom(),
   firstName: varchar('first_name', { length: 100 }).notNull(),
@@ -90,7 +72,6 @@ export const criminals = pgTable('criminals', {
 });
 
 // === CASE MANAGEMENT ===
-
 export const cases = pgTable('cases', {
   id: uuid('id').primaryKey().defaultRandom(),
   caseNumber: varchar('case_number', { length: 50 }),
@@ -109,6 +90,7 @@ export const cases = pgTable('cases', {
   aiSummary: text('ai_summary'),
   aiTags: jsonb('ai_tags').default([]).notNull(),
   metadata: jsonb('metadata').default({}).notNull(),
+  data: jsonb('data').default({}).notNull(), // <-- Added for compatibility with SQLite schema and app queries
   createdBy: uuid('created_by').references(() => users.id),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
@@ -116,7 +98,6 @@ export const cases = pgTable('cases', {
 });
 
 // === EVIDENCE MANAGEMENT ===
-
 export const evidence = pgTable('evidence', {
   id: uuid('id').primaryKey().defaultRandom(),
   caseId: uuid('case_id').references(() => cases.id, { onDelete: 'cascade' }),
@@ -132,7 +113,6 @@ export const evidence = pgTable('evidence', {
 });
 
 // === STATUTES & LEGAL REFERENCES ===
-
 export const statutes = pgTable('statutes', {
   id: uuid('id').primaryKey().defaultRandom(),
   code: varchar('code', { length: 50 }).notNull().unique(),
@@ -152,8 +132,7 @@ export const statutes = pgTable('statutes', {
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
-// === CASE ACTIVITIES & TIMELINE (This is the new table that should be created) ===
-
+// === CASE ACTIVITIES & TIMELINE ===
 export const caseActivities = pgTable('case_activities', {
   id: uuid('id').primaryKey().defaultRandom(),
   caseId: uuid('case_id').notNull().references(() => cases.id, { onDelete: 'cascade' }),
@@ -173,37 +152,34 @@ export const caseActivities = pgTable('case_activities', {
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
-// === LEGACY COMPATIBILITY ===
-export const userTable = users;
-export const accounts = pgTable('account', {
-  userId: uuid('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  type: text('type').notNull(),
-  provider: text('provider').notNull(),
-  providerAccountId: text('providerAccountId').notNull(),
-  refresh_token: text('refresh_token'),
-  access_token: text('access_token'),
-  expires_at: integer('expires_at'),
-  token_type: text('token_type'),
-  scope: text('scope'),
-  id_token: text('id_token'),
-  session_state: text('session_state'),
-}, (table) => ({
-  compoundKey: primaryKey({
-    columns: [table.provider, table.providerAccountId],
-  }),
-}));
+// === CASE EVENTS (Event Store Pattern) ===
+export const caseEvents = pgTable('case_events', {
+  id: text('id').primaryKey(),
+  caseId: text('case_id').notNull().references(() => cases.id, { onDelete: 'cascade' }),
+  eventType: text('event_type').notNull(), // 'created', 'evidence_added', 'status_changed', 'merged', 'text_moved'
+  eventData: jsonb('event_data').notNull(),
+  previousState: text('previous_state'),
+  newState: text('new_state'),
+  userId: text('user_id').references(() => users.id),
+  sessionId: text('session_id'),
+  metadata: jsonb('metadata').default({}).notNull(),
+  timestamp: timestamp('timestamp').notNull().$defaultFn(() => new Date())
+});
 
-export const verificationTokens = pgTable('verificationToken', {
-  identifier: text('identifier').notNull(),
-  token: text('token').notNull(),
-  expires: timestamp('expires', { mode: 'date' }).notNull(),
-}, (table) => ({
-  compoundKey: primaryKey({ columns: [table.identifier, table.token] }),
-}));
-
-// === LEGACY COMPATIBILITY ===
-export const userTable = users;
-export const sessionTable = sessions;
+// === CASE RELATIONSHIPS ===
+export const caseRelationships = pgTable('case_relationships', {
+  id: text('id').primaryKey(),
+  parentCaseId: text('parent_case_id').notNull().references(() => cases.id, { onDelete: 'cascade' }),
+  relatedCaseId: text('related_case_id').notNull().references(() => cases.id, { onDelete: 'cascade' }),
+  relationshipType: text('relationship_type').notNull(), // 'similar', 'merged_from', 'merged_into', 'related', 'duplicate'
+  confidence: decimal('confidence', { precision: 4, scale: 3 }).default('0.0').notNull(), // NLP confidence score 0.0-1.0
+  aiAnalysis: jsonb('ai_analysis').default({}).notNull(),
+  description: text('description'),
+  discoveredBy: text('discovered_by').notNull(), // 'user', 'nlp', 'auto'
+  createdBy: text('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').notNull().$defaultFn(() => new Date()),
+  updatedAt: timestamp('updated_at').notNull().$defaultFn(() => new Date()),
+});
 
 // === RELATIONS ===
 export const usersRelations = relations(users, ({ many }) => ({
@@ -268,6 +244,36 @@ export const caseActivitiesRelations = relations(caseActivities, ({ one }) => ({
   }),
   createdBy: one(users, {
     fields: [caseActivities.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const caseEventsRelations = relations(caseEvents, ({ one }) => ({
+  case: one(cases, {
+    fields: [caseEvents.caseId],
+    references: [cases.id],
+  }),
+  user: one(users, {
+    fields: [caseEvents.userId],
+    references: [users.id],
+  }),
+  session: one(sessions, {
+    fields: [caseEvents.sessionId],
+    references: [sessions.id],
+  }),
+}));
+
+export const caseRelationshipsRelations = relations(caseRelationships, ({ one }) => ({
+  parentCase: one(cases, {
+    fields: [caseRelationships.parentCaseId],
+    references: [cases.id],
+  }),
+  relatedCase: one(cases, {
+    fields: [caseRelationships.relatedCaseId],
+    references: [cases.id],
+  }),
+  createdBy: one(users, {
+    fields: [caseRelationships.createdBy],
     references: [users.id],
   }),
 }));

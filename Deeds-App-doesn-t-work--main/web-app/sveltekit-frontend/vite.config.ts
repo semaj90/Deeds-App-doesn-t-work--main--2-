@@ -94,8 +94,9 @@ export default defineConfig(({ mode }) => {
       noExternal: []
     },
     server: {
-      port: 5174, // Match Playwright and your scripts
+      port: 5173, // Standard port for consistency
       host: 'localhost', // Restrict to localhost only
+      strictPort: true, // Fail if port is already in use instead of using another port
     },
     preview: {
       port: 4173,

@@ -15,6 +15,7 @@ export const criminals = pgTable('criminals', {
   firstName: varchar('first_name', { length: 100 }),
   lastName: varchar('last_name', { length: 100 }),
   middleName: varchar('middle_name', { length: 100 }),
+  name: varchar('name', { length: 255 }), // full name field
   aliases: jsonb('aliases').default([]).notNull(),
   
   // Identification
@@ -23,7 +24,7 @@ export const criminals = pgTable('criminals', {
   passportNumber: varchar('passport_number', { length: 20 }),
   
   // Demographics
-  dateOfBirth: date('date_of_birth'),
+  dateOfBirth: varchar('date_of_birth', { length: 50 }), // Changed to varchar for compatibility
   gender: varchar('gender', { length: 20 }),
   race: varchar('race', { length: 50 }),
   ethnicity: varchar('ethnicity', { length: 50 }),
@@ -45,18 +46,29 @@ export const criminals = pgTable('criminals', {
   zipCode: varchar('zip_code', { length: 10 }),
   country: varchar('country', { length: 100 }),
   
-  // Criminal record
+  // Criminal record and status
   criminalHistory: jsonb('criminal_history').default([]).notNull(),
   riskLevel: varchar('risk_level', { length: 20 }).default('unknown'),
+  threatLevel: varchar('threat_level', { length: 20 }), // additional field for compatibility
   status: createStatusEnum('status', ['active', 'incarcerated', 'deceased', 'unknown']),
+  
+  // Legal information
+  priors: jsonb('priors').default([]).notNull(),
+  convictionStatus: varchar('conviction_status', { length: 50 }),
+  sentenceLength: varchar('sentence_length', { length: 100 }),
+  convictionDate: varchar('conviction_date', { length: 50 }), // Changed to varchar for compatibility
+  escapeAttempts: integer('escape_attempts').default(0),
+  gangAffiliations: jsonb('gang_affiliations').default([]).notNull(),
   
   // Photos and biometrics
   photos: jsonb('photos').default([]).notNull(),
+  photoUrl: varchar('photo_url', { length: 500 }), // direct photo URL
   fingerprints: jsonb('fingerprints').default({}).notNull(),
   
-  // Investigation notes
+  // Investigation notes and AI
   notes: text('notes'),
   knownAssociates: jsonb('known_associates').default([]).notNull(),
+  aiAnalysis: jsonb('ai_analysis').default({}).notNull(),
   
   // Metadata
   isConfidential: boolean('is_confidential').default(true).notNull(),
@@ -68,17 +80,33 @@ export const criminals = pgTable('criminals', {
 // === CRIMES TABLE ===
 export const crimes = pgTable('crimes', {
   id: createId(),
-  
-  // Crime identification
+    // Crime identification
   crimeType: varchar('crime_type', { length: 100 }).notNull(),
   crimeCode: varchar('crime_code', { length: 50 }),
   severity: varchar('severity', { length: 20 }),
+  severityLevel: integer('severity_level'), // 1-10 numeric scale
   classification: varchar('classification', { length: 100 }),
   
   // Description
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
   modus_operandi: text('modus_operandi'),
+  
+  // Enhanced Legal classification details
+  chargeLevel: createStatusEnum('charge_level', ['felony', 'misdemeanor', 'citation', 'infraction']),
+  isFelony: boolean('is_felony').default(false), // Computed from chargeLevel
+  isMisdemeanor: boolean('is_misdemeanor').default(false), // New field
+  isCitation: boolean('is_citation').default(false), // New field
+  isInfraction: boolean('is_infraction').default(false), // New field
+  jurisdiction: varchar('jurisdiction', { length: 100 }),
+  potentialSentence: text('potential_sentence'),
+  fineRange: varchar('fine_range', { length: 100 }), // For citations/infractions
+  
+  // Legal elements and references
+  statuteReferences: jsonb('statute_references').default([]).notNull(), // Added missing field
+  elements: jsonb('elements').default([]).notNull(), // Added missing field
+  defenses: jsonb('defenses').default([]).notNull(), // Added missing field
+  precedentCases: jsonb('precedent_cases').default([]).notNull(), // Added missing field
   
   // Location and time
   location: text('location'),
@@ -97,6 +125,7 @@ export const crimes = pgTable('crimes', {
   status: createStatusEnum('status', ['reported', 'investigating', 'solved', 'cold', 'closed']),
   leadInvestigator: uuid('lead_investigator').references(() => users.id),
   assignedProsecutor: uuid('assigned_prosecutor').references(() => users.id),
+  investigationNotes: text('investigation_notes'), // Added missing field
   
   // Evidence and witnesses
   evidenceList: jsonb('evidence_list').default([]).notNull(),
@@ -105,6 +134,11 @@ export const crimes = pgTable('crimes', {
   
   // Case connection
   relatedCaseId: uuid('related_case_id').references(() => cases.id),
+  
+  // Additional investigation details
+  victimImpact: text('victim_impact'), // Added missing field
+  damageAssessment: jsonb('damage_assessment').default({}).notNull(), // Added missing field
+  weaponsUsed: jsonb('weapons_used').default([]).notNull(), // Added missing field
   
   // Metadata
   tags: jsonb('tags').default([]).notNull(),

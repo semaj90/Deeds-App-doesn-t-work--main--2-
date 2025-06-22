@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import { type NodePgDatabase, drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from '../../../../../../db/schema'; // Use shared monorepo schema
+import * as schema from './unified-schema'; // Use unified schema
 import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
 
@@ -66,7 +66,7 @@ export const db: NodePgDatabase<typeof schema> = new Proxy({} as NodePgDatabase<
 
 export type DbClient = NodePgDatabase<typeof schema>;
 
-export * from '../../../../../../db/schema';
+export * from './unified-schema';
 
 /**
  * Closes the database connection pool.

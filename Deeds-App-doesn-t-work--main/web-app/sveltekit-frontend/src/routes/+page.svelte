@@ -2,37 +2,53 @@
   import { onMount } from 'svelte';
   import Typewriter from '$lib/components/Typewriter.svelte';
   import UploadArea from '$lib/components/UploadArea.svelte';
-    let recentCases: any[] = [];
-  let systemStats = {
-    totalCases: 0,
-    totalEvidence: 0,
-    modelsLoaded: 0,
-    processingJobs: 0
-  };
+  import { browser } from '$app/environment';
+  
+  let recentCases: any[] = [];
   
   onMount(async () => {
-    // Load recent cases and stats
+    // Load recent cases
     try {
-      const [casesRes, statsRes] = await Promise.all([
-        fetch('/api/cases/recent'),
-        fetch('/api/system/stats')
-      ]);
+      const casesRes = await fetch('/api/cases/recent');
       
       if (casesRes.ok) {
         recentCases = await casesRes.json();
       }
-      
-      if (statsRes.ok) {
-        systemStats = await statsRes.json();
-      }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     }
+
+    // Setup AI search functionality
+    if (browser) {
+      const aiSearchBtn = document.getElementById('aiSearchBtn');
+      const aiSearchInputEl = document.getElementById('aiSearchInput') as HTMLInputElement;
+      
+      if (aiSearchBtn && aiSearchInputEl) {
+        aiSearchBtn.addEventListener('click', () => handleAiSearch(aiSearchInputEl.value));
+        aiSearchInputEl.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            handleAiSearch(aiSearchInputEl.value);
+          }
+        });
+      }
+    }
   });
-    function handleQuickUpload(files: any) {
+  
+  function handleQuickUpload(files: any) {
     // Handle quick upload from homepage
     if (files.length > 0) {
       window.location.href = `/upload?files=${files.length}`;
+    }
+  }
+
+  async function handleAiSearch(query: string) {
+    if (!query.trim()) return;
+    
+    try {
+      // Navigate to AI search results page
+      window.location.href = `/ai/search?q=${encodeURIComponent(query)}`;
+    } catch (error) {
+      console.error('AI search error:', error);
     }
   }
 </script>
@@ -44,11 +60,35 @@
 <div class="fade-in">
   <!-- Hero Section -->
   <div class="row mb-5">
-    <div class="col-lg-8 mx-auto text-center">
-      <h1 class="display-4 fw-bold text-dark mb-4">
+    <div class="col-lg-8 mx-auto text-center">      <h1 class="display-4 fw-bold text-dark mb-4">
         <i class="bi bi-shield-check text-primary me-3"></i>
         Legal Intelligence CMS
       </h1>
+        <!-- AI Search Bar -->
+      <div class="row mb-4">
+        <div class="col-lg-10 mx-auto">
+          <div class="search-container">
+            <div class="input-group input-group-lg shadow-lg">
+              <input 
+                type="text" 
+                class="form-control border-0 search-input" 
+                placeholder="What legal case are you working on today? Upload evidence, analyze scenes, extract insights..."
+                id="aiSearchInput"
+              />
+              <button class="btn btn-primary px-4 search-btn" type="button" id="aiSearchBtn">
+                <i class="bi bi-search me-2"></i>
+                Ask AI
+              </button>
+            </div>
+            <div class="text-center mt-3">
+              <small class="text-muted">
+                <i class="bi bi-lightbulb me-1"></i>
+                Try: "Is this legal or illegal and why?" • "Generate reports" • "Analyze evidence"
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
       
       <div class="mb-4" style="min-height: 60px;">
         <Typewriter 
@@ -89,55 +129,7 @@
       </div>
     </div>
   </div>
-  
-  <!-- System Stats -->
-  <div class="row mb-5">
-    <div class="col-lg-12">
-      <h4 class="mb-4">
-        <i class="bi bi-graph-up me-2"></i>System Overview
-      </h4>
-      <div class="row g-4">
-        <div class="col-md-3">
-          <div class="card text-center border-0 shadow-sm h-100">
-            <div class="card-body">
-              <i class="bi bi-folder2 display-6 text-primary mb-3"></i>
-              <h3 class="fw-bold">{systemStats.totalCases}</h3>
-              <p class="text-muted mb-0">Total Cases</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card text-center border-0 shadow-sm h-100">
-            <div class="card-body">
-              <i class="bi bi-camera-video display-6 text-success mb-3"></i>
-              <h3 class="fw-bold">{systemStats.totalEvidence}</h3>
-              <p class="text-muted mb-0">Evidence Files</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card text-center border-0 shadow-sm h-100">
-            <div class="card-body">
-              <i class="bi bi-cpu display-6 text-warning mb-3"></i>
-              <h3 class="fw-bold">{systemStats.modelsLoaded}</h3>
-              <p class="text-muted mb-0">AI Models Loaded</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card text-center border-0 shadow-sm h-100">
-            <div class="card-body">
-              <i class="bi bi-gear display-6 text-info mb-3"></i>
-              <h3 class="fw-bold">{systemStats.processingJobs}</h3>
-              <p class="text-muted mb-0">Processing Jobs</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Recent Cases -->
+    <!-- Recent Cases -->
   <div class="row">
     <div class="col-lg-12">
       <div class="d-flex justify-content-between align-items-center mb-4">
@@ -227,6 +219,49 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </div>  </div>
 </div>
+
+<style>
+  .search-container {
+    position: relative;
+  }
+  
+  .search-input {
+    font-size: 1.1rem !important;
+    padding: 1.2rem 1.5rem !important;
+    border-radius: 12px 0 0 12px !important;
+    border: 2px solid #e9ecef !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+    transition: all 0.3s ease !important;
+  }
+  
+  .search-input:focus {
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+    background: #ffffff !important;
+  }
+  
+  .search-btn {
+    border-radius: 0 12px 12px 0 !important;
+    font-size: 1.1rem !important;
+    padding: 1.2rem 2rem !important;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    border: 2px solid #007bff !important;
+    transition: all 0.3s ease !important;
+  }
+  
+  .search-btn:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #004085 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3) !important;
+  }
+  
+  .input-group-lg {
+    border-radius: 12px !important;
+  }
+  
+  .search-container .shadow-lg {
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+  }
+</style>

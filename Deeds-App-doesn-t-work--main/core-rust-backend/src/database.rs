@@ -89,3 +89,21 @@ pub fn init_sqlite_schema(conn: &Connection) -> SqliteResult<()> {
     tracing::info!("✅ SQLite schema initialized");
     Ok(())
 }
+
+// Initialize SQLite database file and schema
+pub fn init_sqlite(database_path: &str) -> Result<()> {
+    // Remove "sqlite://" prefix if present
+    let path = database_path.strip_prefix("sqlite://").unwrap_or(database_path);
+    
+    // Create directory if it doesn't exist
+    if let Some(parent) = Path::new(path).parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    
+    // Open connection and initialize schema
+    let conn = Connection::open(path)?;
+    init_sqlite_schema(&conn)?;
+    
+    tracing::info!("✅ SQLite database initialized at: {}", path);
+    Ok(())
+}

@@ -15,6 +15,13 @@
       className: 'border-warning/30'
     },
     {
+      id: 'ai-analysis',
+      title: '🤖 AI Analysis Queue',
+      accepts: ['evidence', 'file'],
+      items: [],
+      className: 'border-purple-300'
+    },
+    {
       id: 'verified-evidence',
       title: '✅ Verified Evidence',
       accepts: ['evidence'],
@@ -37,7 +44,12 @@
     }
   ];
 
-  // Sample evidence items
+  // AI Analysis states
+  let selectedAnalysisType = 'scene_analysis';
+  let analysisInProgress = false;
+  let analysisResults: any = null;
+
+  // Sample evidence items with AI capabilities
   let availableEvidence: DragDropItem[] = [
     {
       id: 'evidence-1',
@@ -91,6 +103,51 @@
       availableEvidence = [...availableEvidence, item];
     }
   }
+
+  async function runAIAnalysis(evidenceItem: DragDropItem) {
+    analysisInProgress = true;
+    analysisResults = null;
+
+    try {
+      // Simulate AI analysis call
+      const response = await fetch('/api/ai/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          query: `Analyze ${evidenceItem.title} for legal significance and prosecution value. Type: ${selectedAnalysisType}` 
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        analysisResults = {
+          evidence: evidenceItem,
+          analysis: result.data.response,
+          type: selectedAnalysisType,
+          timestamp: new Date().toISOString()
+        };
+        
+        // Move item to verified evidence after analysis
+        const aiZone = evidenceZones.find(z => z.id === 'ai-analysis');
+        const verifiedZone = evidenceZones.find(z => z.id === 'verified-evidence');
+        
+        if (aiZone && verifiedZone) {
+          const itemIndex = aiZone.items.findIndex(i => i.id === evidenceItem.id);
+          if (itemIndex >= 0) {
+            const [item] = aiZone.items.splice(itemIndex, 1);
+            item.metadata = { ...item.metadata, aiAnalyzed: true, analysisType: selectedAnalysisType };
+            verifiedZone.items.push(item);
+            evidenceZones = [...evidenceZones];
+          }
+        }
+      }
+    } catch (error) {
+      console.error('AI Analysis failed:', error);
+    } finally {
+      analysisInProgress = false;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -106,6 +163,80 @@
   </div>
 
   <div class="container mx-auto px-4 py-6">
+    <!-- AI Analysis Controls -->
+    <div class="card bg-base-100 shadow-sm mb-6">
+      <div class="card-body">
+        <h2 class="card-title text-purple-600">
+          <i class="bi bi-robot me-2"></i>
+          AI Evidence Analysis
+        </h2>
+        <p class="text-base-content/70 mb-4">
+          Upload evidence, analyze scenes, extract insights with AI-powered analysis
+        </p>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div>
+            <label class="label">
+              <span class="label-text font-semibold">Analysis Type:</span>
+            </label>
+            <select bind:value={selectedAnalysisType} class="select select-bordered w-full">
+              <option value="scene_analysis">Crime Scene Analysis</option>
+              <option value="object_detection">Object Detection</option>
+              <option value="document_ocr">Document OCR</option>
+              <option value="pattern_analysis">Pattern Analysis</option>
+              <option value="legal_significance">Legal Significance</option>
+            </select>
+          </div>
+          
+          <div class="flex flex-col justify-end">
+            <button 
+              class="btn btn-primary"
+              disabled={analysisInProgress}
+              on:click={() => {
+                const aiZone = evidenceZones.find(z => z.id === 'ai-analysis');
+                if (aiZone && aiZone.items.length > 0) {
+                  runAIAnalysis(aiZone.items[0]);
+                }
+              }}
+            >
+              {#if analysisInProgress}
+                <span class="loading loading-spinner loading-sm"></span>
+                Analyzing...
+              {:else}
+                <i class="bi bi-play-circle me-2"></i>
+                Run AI Analysis
+              {/if}
+            </button>
+          </div>
+          
+          <div class="flex flex-col justify-end">
+            <button class="btn btn-outline btn-info">
+              <i class="bi bi-download me-2"></i>
+              Export Results
+            </button>
+          </div>
+        </div>
+        
+        {#if analysisResults}
+          <div class="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+            <h4 class="font-semibold text-purple-800 mb-2">
+              <i class="bi bi-check-circle me-2"></i>
+              Analysis Complete: {analysisResults.evidence.title}
+            </h4>
+            <div class="prose prose-sm max-w-none">
+              <div class="bg-white p-3 rounded border text-sm">
+                {analysisResults.analysis.substring(0, 200)}...
+                <button class="btn btn-xs btn-link">View Full Report</button>
+              </div>
+            </div>
+            <div class="mt-2 text-xs text-purple-600">
+              Analysis Type: {analysisResults.type} | Completed: {new Date(analysisResults.timestamp).toLocaleString()}
+            </div>
+          </div>
+        {/if}
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
       <!-- Available Evidence Panel -->
       <div class="lg:col-span-1">

@@ -13,7 +13,7 @@ const dbConfig = parse(databaseUrl);
 
 export default defineConfig({
   dialect: 'postgresql',
-  schema: './web-app/sveltekit-frontend/src/lib/server/db/schema-new.ts',
+  schema: './db/schema/index.ts',
   out: './drizzle',
   dbCredentials: {
     host: dbConfig.host || 'localhost',

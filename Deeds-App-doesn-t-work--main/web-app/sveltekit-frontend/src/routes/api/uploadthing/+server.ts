@@ -1,6 +1,8 @@
 import { createUploadthing, type FileRouter } from 'uploadthing/server';
 import { UploadThingError } from 'uploadthing/server';
 import { json } from '@sveltejs/kit';
+import { db } from '$lib/server/db';
+import { evidence } from '$lib/server/db/unified-schema';
 import type { RequestHandler } from './$types';
 
 const f = createUploadthing();
@@ -24,26 +26,38 @@ const ourFileRouter = {
       // You can also access headers, cookies, etc. from the request
       // const user = await auth(req); // Example: get user from your auth system
       // if (!user) throw new UploadThingError('Unauthorized');
-      return { userId: 'mock-user-id' }; // Whatever is returned here is accessible in onUploadComplete
+
+      const url = new URL(req.url);
+      const caseId = url.searchParams.get('caseId');
+
+      if (!caseId) {
+        console.warn('No caseId provided in upload request. Using placeholder.');
+      }
+
+      return { userId: 'mock-user-id', caseId: caseId || '00000000-0000-0000-0000-000000000000' }; // Whatever is returned here is accessible in onUploadComplete
     })
     .onUploadComplete(async ({ metadata, file }) => {
       // This code runs on your server after upload
       console.log('Upload complete for userId:', metadata.userId);
       console.log('File details:', file);
+      console.log('Case ID from metadata:', metadata.caseId);
 
       // You can save file details to your database here
-      // For example:
-      // await db.insert(evidence).values({
-      //   caseId: 1, // This would come from context or metadata
-      //   fileName: file.name,
-      //   filePath: file.url, // URL provided by Uploadthing
-      //   fileType: file.type,
-      //   fileSize: file.size,
-      //   uploadDate: new Date(),
-      //   summary: null, // AI summary to be generated later
-      //   tags: [], // AI tags to be generated later
-      //   originalContent: null, // For text-based files, fetch content later
-      // });
+      await db.insert(evidence).values({
+        caseId: metadata.caseId, // Use the caseId from middleware metadata
+        uploadedBy: metadata.userId, // Use the userId from middleware
+        title: file.name, // Use file name as title
+        description: `Uploaded file: ${file.name}`,
+        fileName: file.name,
+        fileUrl: file.url, // URL provided by Uploadthing
+        mimeType: file.type,
+        fileSize: file.size,
+        evidenceType: 'digital', // Default to 'digital', can be refined based on file.type
+        uploadedAt: new Date(),
+        // summary: null, // AI summary to be generated later
+        // aiTags: [], // AI tags to be generated later
+        // originalContent: null, // For text-based files, fetch content later
+      });
 
       console.log('Upload finished.');
     }),

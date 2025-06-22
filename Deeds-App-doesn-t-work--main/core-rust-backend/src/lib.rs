@@ -21,32 +21,43 @@ pub use config::Config;
 pub use database::*;
 pub use models::*;
 
-use sqlx::{Pool, Postgres, Sqlite};
+#[cfg(feature = "postgres")]
+use sqlx::{Pool, Postgres};
 
 /// Application state that can be shared across different deployment targets
 #[derive(Clone)]
 pub struct AppState {
     pub config: Config,
+    #[cfg(feature = "postgres")]
     pub pg_pool: Option<Pool<Postgres>>,
-    pub sqlite_pool: Option<Pool<Sqlite>>,
+    // SQLite connection path (using rusqlite, not sqlx)
+    pub sqlite_path: Option<String>,
 }
 
 impl AppState {
     pub async fn new() -> anyhow::Result<Self> {
         let config = Config::from_env()?;
         
-        let (pg_pool, sqlite_pool) = if config.database_url.starts_with("postgres") {
-            let pool = database::create_pg_pool(&config.database_url).await?;
-            (Some(pool), None)
+        #[cfg(feature = "postgres")]
+        let pg_pool = if config.database_url.starts_with("postgres") {
+            Some(database::create_pg_pool(&config.database_url).await?)
         } else {
-            let pool = database::create_sqlite_pool(&config.database_url).await?;
-            (None, Some(pool))
+            None
+        };
+        
+        let sqlite_path = if !config.database_url.starts_with("postgres") {
+            // Initialize SQLite database
+            database::init_sqlite(&config.database_url)?;
+            Some(config.database_url.clone())
+        } else {
+            None
         };
         
         Ok(Self {
             config,
+            #[cfg(feature = "postgres")]
             pg_pool,
-            sqlite_pool,
+            sqlite_path,
         })
     }
 }

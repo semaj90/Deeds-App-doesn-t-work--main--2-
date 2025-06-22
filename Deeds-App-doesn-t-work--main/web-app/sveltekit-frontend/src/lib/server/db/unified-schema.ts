@@ -25,25 +25,59 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
-export const sessions = pgTable('sessions', {
-  id: text('id').primaryKey(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  expiresAt: timestamp('expires_at', { mode: 'date' }).notNull(),
+// === THEMES & UI CUSTOMIZATION ===
+
+export const themes = pgTable('themes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  cssVariables: jsonb('css_variables').notNull(), // CSS custom properties as JSON
+  fontConfig: jsonb('font_config').notNull(), // Font family, sizes, weights
+  colorPalette: jsonb('color_palette').notNull(), // Primary, secondary, accent colors
+  spacing: jsonb('spacing').notNull(), // Padding, margin scales
+  borderRadius: jsonb('border_radius').notNull(), // Border radius values
+  shadows: jsonb('shadows').notNull(), // Box shadow definitions
+  isSystem: boolean('is_system').default(false).notNull(), // Built-in vs user themes
+  isPublic: boolean('is_public').default(false).notNull(), // Shareable themes
+  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
-export const profiles = pgTable('profiles', {
+export const userThemes = pgTable('user_themes', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }).unique(),
-  firstName: varchar('first_name', { length: 100 }).notNull(),
-  lastName: varchar('last_name', { length: 100 }).notNull(),
-  title: varchar('title', { length: 100 }), // e.g., "District Attorney", "Prosecutor"
-  department: varchar('department', { length: 200 }),
-  phone: varchar('phone', { length: 20 }),
-  officeAddress: text('office_address'),
-  avatar: text('avatar'),
-  bio: text('bio'),
-  specializations: jsonb('specializations').default([]).notNull(), // areas of law
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  themeId: uuid('theme_id').notNull().references(() => themes.id, { onDelete: 'cascade' }),
+  isActive: boolean('is_active').default(false).notNull(),
+  customOverrides: jsonb('custom_overrides').default({}), // User-specific theme overrides
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
+export const layoutComponents = pgTable('layout_components', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 100 }).notNull(),
+  type: varchar('type', { length: 50 }).notNull(), // 'button', 'card', 'header', etc.
+  htmlContent: text('html_content').notNull(),
+  cssStyles: text('css_styles'),
+  jsInteractions: text('js_interactions'), // Optional JavaScript for interactions
+  position: jsonb('position').notNull(), // { x, y, width, height, zIndex }
+  themeId: uuid('theme_id').references(() => themes.id, { onDelete: 'cascade' }),
+  isPublic: boolean('is_public').default(false).notNull(),
+  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
+export const canvasLayouts = pgTable('canvas_layouts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  caseId: uuid('case_id').references(() => cases.id, { onDelete: 'cascade' }),
+  themeId: uuid('theme_id').references(() => themes.id, { onDelete: 'set null' }),
+  layoutData: jsonb('layout_data').notNull(), // Complete layout configuration
+  components: jsonb('components').notNull(), // Array of component IDs and positions
+  metadata: jsonb('metadata').default({}),
+  isTemplate: boolean('is_template').default(false).notNull(),
+  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
@@ -243,6 +277,18 @@ export const reports = pgTable('reports', {
   expiresAt: timestamp('expires_at', { mode: 'date' }),
 });
 
+// === CANVAS STATES ===
+
+export const canvasStates = pgTable('canvas_states', {
+  id: serial('id').primaryKey(),
+  caseId: uuid('case_id').notNull().references(() => cases.id, { onDelete: 'cascade' }),
+  canvasData: text('canvas_data').notNull(),
+  imagePreview: text('image_preview'),
+  metadata: text('metadata'),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
 // === RELATIONSHIPS ===
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -343,4 +389,28 @@ export const caseActivitiesRelations = relations(caseActivities, ({ one }) => ({
     references: [users.id],
     relationName: 'createdBy',
   }),
+}));
+
+export const canvasStatesRelations = relations(canvasStates, ({ one }) => ({
+  case: one(cases, {
+    fields: [canvasStates.caseId],
+    references: [cases.id],
+  }),
+}));
+
+export const casesRelationsExtended = relations(cases, ({ many, one }) => ({
+  leadProsecutor: one(users, {
+    fields: [cases.leadProsecutor],
+    references: [users.id],
+    relationName: 'leadProsecutor',
+  }),
+  createdBy: one(users, {
+    fields: [cases.createdBy],
+    references: [users.id],
+    relationName: 'createdBy',
+  }),
+  criminals: many(caseCriminals),
+  evidence: many(evidence),
+  activities: many(caseActivities),
+  canvasStates: many(canvasStates),
 }));

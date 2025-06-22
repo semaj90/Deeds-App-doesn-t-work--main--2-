@@ -43,7 +43,7 @@ Desktop App Architecture:
 ├─────────────────────────┤
 │  Rust Backend (Local)   │ ← New local API server
 ├─────────────────────────┤
-│  SQLite Database        │ ← Offline data storage
+│  Postgres Database        │ ← Offline data storage
 └─────────────────────────┘
 ```
 
@@ -191,17 +191,16 @@ tauri-build = { version = "1.5", features = [] }
 tauri = { version = "1.5", features = ["api-all"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-sqlx = { version = "0.7", features = ["sqlite", "runtime-tokio-rustls"] }
 tokio = { version = "1.0", features = ["full"] }
 
 [features]
 default = ["custom-protocol"]
-custom-protocol = ["tauri/custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"
 ```
 
 ## 🔄 Offline Sync Strategy
 
-### Local Database (SQLite)
+### Local Database (postgres)
 - **Primary storage** for offline use
 - **Fast queries** for desktop responsiveness
 - **Periodic sync** with PostgreSQL server
@@ -286,7 +285,7 @@ cargo tauri build
 ## 🔐 Security Considerations
 
 ### Data Protection
-- **Encrypt SQLite database** with user password
+- **Encrypt postgres database** with user password
 - **Secure file storage** in app-specific directory
 - **Memory protection** for sensitive data in Rust
 

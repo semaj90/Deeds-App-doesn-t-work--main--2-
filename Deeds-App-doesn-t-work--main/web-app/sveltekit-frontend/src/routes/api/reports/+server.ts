@@ -81,8 +81,8 @@ export async function GET({ url }) {
                 doc.moveDown();
                 caseEvidence.forEach(item => {
                     doc.fontSize(12).text(`- ${item.fileName} (${item.fileType}, ${item.fileSize} bytes)`);
-                    doc.text(`  Summary: ${item.aiSummary || 'N/A'}`);
-                    const evidenceTags = Array.isArray(item.aiTags) ? item.aiTags : [];
+                    doc.text(`  Summary: ${item.summary || 'N/A'}`);
+                    const evidenceTags = Array.isArray(item.tags) ? item.tags : [];
                     doc.text(`  Tags: ${evidenceTags.join(', ') || 'N/A'}`);
                     doc.moveDown();
                 });
@@ -102,7 +102,7 @@ export async function GET({ url }) {
             doc.fontSize(25).text(`Statute Report: ${currentStatute.title}`, { align: 'center' });
             doc.moveDown();
             doc.fontSize(14).text(`Code: ${currentStatute.code}`);
-            doc.text(`Description: ${currentStatute.description || 'N/A'}`);
+            doc.text(`Description: ${currentStatute.summary || 'N/A'}`);
             doc.moveDown();
             doc.fontSize(12).text(currentStatute.fullText || 'Full text not available.');
         } else {

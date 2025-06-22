@@ -15,6 +15,9 @@ export const cases = pgTable('cases', {
   status: createStatusEnum('status', ['open', 'closed', 'pending', 'dismissed']),
   priority: createStatusEnum('priority', ['low', 'medium', 'high', 'urgent']),
   
+  // User ownership
+  createdBy: uuid('created_by').references(() => users.id),
+  
   // Prosecutor assignment
   assignedProsecutorId: uuid('assigned_prosecutor_id').references(() => users.id),
   
@@ -22,6 +25,7 @@ export const cases = pgTable('cases', {
   jurisdiction: varchar('jurisdiction', { length: 200 }),
   courtRoom: varchar('court_room', { length: 100 }),
   judge: varchar('judge', { length: 200 }),
+  verdict: text('verdict'),
   
   // Important dates
   incidentDate: timestamp('incident_date', { mode: 'date' }),
@@ -37,8 +41,13 @@ export const cases = pgTable('cases', {
   
   // AI and analytics
   aiSummary: text('ai_summary'),
+  aiTags: jsonb('ai_tags').default([]).notNull(),
+  dangerScore: decimal('danger_score', { precision: 3, scale: 2 }),
   riskScore: decimal('risk_score', { precision: 3, scale: 2 }),
   confidenceLevel: decimal('confidence_level', { precision: 3, scale: 2 }),
+  
+  // Case data storage
+  data: jsonb('data').default({}).notNull(),
   
   // Legacy/compatibility fields
   address: text('address'),
@@ -57,8 +66,10 @@ export const caseEvents = pgTable('case_events', {
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
   eventDate: timestamp('event_date', { mode: 'date' }).notNull(),
+  timestamp: timestamp('timestamp', { mode: 'date' }).notNull(), // alias for eventDate
   
   metadata: jsonb('metadata').default({}).notNull(),
+  eventData: jsonb('event_data').default({}).notNull(), // alias for metadata
   isPublic: boolean('is_public').default(false).notNull(),
   
   ...timestamps,
@@ -69,10 +80,11 @@ export const caseRelationships = pgTable('case_relationships', {
   id: createId(),
   parentCaseId: uuid('parent_case_id').notNull().references(() => cases.id, { onDelete: 'cascade' }),
   childCaseId: uuid('child_case_id').notNull().references(() => cases.id, { onDelete: 'cascade' }),
+  relatedCaseId: uuid('related_case_id').references(() => cases.id), // alias for childCaseId
   
   relationshipType: varchar('relationship_type', { length: 50 }).notNull(), // 'related', 'merged', 'split'
   description: text('description'),
-  strength: decimal('strength', { precision: 3, scale: 2 }),
+  strength: varchar('strength', { length: 50 }), // updated to varchar for compatibility
   
   ...timestamps,
 });
@@ -85,8 +97,12 @@ export const caseTemplates = pgTable('case_templates', {
   caseType: varchar('case_type', { length: 100 }),
   
   template: jsonb('template').notNull(),
+  fields: jsonb('fields').default([]).notNull(), // template fields
   isActive: boolean('is_active').default(true).notNull(),
   createdBy: uuid('created_by').references(() => users.id),
+  
+  // Usage tracking
+  usageCount: integer('usage_count').default(0).notNull(),
   
   ...timestamps,
 });

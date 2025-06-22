@@ -1,6 +1,6 @@
-// Main schema export - now uses shared monorepo schema
-// Re-export everything from the shared schema to maintain compatibility
-export * from '../../../../../../db/schema';
+// Main schema export - now uses complete schema with all required tables
+// Re-export everything from the complete schema to maintain compatibility
+export * from './schema-new';
 
 // import {
 //   sqliteTable,

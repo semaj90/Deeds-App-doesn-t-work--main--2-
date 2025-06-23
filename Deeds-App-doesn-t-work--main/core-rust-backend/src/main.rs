@@ -6,7 +6,6 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use sqlx::{PgPool, Pool, Postgres};
 use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
 use tracing_subscriber;
@@ -24,67 +23,30 @@ mod utils;
 // mod qdrant;  // Commented out for now
 
 use config::Config;
-use handlers::{auth as auth_handlers, cases, evidence, health};
+use handlers::{auth as auth_handlers, cases, evidence, embeddings, health};
 // use llm::LLMService;  // Commented out for now
 // use file_processor::FileProcessor;  // Commented out for now
 // use qdrant::QdrantService;  // Commented out for now
 
-#[derive(Clone)]
-pub struct AppState {
-    pub db: Pool<Postgres>,
-    pub config: Config,
-    // pub llm_service: LLMService,  // Commented out for now
-    // pub file_processor: FileProcessor,  // Commented out for now
-    // pub qdrant_service: QdrantService,  // Commented out for now
-}
+// Import the AppState from lib.rs
+use prosecutor_core::AppState;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // Initialize tracing
     tracing_subscriber::init();
-
-    // Load configuration
-    let config = Config::from_env()?;
     
     tracing::info!("🦀 Starting Prosecutor Backend Server");
-    tracing::info!("📊 Connecting to database: {}", config.database_url_safe());    // Connect to database
-    let db_pool = database::create_pool(&config.database_url).await?;
     
-    // Run migrations
-    tracing::info!("🔄 Running database migrations...");
-    database::run_migrations(&db_pool).await?;    
-    // Initialize LLM service (commented out for now)
-    // tracing::info!("🤖 Initializing Local LLM service...");
-    // let model_path = std::env::var("LOCAL_LLM_MODEL_PATH").ok();
-    // let enable_ai = std::env::var("ENABLE_AI_TAGGING").unwrap_or_default() == "true";
-    // let llm_service = LLMService::new(model_path, enable_ai).await?;
-    
-    // Initialize file processor (commented out for now)
-    // tracing::info!("📁 Initializing file processor...");
-    // let upload_dir = std::env::var("UPLOAD_DIR").unwrap_or_else(|_| "./uploads".to_string());
-    // let enable_ocr = std::env::var("ENABLE_OCR").unwrap_or_default() == "true";
-    // let enable_text_extraction = std::env::var("ENABLE_TEXT_EXTRACTION").unwrap_or_default() == "true";
-    // let max_file_size = std::env::var("MAX_FILE_SIZE")
-    //     .unwrap_or_else(|_| "52428800".to_string())
-    //     .parse::<usize>()
-    //     .unwrap_or(52428800);
-    
-    // let file_processor = FileProcessor::new(upload_dir, enable_ocr, enable_text_extraction, max_file_size);
-    
-    // Initialize Qdrant service (commented out for now)
-    // tracing::info!("🔍 Initializing Qdrant vector search service...");
-    // let qdrant_url = std::env::var("QDRANT_URL").unwrap_or_else(|_| "http://localhost:6333".to_string());
-    // let qdrant_service = QdrantService::new(&qdrant_url, llm_service.clone()).await?;
-      let state = AppState {
-        db: db_pool,
-        config: config.clone(),
-    };
+    // Initialize application state (includes database setup)
+    let state = AppState::new().await?;
+    tracing::info!("✅ Application state initialized");
 
     // Build our application with routes
     let app = create_router(state);
 
-    // Run the server
-    let addr = SocketAddr::from(([127, 0, 0, 1], config.port));
+    // Run the server on port 3001 (different from SvelteKit dev server)
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3001));
     tracing::info!("🚀 Server listening on http://{}", addr);
     
     let listener = tokio::net::TcpListener::bind(addr).await?;
@@ -109,7 +71,14 @@ fn create_router(state: AppState) -> Router {
         
         .route("/api/evidence", post(evidence::upload_evidence))
         .route("/api/evidence/:id", get(evidence::get_evidence).delete(evidence::delete_evidence))
-          // Apply authentication middleware to protected routes
+        
+        // Content embeddings routes
+        .route("/api/embeddings", post(embeddings::create_embedding))
+        .route("/api/embeddings/:content_id/:content_type", get(embeddings::get_embedding))
+        .route("/api/embeddings/:content_id", get(embeddings::get_content_embeddings))
+        .route("/api/embeddings/search", post(embeddings::search_embeddings))
+        
+        // Apply authentication middleware to protected routes
         .layer(axum_middleware::from_fn_with_state(
             state.clone(),
             middleware::auth_middleware,

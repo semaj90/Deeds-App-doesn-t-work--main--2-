@@ -1,15 +1,9 @@
 # Database Setup Guide
 
-This application supports both **SQLite** (for development) and **PostgreSQL** (for production). You can easily switch between them using the provided scripts.
+ and **PostgreSQL** (for production). You can easily switch between them using the provided scripts.
 
 ## Quick Start
 
-### Using SQLite (Recommended for Development)
-
-1. **Switch to SQLite** (default):
-   ```bash
-   npm run switch-db sqlite
-   ```
 
 2. **Run migrations**:
    ```bash

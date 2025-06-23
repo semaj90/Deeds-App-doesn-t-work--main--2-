@@ -1,66 +1,42 @@
 use anyhow::Result;
-
-// PostgreSQL support (using sqlx)
-#[cfg(feature = "postgres")]
-use sqlx::{migrate::MigrateDatabase, PgPool, Postgres};
-
-// SQLite support (using rusqlite for better Windows compatibility)
 use rusqlite::{Connection, Result as SqliteResult};
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
-// PostgreSQL functions
-#[cfg(feature = "postgres")]
-pub async fn create_pg_pool(database_url: &str) -> Result<PgPool> {
-    // Ensure the database exists
-    if !Postgres::database_exists(database_url).await.unwrap_or(false) {
-        tracing::info!("📝 PostgreSQL database does not exist, creating...");
-        Postgres::create_database(database_url).await?;
-    }
+// Database connection wrapper
+pub type DbConnection = Arc<Mutex<Connection>>;
 
-    // Create connection pool
-    let pool = PgPool::connect(database_url).await?;
+// SQLite functions using rusqlite
+pub fn create_connection(database_url: &str) -> Result<DbConnection> {
+    // Remove "sqlite://" prefix if present
+    let path = database_url.strip_prefix("sqlite://").unwrap_or(database_url);
     
-    tracing::info!("✅ PostgreSQL connection established");
-    Ok(pool)
-}
-
-#[cfg(feature = "postgres")]
-pub async fn test_pg_connection(pool: &PgPool) -> Result<()> {
-    sqlx::query("SELECT 1")
-        .execute(pool)
-        .await?;
-    Ok(())
-}
-
-// SQLite functions (using rusqlite for Windows compatibility)
-pub fn create_sqlite_connection(database_path: &str) -> SqliteResult<Connection> {
     // Create directory if it doesn't exist
-    if let Some(parent) = Path::new(database_path).parent() {
+    if let Some(parent) = Path::new(path).parent() {
         if !parent.exists() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| rusqlite::Error::SqliteFailure(
-                    rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CANTOPEN),
-                    Some(format!("Failed to create directory: {}", e))
-                ))?;
+            std::fs::create_dir_all(parent)?;
         }
     }
 
-    let conn = Connection::open(database_path)?;
+    let conn = Connection::open(path)?;
     
     // Enable foreign key support
     conn.execute("PRAGMA foreign_keys = ON", [])?;
     
-    tracing::info!("✅ SQLite connection established at: {}", database_path);
-    Ok(conn)
+    tracing::info!("✅ SQLite connection established at: {}", path);
+    Ok(Arc::new(Mutex::new(conn)))
 }
 
-pub fn test_sqlite_connection(conn: &Connection) -> SqliteResult<()> {
+pub fn test_connection(db: &DbConnection) -> Result<()> {
+    let conn = db.lock().unwrap();
     conn.execute("SELECT 1", [])?;
+    tracing::info!("✅ SQLite connection test successful");
     Ok(())
 }
 
-// Initialize SQLite database with basic schema
-pub fn init_sqlite_schema(conn: &Connection) -> SqliteResult<()> {
+pub fn init_schema(db: &DbConnection) -> Result<()> {
+    let conn = db.lock().unwrap();
+    
     // Create basic tables for case management
     conn.execute(
         "CREATE TABLE IF NOT EXISTS cases (
@@ -86,24 +62,52 @@ pub fn init_sqlite_schema(conn: &Connection) -> SqliteResult<()> {
         [],
     )?;
 
-    tracing::info!("✅ SQLite schema initialized");
-    Ok(())
-}
+    // Create evidence table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS evidence (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            case_id INTEGER REFERENCES cases(id) ON DELETE CASCADE,
+            filename TEXT NOT NULL,
+            file_path TEXT NOT NULL,
+            file_type TEXT NOT NULL,
+            file_size INTEGER NOT NULL,
+            hash_sha256 TEXT NOT NULL,
+            metadata TEXT DEFAULT '{}', -- JSON string
+            anchor_points TEXT DEFAULT '[]', -- JSON string
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )",
+        [],
+    )?;
 
-// Initialize SQLite database file and schema
-pub fn init_sqlite(database_path: &str) -> Result<()> {
-    // Remove "sqlite://" prefix if present
-    let path = database_path.strip_prefix("sqlite://").unwrap_or(database_path);
-    
-    // Create directory if it doesn't exist
-    if let Some(parent) = Path::new(path).parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    
-    // Open connection and initialize schema
-    let conn = Connection::open(path)?;
-    init_sqlite_schema(&conn)?;
-    
-    tracing::info!("✅ SQLite database initialized at: {}", path);
+    // Create embeddings table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS embeddings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            content_id TEXT NOT NULL,
+            content_type TEXT NOT NULL,
+            content_text TEXT NOT NULL,
+            embedding_vector TEXT NOT NULL, -- JSON string
+            metadata TEXT DEFAULT '{}', -- JSON string
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(content_id, content_type)
+        )",
+        [],
+    )?;
+
+    // Create index on embeddings for faster searches
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_embeddings_content_type 
+         ON embeddings(content_type)",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_embeddings_content_id 
+         ON embeddings(content_id)",
+        [],
+    )?;
+
+    tracing::info!("✅ SQLite schema initialized");
     Ok(())
 }

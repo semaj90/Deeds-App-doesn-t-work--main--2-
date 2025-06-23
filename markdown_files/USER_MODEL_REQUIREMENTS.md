@@ -32,15 +32,13 @@ All local LLM functionality requires users to provide their own models.
 
 ### Recommended Model Sources:
 - **[Hugging Face Hub](https://huggingface.co/models?library=gguf)** - Search for GGUF format
-- **[Mistral AI Official](https://mistral.ai/)** - Convert official models
-- **[Meta Llama](https://ai.meta.com/llama/)** - Convert official models
 - **Community quantized models** - Various repositories
 
 ### Model Requirements:
 - **Format**: GGUF (GGML Universal Format)
 - **Size**: 1-8GB recommended for optimal performance
 - **Quantization**: Q4_0, Q4_1, Q5_0, Q5_1, Q8_0 supported
-- **Architecture**: Llama, Mistral, or compatible models
+- **Architecture**: gemma-qat or compatible models
 
 ## 🔧 How to Add Your Models
 

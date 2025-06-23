@@ -2,7 +2,7 @@ import { redirect } from "@sveltejs/kit";
 import type { Actions, ServerLoad } from "@sveltejs/kit";
 import type { Case, Criminal } from '$lib/data/types';
 import { db } from '$lib/server/db';
-import { criminals, cases } from '$lib/server/db/schema-new'; // Use unified schema
+import { criminals, cases } from '$lib/server/db/schema-new';
 
 export const load: ServerLoad = async ({ url }) => {
     console.log('[+page.server.ts] Load function called');

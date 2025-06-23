@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Basic Application Tests', () => {
   test('homepage loads without SSR errors', async ({ page }) => {
     // Go to the homepage
-    await page.goto('http://localhost:5175/');
+    await page.goto('http://localhost:5173/');
     
     // Wait for the page to load
     await page.waitForLoadState('networkidle');
@@ -23,7 +23,7 @@ test.describe('Basic Application Tests', () => {
 
   test('login page loads correctly', async ({ page }) => {
     // Go to the login page
-    await page.goto('http://localhost:5175/login');
+    await page.goto('http://localhost:5173/login');
     
     // Wait for the page to load
     await page.waitForLoadState('networkidle');
@@ -42,7 +42,7 @@ test.describe('Basic Application Tests', () => {
 
   test('statutes page loads without client-side schema import errors', async ({ page }) => {
     // This specifically tests our fix for client-side schema imports
-    await page.goto('http://localhost:5175/statutes');
+    await page.goto('http://localhost:5173/statutes');
     
     // Wait for the page to load
     await page.waitForLoadState('networkidle');

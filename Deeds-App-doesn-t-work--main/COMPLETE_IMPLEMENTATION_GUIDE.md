@@ -159,23 +159,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 ## 🗄️ Database Management {#database-management}
 
-### SQLite Schema with JSON1
-```typescript
-// src/lib/server/db/schema.ts
-export const cases = sqliteTable('cases', {
-  id: text('id').primaryKey(),
-  title: text('title').notNull(),
-  data: text('data', { mode: 'json' }).default('{}').notNull(),
-  tags: text('tags', { mode: 'json' }).default('[]').notNull(),
-  aiSummary: text('ai_summary'),
-  embedding: text('embedding', { mode: 'json' }),
-  createdBy: text('created_by').notNull().references(() => users.id, { 
-    onDelete: 'restrict', 
-    onUpdate: 'cascade' 
-  }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-});
-```
 
 ### Foreign Key Constraints
 - **users.id** → Primary reference for all user-created content
@@ -302,7 +285,7 @@ export class PredictiveAnalyzer {
 src-tauri/
 ├── src/
 │   ├── main.rs              # Tauri app setup
-│   ├── database.rs          # SQLite operations
+│   ├── database.rs          # postgres operations
 │   ├── ai_service.rs        # Local LLM integration
 │   ├── file_handler.rs      # Evidence file processing
 │   └── commands/            # Tauri commands
@@ -361,7 +344,7 @@ $: cases = tauriService.getCases($userSessionStore.user.id);
 ```rust
 // src-tauri/src/sync.rs
 pub struct SyncManager {
-    local_db: SqlitePool,
+    local_db: postgres:,
     remote_endpoint: String,
 }
 
@@ -390,7 +373,7 @@ class Case {
   final List<String> tags;
   final DateTime createdAt;
   
-  // SQLite integration with same schema as web/Tauri
+  // postgres integration with same schema as web/Tauri
 }
 ```
 
@@ -409,7 +392,7 @@ class WebApiService extends ApiService {
 }
 
 class TauriApiService extends ApiService {
-  // Direct SQLite calls (shared with Rust)
+  // Direct postgres calls (shared with Rust)
 }
 ```
 
@@ -429,13 +412,13 @@ class TauriApiService extends ApiService {
    - Update `api/crimes/+server.ts` with caching
 
 3. **🎨 Frontend Component Updates**
-   - Update Bootstrap integration in all components
+   - Update vanilla css integration in all components
    - Ensure all navigation uses `<a href="">` for SSR
    - Connect components to cached API endpoints
 
 ### Integration Tasks
 4. **🦀 Tauri Rust Implementation**
-   - Implement SQLite CRUD commands in Rust
+   - Implement postgres CRUD commands in Rust
    - Create Tauri commands for all major entities
    - Add file handling and AI service integration
 
@@ -463,8 +446,8 @@ class TauriApiService extends ApiService {
 ## 🎯 Architecture Summary
 
 ### Core Technologies
-- **Frontend**: SvelteKit + Bootstrap 5
-- **Database**: SQLite with JSON1 extension
+- **Frontend**: SvelteKit + vanilla css
+- **Database**: postgres + pgvector ? 
 - **ORM**: Drizzle ORM with full type safety
 - **Caching**: Custom in-memory cache with LokiJS
 - **AI/NLP**: Local LLM integration + Qdrant vector DB
@@ -481,12 +464,12 @@ class TauriApiService extends ApiService {
 ✅ Offline-first architecture preparation  
 
 ### Development Workflow
-1. **Web Development**: SvelteKit + SQLite for rapid prototyping
+1. **Web Development**: SvelteKit + postgres for rapid prototyping
 2. **Desktop Enhancement**: Tauri + Rust for native performance
 3. **Mobile Expansion**: Flutter + shared database schema
 4. **AI Integration**: Local LLM + vector search for advanced features
 
-The application is architected for scalability, offline-first usage, and cross-platform deployment while maintaining a single source of truth in the SQLite database with robust caching and real-time updates.
+The application is architected for scalability, offline-first usage, and cross-platform deployment while maintaining a single source of truth in the postgres database with robust caching and real-time updates.
 
 ## 🧪 Playwright E2E Testing & Troubleshooting
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /**
  * Complete Functionality Test for WardenNet Application
  * Tests authentication, database operations, and advanced features

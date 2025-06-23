@@ -1,8 +1,11 @@
 #!/usr/bin/env node
+
 /**
  * Test script to verify registration and login functionality
  * This script will test the complete authentication flow
  */
+
+import fetch from 'node-fetch';
 
 const baseUrl = 'http://localhost:5173';
 
@@ -20,30 +23,30 @@ async function testRegistration() {
     email: testUser.email,
     password: '[HIDDEN]'
   });
-  
-  try {
-    // Create form data
-    const formData = new FormData();
-    formData.append('name', testUser.name);
-    formData.append('email', testUser.email);
-    formData.append('password', testUser.password);
-    
-    const response = await fetch(`${baseUrl}/register`, {
+    try {
+    // Use API endpoint instead of form submission
+    const response = await fetch(`${baseUrl}/api/auth/register`, {
       method: 'POST',
-      body: formData
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: testUser.name,
+        email: testUser.email,
+        password: testUser.password
+      })
     });
     
     console.log('Registration response status:', response.status);
-    console.log('Registration response headers:', Object.fromEntries(response.headers.entries()));
     
-    // Check if we were redirected (which means success)
-    if (response.status === 303 || response.status === 302) {
-      const location = response.headers.get('location');
-      console.log('✅ Registration successful! Redirected to:', location);
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Registration successful!');
+      console.log('Response data:', data);
       return testUser;
     } else {
-      const text = await response.text();
-      console.log('❌ Registration failed. Response:', text);
+      const errorData = await response.json();
+      console.log('❌ Registration failed. Response:', errorData);
       return null;
     }
   } catch (error) {
@@ -57,7 +60,7 @@ async function testLogin(email, password) {
   console.log('📝 Logging in with:', { email, password: '[HIDDEN]' });
   
   try {
-    const response = await fetch(`${baseUrl}/api/login`, {
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -102,11 +105,38 @@ async function checkDatabaseConnection() {
   }
 }
 
-async function run() {
+async function runTests() {
+  console.log('🚀 Starting WardenNet Authentication Tests\n');
+  console.log('=' .repeat(50));
+  
+  // Test 1: Database connection
   await checkDatabaseConnection();
-  const user = await testRegistration();
-  if (!user) return;
-  await testLogin(user.email, user.password);
+  
+  // Test 2: Registration
+  const testUser = await testRegistration();
+  if (!testUser) {
+    console.log('\n❌ Registration test failed - aborting login test');
+    return;
+  }
+  
+  // Test 3: Login
+  const loggedInUser = await testLogin(testUser.email, testUser.password);
+  
+  console.log('\n' + '=' .repeat(50));
+  console.log('📊 Test Results Summary:');
+  console.log('=' .repeat(50));
+  
+  if (testUser && loggedInUser) {
+    console.log('✅ ALL TESTS PASSED!');
+    console.log('  ✓ Registration working');
+    console.log('  ✓ Login working');
+    console.log('  ✓ Session creation working');
+    console.log('\n🎉 Your WardenNet application is ready for use!');
+  } else {
+    console.log('❌ SOME TESTS FAILED');
+    console.log('  Registration:', testUser ? '✓' : '❌');
+    console.log('  Login:', loggedInUser ? '✓' : '❌');
+  }
 }
 
-run();
+runTests().catch(console.error);

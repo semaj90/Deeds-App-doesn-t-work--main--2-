@@ -8,6 +8,7 @@
 :root {
     /* Crimson Red Harvard Law Theme Colors */
     --primary-color: #A51C30; /* Harvard Crimson */
+    --primary-color-rgb: 165, 28, 48; /* For use in rgba() */
     --secondary-color: #4A4A4A; /* Darker gray for accents */
     --background-color: #F8F8F8; /* Light background for readability */
     --surface-color: #FFFFFF; /* White for cards/surfaces */
@@ -170,7 +171,7 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 0.2rem rgba(var(--primary-color), 0.25);
+  box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.25);
 }
 
 /* General button styles */

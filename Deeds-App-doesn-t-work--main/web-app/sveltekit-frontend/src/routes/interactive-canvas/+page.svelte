@@ -1,5 +1,6 @@
 <script lang="ts">
   import CanvasEditor from '$lib/components/CanvasEditor.svelte';
+  import LLMAssistant from '$lib/components/LLMAssistant.svelte';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
 
@@ -8,10 +9,20 @@
   let isLoading = false;
   let notifications: Array<{ type: 'success' | 'error' | 'info'; message: string; id: number }> = [];
   let notificationId = 0;
+  let showAIPanel = false;
+  let caseContext: any = null;
 
   onMount(() => {
     // Get caseId from URL params or generate a demo one
     caseId = $page.url.searchParams.get('caseId') || 'demo-case-' + Date.now();
+    
+    // Initialize case context for AI
+    caseContext = {
+      caseId,
+      caseTitle: `Legal Case ${caseId}`,
+      evidence: [],
+      type: 'interactive-canvas'
+    };
   });
 
   function showNotification(type: 'success' | 'error' | 'info', message: string) {
@@ -49,6 +60,17 @@
   function handleError(event: CustomEvent) {
     const { message } = event.detail;
     showNotification('error', message);
+  }
+
+  function toggleAIPanel() {
+    showAIPanel = !showAIPanel;
+  }
+
+  function handleAIMessage(event: CustomEvent) {
+    const { message, analysis } = event.detail;
+    if (analysis?.suggestions) {
+      showNotification('info', `AI suggested: ${analysis.suggestions.slice(0, 2).join(', ')}`);
+    }
   }
 
   async function exportCanvas() {
@@ -100,6 +122,14 @@
     
     <div class="header-right flex items-center gap-2">
       <button 
+        on:click={toggleAIPanel}
+        class="ai-btn bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-sm"
+        class:active={showAIPanel}
+      >
+        🤖 AI Assistant
+      </button>
+      
+      <button 
         on:click={exportCanvas}
         class="export-btn bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded text-sm"
         disabled={isLoading}
@@ -117,16 +147,31 @@
   </header>
 
   <!-- Main Canvas Area -->
-  <main class="canvas-main flex-1">
-    <CanvasEditor
-      bind:this={canvasEditor}
-      {caseId}
-      on:canvasSaved={handleCanvasSaved}
-      on:canvasLoaded={handleCanvasLoaded}
-      on:evidenceUploaded={handleEvidenceUploaded}
-      on:autoTagged={handleAutoTagged}
-      on:error={handleError}
-    />
+  <main class="canvas-main flex-1 flex">
+    <!-- Canvas Editor -->
+    <div class="canvas-section" class:with-ai={showAIPanel}>
+      <CanvasEditor
+        bind:this={canvasEditor}
+        {caseId}
+        on:canvasSaved={handleCanvasSaved}
+        on:canvasLoaded={handleCanvasLoaded}
+        on:evidenceUploaded={handleEvidenceUploaded}
+        on:autoTagged={handleAutoTagged}
+        on:error={handleError}
+      />
+    </div>
+
+    <!-- AI Assistant Panel -->
+    {#if showAIPanel}
+      <div class="ai-panel">
+        <LLMAssistant
+          {caseId}
+          contextData={caseContext}
+          placeholder="Ask about this case or analyze evidence..."
+          on:messageReceived={handleAIMessage}
+        />
+      </div>
+    {/if}
   </main>
 
   <!-- Notifications -->
@@ -178,6 +223,38 @@
   .canvas-main {
     flex: 1;
     overflow: hidden;
+    display: flex;
+  }
+
+  .canvas-section {
+    flex: 1;
+    min-width: 0;
+    transition: all 0.3s ease;
+  }
+
+  .canvas-section.with-ai {
+    margin-right: 400px;
+  }
+
+  .ai-panel {
+    position: fixed;
+    right: 0;
+    top: 64px; /* Header height */
+    bottom: 0;
+    width: 400px;
+    background: white;
+    border-left: 1px solid #e5e7eb;
+    box-shadow: -4px 0 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 30;
+  }
+
+  .ai-btn {
+    transition: all 0.2s ease;
+  }
+
+  .ai-btn.active {
+    background: #7c3aed;
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3);
   }
 
   .notification {

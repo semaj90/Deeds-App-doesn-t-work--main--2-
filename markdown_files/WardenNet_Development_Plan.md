@@ -10,11 +10,7 @@
     *   Specify the local SQLite database file path (e.g., `sqlite.db`).
 3.  **Update Database Client**:
     *   Adjust [`src/lib/server/db/index.ts`](src/lib/server/db/index.ts) to connect to SQLite using `drizzle-orm/better-sqlite3` for local development. A separate connection logic would be needed for PostgreSQL in a production environment.
-4.  **Review Schema for SQLite Compatibility**:
-    *   Ensure [`src/lib/server/db/schema.ts`](src/lib/server/db/schema.ts) uses SQLite-compatible data types.
-    *   The `vector` custom type will be stored as `text` in SQLite (e.g., `"[0.1,0.2,0.3]"`) as `pgvector` is PostgreSQL-specific. The actual vector database (Qdrant) will handle the vector operations.
-5.  **Generate New Migrations**: Create new Drizzle migrations specifically for SQLite based on the updated schema.
-6.  **Seed Data (if necessary)**: Adapt [`src/lib/server/db/seed.ts`](src/lib/server/db/seed.ts) to work with SQLite.
+4
 
 ### **Phase 2: Custom Authentication Implementation (SvelteKit Form Actions + bcrypt)**
 

@@ -1,0 +1,97 @@
+# Page snapshot
+
+```yaml
+- navigation:
+  - link " Legal Intelligence CMS":
+    - /url: /
+  - list:
+    - listitem:
+      - link " Dashboard":
+        - /url: /dashboard
+    - listitem:
+      - link " Cases":
+        - /url: /cases
+    - listitem:
+      - link " Evidence":
+        - /url: /evidence
+    - listitem:
+      - link " AI Assistant":
+        - /url: /ai-assistant
+    - listitem:
+      - link " Saved Items":
+        - /url: /saved-items
+    - listitem:
+      - link " Upload":
+        - /url: /upload
+  - list:
+    - listitem:
+      - link " Login":
+        - /url: /login
+    - listitem:
+      - link " Register":
+        - /url: /register
+- main:
+  - heading "500" [level=1]
+  - paragraph: Internal Error
+- contentinfo:
+  - heading "Legal Intelligence CMS" [level=6]
+  - paragraph: Multimodal evidence analysis with AI-powered scene understanding
+  - paragraph: Secure • Local Processing • User-Provided Models
+- navigation:
+  - link " Legal Intelligence CMS":
+    - /url: /
+  - list:
+    - listitem:
+      - link " Dashboard":
+        - /url: /dashboard
+    - listitem:
+      - link " Cases":
+        - /url: /cases
+    - listitem:
+      - link " Evidence":
+        - /url: /evidence
+    - listitem:
+      - link " AI Assistant":
+        - /url: /ai-assistant
+    - listitem:
+      - link " Saved Items":
+        - /url: /saved-items
+    - listitem:
+      - link " Upload":
+        - /url: /upload
+  - list:
+    - listitem:
+      - link " Login":
+        - /url: /login
+    - listitem:
+      - link " Register":
+        - /url: /register
+- main:
+  - img
+  - heading "Prosecutor Case Management" [level=2]
+  - paragraph: Sign in to your account
+  - paragraph: "Demo Credentials:"
+  - strong: "Admin:"
+  - text: admin@example.com / admin123
+  - strong: "User:"
+  - text: user@example.com / user123 Email address
+  - img
+  - textbox "Email address"
+  - text: Password
+  - img
+  - textbox "Password"
+  - link "Forgot password?":
+    - /url: /forgot-password
+  - button "Sign In":
+    - img
+    - text: Sign In
+  - paragraph:
+    - text: Don't have an account?
+    - link "Create one here":
+      - /url: /register
+- contentinfo:
+  - heading "Legal Intelligence CMS" [level=6]
+  - paragraph: Multimodal evidence analysis with AI-powered scene understanding
+  - paragraph: Secure • Local Processing • User-Provided Models
+- text: Login - Prosecutor Case Management
+```

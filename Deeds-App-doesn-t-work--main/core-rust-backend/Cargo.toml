@@ -9,14 +9,13 @@ crate-type = ["lib", "cdylib"]  # lib for Tauri, cdylib for Flutter FFI
 
 [dependencies]
 # Web framework (for HTTP API when needed)
-axum = { version = "0.7", optional = true }
+axum = { version = "0.7", features = ["query"], optional = true }
 tokio = { version = "1.0", features = ["full"] }
 tower = { version = "0.4", optional = true }
-tower-http = { version = "0.5", features = ["cors", "fs"], optional = true }
+tower-http = { version = "0.5", features = ["cors"], optional = true }
 hyper = { version = "1.0", optional = true }
 
-# Database - Use rusqlite for SQLite, PostgreSQL support can be added later
-# sqlx = { version = "0.7", features = ["runtime-tokio", "postgres", "uuid", "chrono", "json"], optional = true, default-features = false }
+# Database - Use rusqlite for SQLite (pure Rust, avoids native compilation)
 rusqlite = { version = "0.31", features = ["bundled", "chrono", "uuid", "serde_json"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
@@ -25,17 +24,24 @@ chrono = { version = "0.4", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
-# Simple auth (avoiding ring crate for Windows compatibility)
+# Simple auth (pure Rust, no native crypto dependencies)
 base64 = "0.22"
-sha2 = "0.10"
+sha2 = "0.10"          # Pure Rust SHA-256 for password hashing
+bcrypt = "0.15"        # Pure Rust bcrypt implementation
+# Using hmac + sha2 instead of jsonwebtoken to avoid ring dependency
+hmac = "0.12"          # HMAC for JWT signing
 lazy_static = "1.4"
+
+# Optional encryption dependencies
+aes-gcm = { version = "0.10", optional = true }       # Pure Rust AES encryption
+chacha20poly1305 = { version = "0.10", optional = true }  # Pure Rust authenticated encryption
 
 # Environment and configuration
 dotenv = "0.15"
 anyhow = "1.0"
 thiserror = "1.0"
 
-# File handling and uploads
+# File handling and uploads (simplified)
 multer = { version = "3.0", optional = true }
 mime = "0.3"
 
@@ -49,26 +55,36 @@ rand = "0.8"
 # FFI support for Flutter
 flutter_rust_bridge = { version = "1.77", optional = true }
 
+# TTS (Text-to-Speech) support
+tts = { version = "0.25", optional = true }             # Pure Rust TTS
+rodio = { version = "0.17", optional = true }           # Audio playback
+
+# AI dependencies (lightweight approach)
+pyo3 = { version = "0.20", optional = true }           # Python integration
+ndarray = { version = "0.15", optional = true }        # N-dimensional arrays
+reqwest = { version = "0.11", features = ["json"], optional = true }  # HTTP client for external APIs
+
+# PostgreSQL support will be added later when needed
+# sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-rustls", "macros"], optional = true }
+
 [features]
-default = ["database"]
+default = ["database", "web-server"]
 # Web server features (for Vercel functions or standalone server)
 web-server = ["axum", "tower", "tower-http", "hyper", "multer"]
-# Core database functionality (SQLite with rusqlite)
+# Core database functionality (using rusqlite)
 database = []
-# PostgreSQL support (for web app) - disabled for now to avoid conflicts
-# postgres = ["sqlx"]
 # FFI for Flutter
 flutter-ffi = ["flutter_rust_bridge"]
-# AI features (can be enabled when ready)
+# AI features (lightweight, pure Rust when possible)
 ai-features = [
-    # "dep:qdrant-client",
-    # "dep:candle-core",
-    # "dep:candle-transformers",
-    # "dep:candle-nn",
-    # "dep:fastembed",
-    # "dep:hf-hub",
-    # "dep:tokenizers"
+    "dep:pyo3",          # Python NLP integration
+    "dep:ndarray",       # Vector operations
+    "dep:reqwest",       # HTTP client for external APIs
 ]
+# TTS features
+tts-features = ["dep:tts", "dep:rodio"]
+# Encryption features
+encryption = ["dep:aes-gcm", "dep:chacha20poly1305"]
 
 # AI dependencies commented out due to Windows compilation issues
 # Will be re-enabled once environment is properly configured

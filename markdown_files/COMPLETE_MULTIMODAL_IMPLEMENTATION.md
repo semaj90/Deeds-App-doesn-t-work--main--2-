@@ -48,7 +48,7 @@ graph TB
 | **Desktop UI** | Tauri + Rust + WebView | Bundles SvelteKit app, local file processing |
 | **Evidence Processing** | OpenCV, YOLOv8, CLIP, ffmpeg | MIT-licensed multimodal analysis |
 | **Scene Summarization** | User-provided GGUF models | Local LLM analysis (Gemma QAT, etc.) |
-| **Data Layer** | SQLite (Drizzle ORM), Qdrant | Caching, embeddings, vector search |
+| **Data Layer** | postgres (Drizzle ORM), Qdrant | Caching, embeddings, vector search |
 | **Frontend** | SvelteKit + SSR | Markdown rendering, interactive UI |
 
 ## 🚀 Quick Start
@@ -89,7 +89,7 @@ npm run tauri dev
 2. **Rust Processing**: OpenCV pre-processes evidence (denoise, extract frames)
 3. **AI Analysis**: MIT-licensed models detect objects, extract text, transcribe audio
 4. **Scene Summary**: User's local LLM generates markdown analysis
-5. **Storage**: Results cached in SQLite + Qdrant for RAG
+5. **Storage**: Results cached in postgres + Qdrant for RAG
 6. **Rendering**: SvelteKit displays interactive analysis
 
 ### Interactive Analysis

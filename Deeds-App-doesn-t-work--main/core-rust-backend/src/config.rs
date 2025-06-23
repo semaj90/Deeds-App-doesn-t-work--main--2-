@@ -16,7 +16,7 @@ impl Config {
         dotenv::dotenv().ok();
 
         let database_url = env::var("DATABASE_URL")
-            .unwrap_or_else(|_| "postgresql://postgres:postgres@localhost:5432/prosecutor_db".to_string());
+            .unwrap_or_else(|_| "sqlite:./prosecutor.db".to_string());
         
         let jwt_secret = env::var("JWT_SECRET")
             .unwrap_or_else(|_| "your_very_secure_jwt_secret_key_here_at_least_32_characters_long_for_security".to_string());

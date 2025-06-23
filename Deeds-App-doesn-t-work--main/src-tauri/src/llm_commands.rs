@@ -7,6 +7,11 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use tokio::process::Command;
+use aes_gcm::{Aes256Gcm, Key, Nonce};
+use aes_gcm::aead::{Aead, NewAead, generic_array::GenericArray};
+use sha2::{Sha256, Digest};
+use rand::{RngCore, rngs::OsRng};
+use std::env;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LLMConfig {
@@ -32,6 +37,32 @@ pub struct LLMResponse {
     pub processing_time_ms: u64,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ModelEncryptionInfo {
+    pub is_encrypted: bool,
+    pub nonce: Option<Vec<u8>>,
+    pub key_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InferenceRequest {
+    pub prompt: String,
+    pub max_tokens: Option<u32>,
+    pub temperature: Option<f32>,
+    pub top_p: Option<f32>,
+    pub context_window: Option<u32>,
+    pub system_prompt: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InferenceResponse {
+    pub text: String,
+    pub tokens_generated: u32,
+    pub tokens_per_second: f32,
+    pub processing_time_ms: u64,
+    pub model_used: String,
+}
+
 // Get the models directory path
 fn get_models_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let app_data_dir = app.path_resolver()
@@ -47,6 +78,71 @@ fn get_models_dir(app: &AppHandle) -> Result<PathBuf, String> {
     }
     
     Ok(models_dir)
+}
+
+// Get the secure keys directory
+fn get_keys_dir() -> Result<PathBuf, String> {
+    let home_dir = env::var("USERPROFILE")
+        .or_else(|_| env::var("HOME"))
+        .map_err(|_| "Cannot determine home directory")?;
+    
+    let keys_dir = PathBuf::from(home_dir).join(".deeds").join("keys");
+    
+    if !keys_dir.exists() {
+        fs::create_dir_all(&keys_dir)
+            .map_err(|e| format!("Failed to create keys directory: {}", e))?;
+    }
+    
+    Ok(keys_dir)
+}
+
+// Generate or load encryption key
+fn get_or_create_model_key() -> Result<[u8; 32], String> {
+    let keys_dir = get_keys_dir()?;
+    let key_path = keys_dir.join("model.key");
+    
+    if key_path.exists() {
+        let key_data = fs::read(&key_path)
+            .map_err(|e| format!("Failed to read encryption key: {}", e))?;
+        
+        if key_data.len() != 32 {
+            return Err("Invalid key size".to_string());
+        }
+        
+        let mut key = [0u8; 32];
+        key.copy_from_slice(&key_data);
+        Ok(key)
+    } else {
+        // Generate new key
+        let mut key = [0u8; 32];
+        OsRng.fill_bytes(&mut key);
+        
+        fs::write(&key_path, &key)
+            .map_err(|e| format!("Failed to save encryption key: {}", e))?;
+        
+        // Set secure permissions (Unix-like systems)
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&key_path)
+                .map_err(|e| format!("Failed to get key file metadata: {}", e))?
+                .permissions();
+            perms.set_mode(0o600); // Read/write for owner only
+            fs::set_permissions(&key_path, perms)
+                .map_err(|e| format!("Failed to set key file permissions: {}", e))?;
+        }
+        
+        Ok(key)
+    }
+}
+
+// Get the active model name from config
+fn get_active_model_name(app_handle: &AppHandle) -> Result<String, String> {
+    let config = get_llm_config(app_handle.clone()).await?;
+    config.get("active_model")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .ok_or("No active model set in config".to_string())
 }
 
 #[command]
@@ -294,6 +390,245 @@ pub async fn check_llm_service_status() -> Result<serde_json::Value, String> {
     }
 }
 
+// Encrypt model file
+#[command]
+pub async fn encrypt_model_file(
+    app_handle: AppHandle,
+    model_path: String,
+) -> Result<String, String> {
+    let models_dir = get_models_dir(&app_handle)?;
+    let source_path = PathBuf::from(&model_path);
+    
+    if !source_path.exists() {
+        return Err("Model file does not exist".to_string());
+    }
+    
+    let key = get_or_create_model_key()?;
+    let cipher = Aes256Gcm::new(Key::from_slice(&key));
+    
+    // Generate random nonce
+    let mut nonce_bytes = [0u8; 12];
+    OsRng.fill_bytes(&mut nonce_bytes);
+    let nonce = Nonce::from_slice(&nonce_bytes);
+    
+    // Read model file
+    let plaintext = fs::read(&source_path)
+        .map_err(|e| format!("Failed to read model file: {}", e))?;
+    
+    // Encrypt
+    let ciphertext = cipher.encrypt(nonce, plaintext.as_ref())
+        .map_err(|e| format!("Encryption failed: {}", e))?;
+    
+    // Save encrypted file
+    let encrypted_filename = format!("{}.encrypted", 
+        source_path.file_name().unwrap().to_string_lossy());
+    let encrypted_path = models_dir.join(&encrypted_filename);
+    
+    fs::write(&encrypted_path, &ciphertext)
+        .map_err(|e| format!("Failed to write encrypted file: {}", e))?;
+    
+    // Save encryption metadata
+    let metadata = ModelEncryptionInfo {
+        is_encrypted: true,
+        nonce: Some(nonce_bytes.to_vec()),
+        key_id: "model.key".to_string(),
+    };
+    
+    let metadata_path = models_dir.join(format!("{}.meta", encrypted_filename));
+    let metadata_json = serde_json::to_string_pretty(&metadata)
+        .map_err(|e| format!("Failed to serialize metadata: {}", e))?;
+    
+    fs::write(&metadata_path, metadata_json)
+        .map_err(|e| format!("Failed to write metadata: {}", e))?;
+    
+    Ok(format!("Model encrypted successfully: {}", encrypted_filename))
+}
+
+// Decrypt and load model for inference
+#[command]
+pub async fn run_llama_inference(
+    app_handle: AppHandle,
+    request: InferenceRequest,
+    model_name: String,
+) -> Result<InferenceResponse, String> {
+    let models_dir = get_models_dir(&app_handle)?;
+    let start_time = std::time::Instant::now();
+    
+    // Check if model is encrypted
+    let encrypted_path = models_dir.join(&format!("{}.encrypted", model_name));
+    let metadata_path = models_dir.join(&format!("{}.encrypted.meta", model_name));
+    
+    let model_data = if encrypted_path.exists() && metadata_path.exists() {
+        // Decrypt model
+        let key = get_or_create_model_key()?;
+        let cipher = Aes256Gcm::new(Key::from_slice(&key));
+        
+        // Read metadata
+        let metadata_content = fs::read_to_string(&metadata_path)
+            .map_err(|e| format!("Failed to read metadata: {}", e))?;
+        let metadata: ModelEncryptionInfo = serde_json::from_str(&metadata_content)
+            .map_err(|e| format!("Failed to parse metadata: {}", e))?;
+        
+        if !metadata.is_encrypted {
+            return Err("Model metadata indicates unencrypted file".to_string());
+        }
+        
+        let nonce_bytes = metadata.nonce.ok_or("Missing nonce in metadata")?;
+        let nonce = Nonce::from_slice(&nonce_bytes);
+        
+        // Read and decrypt
+        let ciphertext = fs::read(&encrypted_path)
+            .map_err(|e| format!("Failed to read encrypted model: {}", e))?;
+        
+        cipher.decrypt(nonce, ciphertext.as_ref())
+            .map_err(|e| format!("Decryption failed: {}", e))?
+    } else {
+        // Try unencrypted model
+        let model_path = models_dir.join(&model_name);
+        if !model_path.exists() {
+            return Err(format!("Model file not found: {}", model_name));
+        }
+        
+        fs::read(&model_path)
+            .map_err(|e| format!("Failed to read model file: {}", e))?
+    };
+    
+    // For now, we'll call an external llama.cpp server
+    // In a full implementation, you could integrate llama.cpp directly via Rust bindings
+    let inference_result = run_external_llama_inference(&request, &model_data).await?;
+    
+    let processing_time = start_time.elapsed().as_millis() as u64;
+    
+    Ok(InferenceResponse {
+        text: inference_result.text,
+        tokens_generated: inference_result.tokens_generated,
+        tokens_per_second: if processing_time > 0 {
+            inference_result.tokens_generated as f32 / (processing_time as f32 / 1000.0)
+        } else {
+            0.0
+        },
+        processing_time_ms: processing_time,
+        model_used: model_name,
+    })
+}
+
+// External inference helper (replace with direct llama.cpp integration if needed)
+async fn run_external_llama_inference(
+    request: &InferenceRequest,
+    _model_data: &[u8], // For direct integration, this would be used to load the model
+) -> Result<InferenceResponse, String> {
+    let client = reqwest::Client::new();
+    
+    // Call local llama.cpp server
+    let response = client
+        .post("http://localhost:8080/completion")
+        .json(&serde_json::json!({
+            "prompt": request.prompt,
+            "n_predict": request.max_tokens.unwrap_or(512),
+            "temperature": request.temperature.unwrap_or(0.7),
+            "top_p": request.top_p.unwrap_or(0.95),
+            "n_ctx": request.context_window.unwrap_or(2048),
+            "system_prompt": request.system_prompt,
+            "stream": false
+        }))
+        .send()
+        .await
+        .map_err(|e| format!("Failed to call inference server: {}", e))?;
+    
+    if !response.status().is_success() {
+        return Err(format!("Inference server error: {}", response.status()));
+    }
+    
+    let result: serde_json::Value = response.json().await
+        .map_err(|e| format!("Failed to parse inference response: {}", e))?;
+    
+    Ok(InferenceResponse {
+        text: result["content"].as_str().unwrap_or("").to_string(),
+        tokens_generated: result["tokens_evaluated"].as_u64().unwrap_or(0) as u32,
+        tokens_per_second: 0.0, // Will be calculated by caller
+        processing_time_ms: 0, // Will be calculated by caller
+        model_used: "loaded".to_string(),
+    })
+}
+
+// Start local llama.cpp server with model
+#[command]
+pub async fn start_llama_server(
+    app_handle: AppHandle,
+    model_name: String,
+    port: Option<u16>,
+) -> Result<String, String> {
+    let models_dir = get_models_dir(&app_handle)?;
+    let port = port.unwrap_or(8080);
+    
+    // Check if model exists (encrypted or unencrypted)
+    let encrypted_path = models_dir.join(&format!("{}.encrypted", model_name));
+    let model_path = models_dir.join(&model_name);
+    
+    let final_model_path = if encrypted_path.exists() {
+        // For encrypted models, we'd need to decrypt to a temporary file
+        // For simplicity, we'll assume unencrypted for server startup
+        return Err("Encrypted models require decryption before server startup. Use run_llama_inference for encrypted models.".to_string());
+    } else if model_path.exists() {
+        model_path
+    } else {
+        return Err(format!("Model not found: {}", model_name));
+    };
+    
+    // Start llama.cpp server
+    let mut cmd = Command::new("llama-server");
+    cmd.args(&[
+        "-m", &final_model_path.to_string_lossy(),
+        "--port", &port.to_string(),
+        "--host", "127.0.0.1",
+        "--n-gpu-layers", "99", // Use GPU if available
+        "--ctx-size", "4096",
+    ]);
+    
+    let child = cmd.spawn()
+        .map_err(|e| format!("Failed to start llama server: {}. Make sure llama.cpp is installed.", e))?;
+    
+    // Store process ID for later management
+    let pid = child.id().unwrap_or(0);
+    
+    Ok(format!("Llama server started on port {} with PID {}", port, pid))
+}
+
+// Health check for inference service
+#[command]
+pub async fn check_inference_health() -> Result<serde_json::Value, String> {
+    let client = reqwest::Client::new();
+    
+    match client.get("http://localhost:8080/health").send().await {
+        Ok(response) if response.status().is_success() => {
+            Ok(serde_json::json!({
+                "status": "healthy",
+                "service": "llama.cpp",
+                "port": 8080,
+                "available": true
+            }))
+        }
+        Ok(response) => {
+            Ok(serde_json::json!({
+                "status": "error",
+                "service": "llama.cpp",
+                "port": 8080,
+                "available": false,
+                "error": format!("HTTP {}", response.status())
+            }))
+        }
+        Err(e) => {
+            Ok(serde_json::json!({
+                "status": "offline",
+                "service": "llama.cpp",
+                "port": 8080,
+                "available": false,
+                "error": format!("Connection failed: {}", e)
+            }))
+        }
+    }
+}
+
 // Register all commands with your Tauri app
 pub fn register_llm_commands<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
     tauri::plugin::Builder::new("llm")
@@ -304,7 +639,11 @@ pub fn register_llm_commands<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<
             generate_with_local_llm,
             get_llm_config,
             update_llm_config,
-            check_llm_service_status
+            check_llm_service_status,
+            encrypt_model_file,
+            run_llama_inference,
+            start_llama_server,
+            check_inference_health
         ])
         .build()
 }

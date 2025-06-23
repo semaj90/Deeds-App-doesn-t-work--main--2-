@@ -98,8 +98,6 @@
   // Layout container reference
   let layoutContainer: HTMLElement;
 
-  const dispatch = createEventDispatcher();
-
   onMount(() => {
     if (layoutData) {
       loadLayout(layoutData);
@@ -509,9 +507,10 @@
         <Card title="Properties" padding="md">
           <div class="property-form">
             <div class="form-group">
-              <label>Name</label>
-              <input 
-                type="text" 
+              <label for="itemName">Name</label>
+              <input
+                id="itemName"
+                type="text"
                 class="form-input"
                 bind:value={selectedItem.name}
                 on:input={() => updateItemProperty(selectedItem.id, 'name', selectedItem.name)}
@@ -519,10 +518,11 @@
             </div>
 
             <div class="form-group">
-              <label>Width (Grid Units)</label>
-              <input 
-                type="number" 
-                min="1" 
+              <label for="itemWidth">Width (Grid Units)</label>
+              <input
+                id="itemWidth"
+                type="number"
+                min="1"
                 max={gridSize}
                 class="form-input"
                 bind:value={selectedItem.size.width}
@@ -531,10 +531,11 @@
             </div>
 
             <div class="form-group">
-              <label>Height (Grid Units)</label>
-              <input 
-                type="number" 
-                min="1" 
+              <label for="itemHeight">Height (Grid Units)</label>
+              <input
+                id="itemHeight"
+                type="number"
+                min="1"
                 max="10"
                 class="form-input"
                 bind:value={selectedItem.size.height}
@@ -545,18 +546,20 @@
             <!-- Type-specific properties -->
             {#if selectedItem.type === 'text'}
               <div class="form-group">
-                <label>Content</label>
-                <textarea 
+                <label for="itemContent">Content</label>
+                <textarea
+                  id="itemContent"
                   class="form-textarea"
                   bind:value={selectedItem.props.content}
                   on:input={() => updateItemProperty(selectedItem.id, 'props', selectedItem.props)}
                 ></textarea>
               </div>
               <div class="form-group">
-                <label>Font Size</label>
-                <input 
-                  type="number" 
-                  min="8" 
+                <label for="itemFontSize">Font Size</label>
+                <input
+                  id="itemFontSize"
+                  type="number"
+                  min="8"
                   max="72"
                   class="form-input"
                   bind:value={selectedItem.props.fontSize}
@@ -567,8 +570,9 @@
 
             {#if selectedItem.type === 'notes'}
               <div class="form-group">
-                <label>Color</label>
-                <input 
+                <label for="itemColor">Color</label>
+                <input
+                  id="itemColor"
                   type="color"
                   class="form-input"
                   bind:value={selectedItem.props.color}

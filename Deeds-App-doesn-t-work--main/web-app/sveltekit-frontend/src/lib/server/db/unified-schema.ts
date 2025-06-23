@@ -292,8 +292,7 @@ export const canvasStates = pgTable('canvas_states', {
 // === RELATIONSHIPS ===
 
 export const usersRelations = relations(users, ({ one, many }) => ({
-  profile: one(profiles),
-  sessions: many(sessions),
+  // sessions: many(sessions), // sessions table not defined in this schema
   casesAsLead: many(cases, { relationName: 'leadProsecutor' }),
   casesCreated: many(cases, { relationName: 'createdBy' }),
   evidenceUploaded: many(evidence),
@@ -305,19 +304,15 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   reports: many(reports),
 }));
 
-export const profilesRelations = relations(profiles, ({ one }) => ({
-  user: one(users, {
-    fields: [profiles.userId],
-    references: [users.id],
-  }),
-}));
 
-export const sessionsRelations = relations(sessions, ({ one }) => ({
-  user: one(users, {
-    fields: [sessions.userId],
-    references: [users.id],
-  }),
-}));
+
+// Sessions relations commented out - sessions table not defined in this schema
+// export const sessionsRelations = relations(sessions, ({ one }) => ({
+//   user: one(users, {
+//     fields: [sessions.userId],
+//     references: [users.id],
+//   }),
+// }));
 
 export const casesRelations = relations(cases, ({ one, many }) => ({
   leadProsecutor: one(users, {

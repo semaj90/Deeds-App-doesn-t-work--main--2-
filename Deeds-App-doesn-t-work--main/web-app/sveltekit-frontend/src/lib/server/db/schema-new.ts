@@ -652,6 +652,90 @@ export const caseEvidenceSummaries = pgTable('case_evidence_summaries', {
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
+// === PERSONALIZED RAG SYSTEM ===
+
+// Table to store user-saved LLM outputs for personalized retrieval
+export const savedItems = pgTable('saved_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 255 }).notNull(),
+  content: text('content').notNull(), // The synthesized LLM answer/content
+  contentType: varchar('content_type', { length: 50 }).default('llm_answer').notNull(), // 'llm_answer', 'manual_note', 'case_insight'
+  originalQuery: text('original_query'), // The query that generated this content
+  tags: jsonb('tags').default([]).notNull(), // User-assigned tags
+  embedding: jsonb('embedding'), // Vector embedding for semantic search
+  userRating: integer('user_rating'), // 1-5 rating by user
+  userNotes: text('user_notes'), // User's additional notes/annotations
+  isPrivate: boolean('is_private').default(false).notNull(), // Whether this is private to the user
+  usage_count: integer('usage_count').default(0).notNull(), // Track how often this is retrieved/referenced
+  lastUsedAt: timestamp('last_used_at', { mode: 'date' }),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
+// Table to track source chunks that contributed to saved items
+export const savedItemSourceChunks = pgTable('saved_item_source_chunks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  savedItemId: uuid('saved_item_id').notNull().references(() => savedItems.id, { onDelete: 'cascade' }),
+  sourceType: varchar('source_type', { length: 50 }).notNull(), // 'case', 'evidence', 'statute', 'criminal', 'external'
+  sourceId: uuid('source_id'), // ID of the source entity (case.id, evidence.id, etc.)
+  chunkText: text('chunk_text').notNull(), // The specific text chunk that contributed
+  chunkEmbedding: jsonb('chunk_embedding'), // Embedding of this specific chunk
+  relevanceScore: decimal('relevance_score', { precision: 5, scale: 4 }), // 0.0-1.0 relevance score
+  position: integer('position'), // Position/order in the original source
+  metadata: jsonb('metadata').default({}).notNull(), // Additional metadata (page numbers, timestamps, etc.)
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
+// Table to store user feedback on LLM outputs for continuous improvement
+export const userFeedback = pgTable('user_feedback', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  sessionId: text('session_id'), // Track feedback within conversation sessions
+  query: text('query').notNull(), // The original query
+  llmResponse: text('llm_response').notNull(), // The LLM's response
+  userRating: integer('user_rating').notNull(), // 1-5 rating
+  feedbackType: varchar('feedback_type', { length: 50 }).notNull(), // 'helpful', 'inaccurate', 'incomplete', 'irrelevant'
+  userComments: text('user_comments'), // Detailed feedback from user
+  improvedResponse: text('improved_response'), // User's correction/improvement
+  context: jsonb('context').default({}).notNull(), // Context data (retrieved chunks, model used, etc.)
+  wasFixed: boolean('was_fixed').default(false).notNull(), // Whether this feedback led to improvements
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
+// Table to store user's personalized search preferences and filters
+export const userSearchPreferences = pgTable('user_search_preferences', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  preferredSources: jsonb('preferred_sources').default([]).notNull(), // ['cases', 'statutes', 'evidence', 'saved_items']
+  excludedSources: jsonb('excluded_sources').default([]).notNull(),
+  preferredTimeRange: jsonb('preferred_time_range').default({}).notNull(), // Date range preferences
+  customPrompts: jsonb('custom_prompts').default({}).notNull(), // User's custom prompt templates
+  searchHistory: jsonb('search_history').default([]).notNull(), // Recent search queries (limited)
+  frequentTerms: jsonb('frequent_terms').default({}).notNull(), // Frequently used terms and their weights
+  savedQueries: jsonb('saved_queries').default([]).notNull(), // User's saved/bookmarked queries
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
+// Table to store global knowledge base for cross-user insights (anonymized)
+export const knowledgeBase = pgTable('knowledge_base', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  title: varchar('title', { length: 255 }).notNull(),
+  content: text('content').notNull(),
+  contentType: varchar('content_type', { length: 50 }).notNull(), // 'legal_principle', 'case_pattern', 'best_practice'
+  category: varchar('category', { length: 100 }), // 'criminal_law', 'civil_procedure', 'evidence_handling'
+  tags: jsonb('tags').default([]).notNull(),
+  embedding: jsonb('embedding'),
+  confidenceScore: decimal('confidence_score', { precision: 5, scale: 4 }), // Quality/confidence score
+  sourceCount: integer('source_count').default(1).notNull(), // How many cases/users contributed to this
+  verificationStatus: varchar('verification_status', { length: 50 }).default('pending').notNull(), // 'verified', 'pending', 'disputed'
+  isPublic: boolean('is_public').default(true).notNull(),
+  contributorIds: jsonb('contributor_ids').default([]).notNull(), // Anonymized list of contributing users
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
 // === TYPE EXPORTS FOR COMPATIBILITY ===
 
 // Import the proper InferSelectModel type from drizzle-orm
@@ -706,6 +790,21 @@ export type NewEvidenceAnchorPoint = InferInsertModel<typeof evidenceAnchorPoint
 export type CaseEvidenceSummary = InferSelectModel<typeof caseEvidenceSummaries>;
 export type NewCaseEvidenceSummary = InferInsertModel<typeof caseEvidenceSummaries>;
 
+export type SavedItem = InferSelectModel<typeof savedItems>;
+export type NewSavedItem = InferInsertModel<typeof savedItems>;
+
+export type SavedItemSourceChunk = InferSelectModel<typeof savedItemSourceChunks>;
+export type NewSavedItemSourceChunk = InferInsertModel<typeof savedItemSourceChunks>;
+
+export type UserFeedback = InferSelectModel<typeof userFeedback>;
+export type NewUserFeedback = InferInsertModel<typeof userFeedback>;
+
+export type UserSearchPreferences = InferSelectModel<typeof userSearchPreferences>;
+export type NewUserSearchPreferences = InferInsertModel<typeof userSearchPreferences>;
+
+export type KnowledgeBase = InferSelectModel<typeof knowledgeBase>;
+export type NewKnowledgeBase = InferInsertModel<typeof knowledgeBase>;
+
 // === EXPORT DATABASE SCHEMA ===
 
 // Export the database schema with relations for db.query
@@ -733,5 +832,10 @@ export const schema = {
   caseEvidenceSummaries,
   contentEmbeddings,
   lawParagraphs,
-  caseCriminals
+  caseCriminals,
+  savedItems,
+  savedItemSourceChunks,
+  userFeedback,
+  userSearchPreferences,
+  knowledgeBase
 };

@@ -108,16 +108,26 @@
           <a class="nav-link" href="/cases" class:active={$page.url.pathname.startsWith('/cases')}>
             <i class="bi bi-folder2-open me-1"></i>Cases
           </a>
-        </li>
-        <li class="nav-item">
+        </li>        <li class="nav-item">
           <a class="nav-link" href="/evidence" class:active={$page.url.pathname.startsWith('/evidence')}>
             <i class="bi bi-camera-video me-1"></i>Evidence
           </a>
         </li>
         <li class="nav-item">
+          <a class="nav-link" href="/ai-assistant" class:active={$page.url.pathname.startsWith('/ai-assistant')}>
+            <i class="bi bi-robot me-1"></i>AI Assistant
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/saved-items" class:active={$page.url.pathname === '/saved-items'}>
+            <i class="bi bi-bookmarks me-1"></i>Saved Items
+          </a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" href="/upload" class:active={$page.url.pathname === '/upload'}>
             <i class="bi bi-cloud-upload me-1"></i>Upload
-          </a>        </li>      </ul>
+          </a>
+        </li></ul>
       
       <ul class="navbar-nav">
         {#if user}

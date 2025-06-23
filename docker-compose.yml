@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: prosecutor_db
+      POSTGRES_DB: prosecutor_app
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -32,16 +32,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  drizzle-studio:
-    image: ghcr.io/drizzle-team/drizzle-studio:latest
-    ports:
-      - 8899:8899
-    environment:
-      DATABASE_URL: "postgres://postgres:postgres@db:5432/prosecutor_db"
-    depends_on:
-      db:
-        condition: service_healthy
 
 volumes:
   pgdata:

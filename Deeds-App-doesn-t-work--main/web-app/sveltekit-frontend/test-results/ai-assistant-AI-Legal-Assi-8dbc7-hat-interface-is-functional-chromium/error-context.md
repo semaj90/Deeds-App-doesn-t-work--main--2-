@@ -1,0 +1,47 @@
+# Page snapshot
+
+```yaml
+- navigation:
+  - link " Legal Intelligence CMS":
+    - /url: /
+  - list:
+    - listitem:
+      - link " Dashboard":
+        - /url: /dashboard
+    - listitem:
+      - link " Cases":
+        - /url: /cases
+    - listitem:
+      - link " Evidence":
+        - /url: /evidence
+    - listitem:
+      - link " AI Assistant":
+        - /url: /ai-assistant
+    - listitem:
+      - link " Saved Items":
+        - /url: /saved-items
+    - listitem:
+      - link " Upload":
+        - /url: /upload
+  - list:
+    - listitem:
+      - link " Login":
+        - /url: /login
+    - listitem:
+      - link " Register":
+        - /url: /register
+- main:
+  - heading "500" [level=1]
+  - paragraph: Internal Error
+- contentinfo:
+  - heading "Legal Intelligence CMS" [level=6]
+  - paragraph: Multimodal evidence analysis with AI-powered scene understanding
+  - paragraph: Secure • Local Processing • User-Provided Models
+- text: "[plugin:vite-plugin-svelte] src/routes/ai-assistant/+page.svelte:192:0 A component can have a single top-level `<script>` element and/or a single top-level `<script module>` element https://svelte.dev/e/script_duplicate src/routes/ai-assistant/+page.svelte:192:0 190 | 191 | 192 | <script lang=\"ts\"> ^ 193 | import LLMAssistant from '$lib/components/LLMAssistant.svelte'; 194 | </script> Click outside, press Esc key, or fix the code to dismiss. You can also disable this overlay by setting"
+- code: server.hmr.overlay
+- text: to
+- code: "false"
+- text: in
+- code: vite.config.ts
+- text: .
+```

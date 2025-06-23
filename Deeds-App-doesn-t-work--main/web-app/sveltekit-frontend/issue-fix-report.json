@@ -1,0 +1,51 @@
+{
+  "timestamp": "2025-06-23T02:37:31.057Z",
+  "summary": {
+    "issuesFound": 4,
+    "issuesFixed": 0,
+    "successRate": "0.0%"
+  },
+  "results": [
+    {
+      "check": "Package.json Dependencies",
+      "status": "OK"
+    },
+    {
+      "check": "Environment Configuration",
+      "status": "NEEDS_MANUAL_FIX",
+      "issue": "Missing env vars: POSTGRES_"
+    },
+    {
+      "check": "Health API Endpoint",
+      "status": "OK"
+    },
+    {
+      "check": "Settings Component",
+      "status": "FAILED_TO_FIX",
+      "issue": "Settings component missing",
+      "error": "Command failed: mkdir -p src/lib/components\nThe syntax of the command is incorrect.\r\n"
+    },
+    {
+      "check": "Required Routes",
+      "status": "OK"
+    },
+    {
+      "check": "TypeScript Configuration",
+      "status": "NEEDS_MANUAL_FIX",
+      "issue": "TypeScript compilation errors detected"
+    },
+    {
+      "check": "Drizzle Configuration",
+      "status": "OK"
+    },
+    {
+      "check": "Build Process",
+      "status": "NEEDS_MANUAL_FIX",
+      "issue": "Build process failed"
+    },
+    {
+      "check": "Test Configuration",
+      "status": "OK"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { 
+  /* import { 
   sqliteTable,
   text, 
   integer,
@@ -225,3 +225,9 @@ export type Case = typeof cases.$inferSelect;
 export type Evidence = typeof evidence.$inferSelect;
 export type Statute = typeof statutes.$inferSelect;
 export type CaseActivity = typeof caseActivities.$inferSelect;
+/ / Export relations types
+export type UserRelations = typeof usersRelations.$inferSelect;
+export type SessionRelations = typeof sessionsRelations.$inferSelect;
+export type CaseRelations = typeof casesRelations.$inferSelect;
+export type CriminalRelations = typeof criminalsRelations.$inferSelect;
+export type EvidenceRelations = typeof evidenceRelations.$inferSelect;    

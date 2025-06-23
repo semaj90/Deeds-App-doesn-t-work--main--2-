@@ -1,0 +1,11 @@
+{
+	"/": [],
+	"/ai-assistant": [],
+	"/api/cases/suggest-title": [
+		"src/routes/api/cases/suggest-title/+server.ts"
+	],
+	"/api/llm/chat": [
+		"src/routes/api/llm/chat/+server.ts"
+	],
+	"/cases/[id]": []
+}

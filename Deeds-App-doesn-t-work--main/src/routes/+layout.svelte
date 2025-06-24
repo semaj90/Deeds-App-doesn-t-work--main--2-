@@ -10,8 +10,10 @@
 
   export let data: PageData;
 
-  $: user = $page.data.session?.user;
+  // Use reactive statement to get user from data, fallback to $page store if needed
+  $: user = data?.session?.user ?? $page.data.session?.user ?? null;
 
+  // Only update userSessionStore on the client and when user changes
   $: if (browser) {
     if (user) {
       userSessionStore.set({
@@ -30,7 +32,8 @@
     }
   }
 
-  if (typeof window !== 'undefined') {
+  // Defensive: only attach window.onerror in browser
+  if (browser && typeof window !== 'undefined') {
     window.onerror = function(message, source, lineno, colno, error) {
       console.error('Client-side error caught by window.onerror:');
       console.error('Message:', message);

@@ -48,179 +48,115 @@
       // Navigate to AI search results page
       window.location.href = `/ai/search?q=${encodeURIComponent(query)}`;
     } catch (error) {
-      console.error('AI search error:', error);
+      console.error('AI search failed:', error);
     }
   }
 </script>
 
 <svelte:head>
-  <title>Legal Intelligence CMS - Home</title>
+  <title>Prosecutor Case Management System</title>
+  <meta name="description" content="Advanced legal case management with AI-powered document analysis" />
 </svelte:head>
 
-<div class="fade-in">
-  <!-- Hero Section -->
-  <div class="row mb-5">
-    <div class="col-lg-8 mx-auto text-center">      <h1 class="display-4 fw-bold text-dark mb-4">
-        <i class="bi bi-shield-check text-primary me-3"></i>
-        Legal Intelligence CMS
-      </h1>
-        <!-- AI Search Bar -->
-      <div class="row mb-4">
-        <div class="col-lg-10 mx-auto">
-          <div class="search-container">
-            <div class="input-group input-group-lg shadow-lg">
-              <input 
-                type="text" 
-                class="form-control border-0 search-input" 
-                placeholder="What legal case are you working on today? Upload evidence, analyze scenes, extract insights..."
-                id="aiSearchInput"
-              />
-              <button class="btn btn-primary px-4 search-btn" type="button" id="aiSearchBtn">
-                <i class="bi bi-search me-2"></i>
-                Ask AI
-              </button>
-            </div>
-            <div class="text-center mt-3">
-              <small class="text-muted">
-                <i class="bi bi-lightbulb me-1"></i>
-                Try: "Is this legal or illegal and why?" • "Generate reports" • "Analyze evidence"
-              </small>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="mb-4" style="min-height: 60px;">
+<!-- Hero Section -->
+<section class="hero-section min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 text-white flex items-center justify-center">
+  <div class="container mx-auto px-6 text-center">
+    <div class="max-w-4xl mx-auto">
+      <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
         <Typewriter 
-          text="What legal case are you working on today? Upload evidence, analyze scenes, extract insights..."
-          speed={50}
+          text="Advanced Legal Case Management"
+          speed={100}
+          delay={500}
         />
+      </h1>
+      
+      <p class="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto leading-relaxed">
+        Who, what, why, how - We help you find the answers.
+      </p>
+      
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+        <a href="/cases" class="bg-yellow-500 hover:bg-yellow-600 text-black px-8 py-4 rounded-lg font-semibold transition-colors duration-200 text-lg shadow-lg">
+          View Cases
+        </a>
+        <a href="/upload" class="bg-transparent border-2 border-white hover:bg-white hover:text-gray-900 px-8 py-4 rounded-lg font-semibold transition-colors duration-200 text-lg">
+          Upload Evidence
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Quick Actions Section -->
+<section class="py-16 bg-gray-50">
+  <div class="container mx-auto px-6">
+    <h2 class="text-4xl font-bold text-center mb-12 text-gray-800">Quick Actions</h2>
+    
+    <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      <!-- AI Search -->
+      <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow duration-300">
+        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-semibold mb-4 text-gray-900">AI-Powered Search</h3>
+        <p class="text-gray-600 mb-6">
+          Instantly search through case files, evidence, and legal precedents with our intelligent AI.
+        </p>
+        <a href="/ai" class="text-blue-600 hover:text-blue-800 font-semibold">Learn More &rarr;</a>
       </div>
       
-      <div class="d-flex gap-3 justify-content-center flex-wrap">
-        <a href="/cases/new" class="btn btn-primary btn-lg">
-          <i class="bi bi-plus-circle me-2"></i>New Case
-        </a>
-        <a href="/upload" class="btn btn-outline-primary btn-lg">
-          <i class="bi bi-cloud-upload me-2"></i>Upload Evidence
-        </a>
-        <a href="/dashboard" class="btn btn-outline-secondary btn-lg">
-          <i class="bi bi-speedometer2 me-2"></i>Dashboard
-        </a>
+      <!-- Evidence Upload -->
+      <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow duration-300">
+        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-semibold mb-4 text-gray-900">Upload Evidence</h3>
+        <p class="text-gray-600 mb-6">
+          Securely upload and manage all your case evidence in one centralized location.
+        </p>
+        <a href="/evidence" class="text-green-600 hover:text-green-800 font-semibold">Upload Now &rarr;</a>
+      </div>
+      
+      <!-- Case Management -->
+      <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow duration-300">
+        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-semibold mb-4 text-gray-900">Manage Cases</h3>
+        <p class="text-gray-600 mb-6">
+          Organize, track, and manage all your legal cases with our intuitive interface.
+        </p>
+        <a href="/cases" class="text-purple-600 hover:text-purple-800 font-semibold">View Cases &rarr;</a>
       </div>
     </div>
   </div>
-  
-  <!-- Quick Upload Section -->
-  <div class="row mb-5">
-    <div class="col-lg-10 mx-auto">
-      <div class="card border-0 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title text-center mb-4">
-            <i class="bi bi-lightning me-2"></i>Quick Evidence Upload
-          </h5>
-          <UploadArea onUpload={handleQuickUpload} />
-          <div class="text-center mt-3">
-            <small class="text-muted">
-              Supports: PDF, Images (JPG, PNG), Video (MP4, AVI), Audio (MP3, WAV)
-            </small>
+</section>
+
+<!-- Recent Cases Section -->
+<section class="py-16 bg-white">
+  <div class="container mx-auto px-6">
+    <h2 class="text-4xl font-bold text-center mb-12 text-gray-800">Recent Cases</h2>
+    
+    {#if recentCases.length > 0}
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {#each recentCases as caseItem}
+          <div class="bg-gray-50 rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
+            <h3 class="text-xl font-bold mb-2 text-gray-900">{caseItem.title}</h3>
+            <p class="text-gray-600 mb-4">{caseItem.description}</p>
+            <a href="/cases/{caseItem.id}" class="text-blue-600 hover:text-blue-800 font-semibold">View Details &rarr;</a>
           </div>
-        </div>
+        {/each}
       </div>
-    </div>
+    {:else}
+      <p class="text-center text-gray-500">No recent cases found.</p>
+    {/if}
   </div>
-    <!-- Recent Cases -->
-  <div class="row">
-    <div class="col-lg-12">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4>
-          <i class="bi bi-clock-history me-2"></i>Recent Cases
-        </h4>
-        <a href="/cases" class="btn btn-outline-primary">
-          View All <i class="bi bi-arrow-right ms-1"></i>
-        </a>
-      </div>
-        {#if recentCases.length > 0}
-        <div class="row g-4">
-          {#each recentCases.slice(0, 6) as caseItem}
-            <div class="col-md-6 col-lg-4">
-              <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                  <div class="d-flex justify-content-between align-items-start mb-3">
-                    <h6 class="card-title mb-0">{caseItem.title}</h6>
-                    <span class="badge bg-{caseItem.status === 'active' ? 'success' : caseItem.status === 'pending' ? 'warning' : 'secondary'}">
-                      {caseItem.status}
-                    </span>
-                  </div>
-                  
-                  <p class="card-text text-muted small mb-3">
-                    {caseItem.description?.substring(0, 100)}...
-                  </p>
-                  
-                  <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted">
-                      <i class="bi bi-calendar me-1"></i>
-                      {new Date(caseItem.created_at).toLocaleDateString()}
-                    </small>
-                    <a href="/cases/{caseItem.id}" class="btn btn-sm btn-outline-primary">
-                      View <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          {/each}
-        </div>
-      {:else}
-        <div class="text-center py-5">
-          <i class="bi bi-folder2-open display-1 text-muted mb-3"></i>
-          <h5 class="text-muted">No cases yet</h5>
-          <p class="text-muted">Create your first case to get started with evidence analysis</p>
-          <a href="/cases/new" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-2"></i>Create First Case
-          </a>
-        </div>
-      {/if}
-    </div>
-  </div>
-  
-  <!-- Features Overview -->
-  <div class="row mt-5 pt-5 border-top">
-    <div class="col-lg-12">
-      <h4 class="text-center mb-5">
-        <i class="bi bi-stars me-2"></i>AI-Powered Features
-      </h4>
-      <div class="row g-4">
-        <div class="col-md-4">
-          <div class="text-center">
-            <i class="bi bi-eye display-5 text-primary mb-3"></i>
-            <h5>Computer Vision</h5>
-            <p class="text-muted">
-              Object detection, OCR, and scene analysis using YOLO and advanced AI models
-            </p>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="text-center">
-            <i class="bi bi-soundwave display-5 text-success mb-3"></i>
-            <h5>Audio Analysis</h5>
-            <p class="text-muted">
-              Speech transcription, speaker identification, and audio timeline analysis
-            </p>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="text-center">
-            <i class="bi bi-chat-dots display-5 text-warning mb-3"></i>
-            <h5>NLP & RAG</h5>
-            <p class="text-muted">
-              Natural language processing with vector search and retrieval augmented generation
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>  </div>
-</div>
+</section>
 
 <style>
   .search-container {

@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-static'; // Use static adapter for desktop/Tauri deployment
+import adapter from '@sveltejs/adapter-auto'; // Use auto adapter for development and dynamic routes
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
@@ -10,13 +10,7 @@ const config = {
 	}),
 
 	kit: {
-		adapter: adapter({
-			pages: 'build',
-			assets: 'build',
-			fallback: undefined,
-			precompress: false,
-			strict: true
-		})
+		adapter: adapter()
 	}
 };
 

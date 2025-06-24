@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { db } from '$lib/server/db/shared-db';
+import { db } from '$lib/server/db';
 import { cases, crimes, criminals, evidence } from '$lib/server/db/schema';
 import { eq, count, and } from 'drizzle-orm';
 
@@ -41,13 +41,13 @@ export const load: PageServerLoad = async ({ locals }) => {
       db.select({ count: count() }).from(evidence),
       
       // Felony cases
-      db.select({ count: count() }).from(crimes).where(eq(crimes.severity, 'felony')),
+      db.select({ count: count() }).from(crimes).where(eq(crimes.chargeLevel, 'felony')),
       
       // Misdemeanor cases
-      db.select({ count: count() }).from(crimes).where(eq(crimes.severity, 'misdemeanor')),
+      db.select({ count: count() }).from(crimes).where(eq(crimes.chargeLevel, 'misdemeanor')),
       
       // Citation cases
-      db.select({ count: count() }).from(crimes).where(eq(crimes.severity, 'citation'))
+      db.select({ count: count() }).from(crimes).where(eq(crimes.chargeLevel, 'citation'))
     ]);
 
     const userStats = {

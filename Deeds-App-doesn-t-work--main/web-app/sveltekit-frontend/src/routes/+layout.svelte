@@ -1,183 +1,86 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { page } from '$app/stores';
-  import { browser } from '$app/environment';
-  import 'bootstrap/dist/css/bootstrap.min.css';
+  import { goto } from '$app/navigation';
+  import Settings from '$lib/components/Settings.svelte';
+  import { onMount } from 'svelte';
 
-  let aiSearchInput: string = '';
-  let aiSearchVisible = false;
+  let user = $page.data?.user;
+  let showSettings = false;
 
-  onMount(async () => {
-    if (browser) {
-      // Import Bootstrap JS only in the browser
-      const { default: bootstrap } = await import('bootstrap');
-      
-      // Initialize all Bootstrap components that require JS, like dropdowns
-      const dropdownElementList = Array.from(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
-      dropdownElementList.forEach(dropdownToggleEl => {
-        new bootstrap.Dropdown(dropdownToggleEl);
-      });
+  // Settings state
+  let settings = {
+    theme: 'light',
+    language: 'en',
+    ttsEngine: 'browser',
+    voiceLanguage: 'en-US',
+    enableSuggestions: true,
+    enableMasking: false,
+    enableAutoSave: true,
+    maxHistoryItems: 50,
+    enableNotifications: true,
+    fontFamily: 'Inter',
+    fontSize: 'medium'
+  };
 
-      // Setup AI search functionality
-      const aiSearchBtn = document.getElementById('aiSearchBtn');
-      const aiSearchInputEl = document.getElementById('aiSearchInput') as HTMLInputElement;
-      
-      if (aiSearchBtn && aiSearchInputEl) {
-        aiSearchBtn.addEventListener('click', () => handleAiSearch(aiSearchInputEl.value));
-        aiSearchInputEl.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') {
-            handleAiSearch(aiSearchInputEl.value);
-          }
-        });
-
-        // Add example prompts on focus
-        aiSearchInputEl.addEventListener('focus', () => {
-          aiSearchVisible = true;
-        });
-      }
-    }
-  });
-
-  async function handleAiSearch(query: string) {
-    if (!query.trim()) return;
-    
-    try {
-      // Show loading state
-      const btn = document.getElementById('aiSearchBtn');
-      if (btn) {
-        btn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
-      }
-
-      // Call AI search API
-      const response = await fetch('/api/ai/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
-      });
-
-      const result = await response.json();
-      
-      // Show result in modal or navigate to results page
-      if (result.success) {
-        // Navigate to AI search results page with the response
-        window.location.href = `/ai/search?q=${encodeURIComponent(query)}&r=${encodeURIComponent(JSON.stringify(result.data))}`;
-      } else {
-        alert('AI search failed: ' + result.error);
-      }
-    } catch (error) {
-      console.error('AI search error:', error);
-      alert('AI search service unavailable');
-    } finally {
-      // Reset button
-      const btn = document.getElementById('aiSearchBtn');
-      if (btn) {
-        btn.innerHTML = '<i class="bi bi-search"></i>';
-      }
-    }
+  function handleSettingsClose() {
+    showSettings = false;
   }
 
-  $: user = $page.data.user || $page.data.session?.user;
-  $: avatar = (user as any)?.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user?.name || user?.email || 'U') + '&background=0D8ABC&color=fff';
+  function handleSettingsSave(event: CustomEvent<any>) {
+    settings = { ...event.detail };
+    // Apply theme immediately
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', settings.theme);
+    }
+    showSettings = false;
+  }
+
+  onMount(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', settings.theme);
+    }
+  });
 </script>
 
-<svelte:head>
-  <title>Legal Intelligence CMS</title>
-  <meta name="description" content="Multimodal Legal Scene Understanding with AI" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-</svelte:head>
-
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-  <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="/">
-      <i class="bi bi-shield-check me-2"></i>
-      Legal Intelligence CMS
-    </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="/dashboard" class:active={$page.url.pathname === '/dashboard'}>
-            <i class="bi bi-speedometer2 me-1"></i>Dashboard
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/cases" class:active={$page.url.pathname.startsWith('/cases')}>
-            <i class="bi bi-folder2-open me-1"></i>Cases
-          </a>
-        </li>        <li class="nav-item">
-          <a class="nav-link" href="/evidence" class:active={$page.url.pathname.startsWith('/evidence')}>
-            <i class="bi bi-camera-video me-1"></i>Evidence
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/ai-assistant" class:active={$page.url.pathname.startsWith('/ai-assistant')}>
-            <i class="bi bi-robot me-1"></i>AI Assistant
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/saved-items" class:active={$page.url.pathname === '/saved-items'}>
-            <i class="bi bi-bookmarks me-1"></i>Saved Items
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/upload" class:active={$page.url.pathname === '/upload'}>
-            <i class="bi bi-cloud-upload me-1"></i>Upload
-          </a>
-        </li></ul>
-      
-      <ul class="navbar-nav">
-        {#if user}
-          <li class="nav-item dropdown d-flex align-items-center">
-            <span class="me-2 text-light">Hello, {user.name || user.email}</span>            <button class="nav-link dropdown-toggle d-flex align-items-center btn btn-link border-0 p-0" data-bs-toggle="dropdown" aria-label="User menu">
-              <img src={avatar} alt="User avatar" class="rounded-circle me-2" style="width:32px;height:32px;object-fit:cover;" />
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="/profile"><i class="bi bi-person me-2"></i>Profile & Stats</a></li>
-              <li><a class="dropdown-item" href="/settings"><i class="bi bi-gear me-2"></i>Settings</a></li>
-              <li><hr class="dropdown-divider" /></li>
-              <li><a class="dropdown-item" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
-            </ul>
-          </li>
-        {:else}
-          <li class="nav-item me-2">
-            <a class="btn btn-outline-light" href="/login">
-              <i class="bi bi-box-arrow-in-right me-1"></i>Login
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="btn btn-light" href="/register">
-              <i class="bi bi-person-plus me-1"></i>Register
-            </a>
-          </li>
-        {/if}
-      </ul>
+<nav class="navbar bg-base-100 shadow mb-4">
+  <div class="container mx-auto flex justify-between items-center py-2 px-4">
+    <div class="flex items-center gap-4">
+      <a href="/" class="font-bold text-lg">WardenNet</a>
+      <a href="/cases">Cases</a>
+      <a href="/evidence">Evidence</a>
+      <a href="/law">Law</a>
+      <a href="/ai">AI Prompt</a>
+      <a href="/ai-assistant">AI Assistant</a>
+    </div>
+    <div class="flex items-center gap-2">
+      <button 
+        class="btn btn-ghost btn-sm" 
+        on:click={() => showSettings = true}
+        title="Settings"
+      >
+        ⚙️
+      </button>
+      {#if user}
+        <a href="/profile">Profile</a>
+        <a href="/logout">Logout</a>
+      {:else}
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+      {/if}
     </div>
   </div>
 </nav>
-
-<main class="container-fluid py-4">
+<main class="container mx-auto px-4">
   <slot />
 </main>
 
-<footer class="bg-dark text-light py-4 mt-5">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-6">
-        <h6>Legal Intelligence CMS</h6>
-        <p class="text-muted small">Multimodal evidence analysis with AI-powered scene understanding</p>
-      </div>
-      <div class="col-md-6 text-md-end">
-        <p class="text-muted small">
-          Secure • Local Processing • User-Provided Models
-        </p>
-      </div>
-    </div>
-  </div>
-</footer>
+<!-- Settings Modal -->
+<Settings 
+  bind:isOpen={showSettings}
+  bind:settings={settings}
+  on:close={handleSettingsClose}
+  on:save={handleSettingsSave}
+/>
 
 <style>
   :global(body) {

@@ -5,7 +5,7 @@ test.describe('Quick Status Check', () => {
     console.log('🔍 Testing app accessibility...');
     
     try {
-      await page.goto('http://localhost:5173/', { timeout: 10000 });
+      await page.goto('http://localhost:5174/', { timeout: 10000 });
       console.log('✅ App is accessible');
       
       const title = await page.title();
@@ -30,9 +30,8 @@ test.describe('Quick Status Check', () => {
       }
       
       expect(true).toBe(true); // Pass the test if we get here
-      
-    } catch (error) {
-      console.log('❌ App not accessible:', error.message);
+        } catch (error) {
+      console.log('❌ App not accessible:', (error as Error).message);
       throw error;
     }
   });
@@ -41,7 +40,7 @@ test.describe('Quick Status Check', () => {
     console.log('🔍 Testing login page...');
     
     try {
-      await page.goto('http://localhost:5173/login', { timeout: 10000 });
+      await page.goto('http://localhost:5174/login', { timeout: 10000 });
       console.log('✅ Login page accessible');
       
       // Look for login form elements
@@ -55,9 +54,8 @@ test.describe('Quick Status Check', () => {
       
       expect(emailField).toBeGreaterThan(0);
       expect(passwordField).toBeGreaterThan(0);
-      
-    } catch (error) {
-      console.log('❌ Login page error:', error.message);
+        } catch (error) {
+      console.log('❌ Login page error:', (error as Error).message);
       throw error;
     }
   });
@@ -66,7 +64,7 @@ test.describe('Quick Status Check', () => {
     console.log('🔍 Testing register page...');
     
     try {
-      await page.goto('http://localhost:5173/register', { timeout: 10000 });
+      await page.goto('http://localhost:5174/register', { timeout: 10000 });
       console.log('✅ Register page accessible');
       
       // Look for registration form elements
@@ -80,9 +78,8 @@ test.describe('Quick Status Check', () => {
       
       expect(emailField).toBeGreaterThan(0);
       expect(passwordField).toBeGreaterThan(0);
-      
-    } catch (error) {
-      console.log('❌ Register page error:', error.message);
+        } catch (error) {
+      console.log('❌ Register page error:', (error as Error).message);
       throw error;
     }
   });

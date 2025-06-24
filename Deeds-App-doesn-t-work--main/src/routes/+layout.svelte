@@ -12,16 +12,16 @@
 
   $: user = $page.data.session?.user;
 
-  $: if (browser && data.user !== undefined) {
-    if (data.user) {
+  $: if (browser) {
+    if (user) {
       userSessionStore.set({
         user: {
-          id: data.user.id ?? '',
-          name: data.user.name ?? '',
-          email: data.user.email ?? '',
-          image: data.user.image ?? undefined,
-          username: data.user.username ?? '',
-          role: data.user.role ?? ''
+          id: user.id ?? '',
+          name: user.name ?? '',
+          email: user.email ?? '',
+          image: user.image ?? undefined,
+          username: user.username ?? '',
+          role: user.role ?? ''
         },
         expires: null
       });

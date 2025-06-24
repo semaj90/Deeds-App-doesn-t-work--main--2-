@@ -2,7 +2,7 @@ import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
   // Use unified schema for consistent database structure
-  schema: './src/lib/server/db/schema-new.ts',
+  schema: './src/lib/server/db/schema.ts',
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: {

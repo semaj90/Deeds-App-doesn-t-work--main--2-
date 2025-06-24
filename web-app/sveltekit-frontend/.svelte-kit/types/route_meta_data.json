@@ -1,0 +1,78 @@
+{
+	"/": [
+		"src/routes/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/ai-assistant": [
+		"src/routes/+layout.server.ts"
+	],
+	"/ai": [
+		"src/routes/+layout.server.ts"
+	],
+	"/api/ai/prompt": [
+		"src/routes/api/ai/prompt/+server.ts"
+	],
+	"/api/auth/login": [
+		"src/routes/api/auth/login/+server.ts"
+	],
+	"/api/auth/logout": [
+		"src/routes/api/auth/logout/+server.ts"
+	],
+	"/api/auth/register": [
+		"src/routes/api/auth/register/+server.ts"
+	],
+	"/api/cases": [
+		"src/routes/api/cases/+server.ts"
+	],
+	"/api/cases/recent": [
+		"src/routes/api/cases/recent/+server.ts"
+	],
+	"/api/cases/suggest-title": [
+		"src/routes/api/cases/suggest-title/+server.ts"
+	],
+	"/api/evidence": [
+		"src/routes/api/evidence/+server.ts"
+	],
+	"/api/llm/chat": [
+		"src/routes/api/llm/chat/+server.ts"
+	],
+	"/api/statutes": [
+		"src/routes/api/statutes/+server.ts"
+	],
+	"/cases": [
+		"src/routes/cases/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/cases/new": [
+		"src/routes/cases/new/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/cases/[id]": [
+		"src/routes/cases/[id]/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/dashboard": [
+		"src/routes/dashboard/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/evidence": [
+		"src/routes/+layout.server.ts"
+	],
+	"/law": [
+		"src/routes/+layout.server.ts"
+	],
+	"/login": [
+		"src/routes/+layout.server.ts"
+	],
+	"/logout": [
+		"src/routes/+layout.server.ts"
+	],
+	"/profile": [
+		"src/routes/profile/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/register": [
+		"src/routes/register/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	]
+}

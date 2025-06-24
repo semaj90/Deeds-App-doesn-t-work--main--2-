@@ -24,10 +24,11 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           <div>
-            <label class="label">
+            <label class="label" for="email">
               <span class="label-text">Email</span>
             </label>
             <input 
+              id="email"
               type="email" 
               class="input input-bordered w-full" 
               value={user.email || ''} 
@@ -36,10 +37,11 @@
           </div>
           
           <div>
-            <label class="label">
+            <label class="label" for="name">
               <span class="label-text">Name</span>
             </label>
             <input 
+              id="name"
               type="text" 
               class="input input-bordered w-full" 
               value={user.name || ''} 
@@ -48,10 +50,11 @@
           </div>
           
           <div>
-            <label class="label">
+            <label class="label" for="role">
               <span class="label-text">Role</span>
             </label>
             <input 
+              id="role"
               type="text" 
               class="input input-bordered w-full" 
               value={user.role || 'User'} 
@@ -60,10 +63,11 @@
           </div>
           
           <div>
-            <label class="label">
+            <label class="label" for="memberSince">
               <span class="label-text">Member Since</span>
             </label>
             <input 
+              id="memberSince"
               type="text" 
               class="input input-bordered w-full" 
               value={user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'} 
@@ -72,8 +76,7 @@
           </div>
         </div>
         
-        <div class="card-actions justify-end mt-6">
-          <button class="btn btn-primary" onclick="alert('Profile editing coming soon!')">
+        <div class="card-actions justify-end mt-6">          <button class="btn btn-primary" on:click={() => alert('Profile editing coming soon!')}>
             Edit Profile
           </button>
         </div>

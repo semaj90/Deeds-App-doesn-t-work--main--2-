@@ -6,6 +6,7 @@
     { name: 'Cases', icon: '🗂️', href: '/cases' },
     { name: 'Criminals', icon: '🧑‍⚖️', href: '/criminals' },
     { name: 'Statutes', icon: '⚖️', href: '/statutes' },
+    { name: 'Citations', icon: '📚', href: '/citations' },
     { name: 'Interactive Canvas', icon: '🎨', href: '/interactive-canvas' },
     { name: 'About', icon: 'ℹ️', href: '/about' },
   ];

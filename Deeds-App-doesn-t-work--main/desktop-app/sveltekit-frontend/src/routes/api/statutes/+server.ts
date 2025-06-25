@@ -41,7 +41,8 @@ export async function POST({ request }) {
         const newStatute = await db.insert(statutes).values({
             title,
             description,
-            code
+            code,
+            category: 'general' // Provide default category
         }).returning();
         return json(newStatute[0], { status: 201 });
     } catch (error) {

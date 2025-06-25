@@ -29,7 +29,7 @@ export async function verifyPassword(password: string, hashed: string): Promise<
  */
 export function signJWT(payload: object): string {
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: `${JWT_EXPIRATION}s`,
+    expiresIn: parseInt(JWT_EXPIRATION),
   });
 }
 

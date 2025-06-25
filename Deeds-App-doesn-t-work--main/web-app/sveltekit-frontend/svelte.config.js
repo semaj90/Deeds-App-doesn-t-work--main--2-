@@ -12,7 +12,11 @@ const config = {
 	kit: {
 		adapter: adapter({
 			// default options are fine
-		})
+		}),
+		alias: {
+			'$ui/*': '../../../packages/ui/src/lib/*',
+			'$lib/*': '../../../packages/lib/src/*'
+		}
 	}
 };
 

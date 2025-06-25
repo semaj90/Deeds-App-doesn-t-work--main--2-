@@ -1,113 +1,123 @@
 use anyhow::Result;
-use rusqlite::{Connection, Result as SqliteResult};
-use std::path::Path;
-use std::sync::{Arc, Mutex};
+use sqlx::{PgPool, Pool, Postgres};
+use std::sync::Arc;
 
-// Database connection wrapper
-pub type DbConnection = Arc<Mutex<Connection>>;
+// Database connection wrapper for PostgreSQL
+pub type DbConnection = Arc<PgPool>;
 
-// SQLite functions using rusqlite
-pub fn create_connection(database_url: &str) -> Result<DbConnection> {
-    // Remove "sqlite://" prefix if present
-    let path = database_url.strip_prefix("sqlite://").unwrap_or(database_url);
+// PostgreSQL functions using SQLx
+pub async fn create_connection(database_url: &str) -> Result<DbConnection> {
+    tracing::info!("Connecting to PostgreSQL database...");
     
-    // Create directory if it doesn't exist
-    if let Some(parent) = Path::new(path).parent() {
-        if !parent.exists() {
-            std::fs::create_dir_all(parent)?;
-        }
-    }
-
-    let conn = Connection::open(path)?;
+    let pool = PgPool::connect(database_url).await?;
     
-    // Enable foreign key support
-    conn.execute("PRAGMA foreign_keys = ON", [])?;
-    
-    tracing::info!("✅ SQLite connection established at: {}", path);
-    Ok(Arc::new(Mutex::new(conn)))
+    tracing::info!("✅ PostgreSQL connection pool established");
+    Ok(Arc::new(pool))
 }
 
-pub fn test_connection(db: &DbConnection) -> Result<()> {
-    let conn = db.lock().unwrap();
-    conn.execute("SELECT 1", [])?;
-    tracing::info!("✅ SQLite connection test successful");
+pub async fn test_connection(db: &DbConnection) -> Result<()> {
+    sqlx::query("SELECT 1").fetch_one(db.as_ref()).await?;
+    tracing::info!("✅ PostgreSQL connection test successful");
     Ok(())
 }
 
-pub fn init_schema(db: &DbConnection) -> Result<()> {
-    let conn = db.lock().unwrap();
+pub async fn init_schema(db: &DbConnection) -> Result<()> {
+    tracing::info!("Initializing PostgreSQL schema...");
+    
+    // Enable pgvector extension if not already enabled
+    sqlx::query("CREATE EXTENSION IF NOT EXISTS vector")
+        .execute(db.as_ref())
+        .await
+        .ok(); // Don't fail if extension already exists or can't be created
     
     // Create basic tables for case management
-    conn.execute(
+    sqlx::query(
         "CREATE TABLE IF NOT EXISTS cases (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            title VARCHAR(255) NOT NULL,
             description TEXT,
-            status TEXT NOT NULL DEFAULT 'open',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )",
-        [],
-    )?;
+            status VARCHAR(50) NOT NULL DEFAULT 'open',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
+            created_by UUID NOT NULL
+        )"
+    )
+    .execute(db.as_ref())
+    .await?;
 
-    conn.execute(
+    // Create users table
+    sqlx::query(
         "CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            role TEXT NOT NULL DEFAULT 'user',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )",
-        [],
-    )?;
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            username VARCHAR(255) UNIQUE NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            role VARCHAR(50) NOT NULL DEFAULT 'user',
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )"
+    )
+    .execute(db.as_ref())
+    .await?;
 
     // Create evidence table
-    conn.execute(
+    sqlx::query(
         "CREATE TABLE IF NOT EXISTS evidence (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            case_id INTEGER REFERENCES cases(id) ON DELETE CASCADE,
-            filename TEXT NOT NULL,
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            case_id UUID REFERENCES cases(id) ON DELETE CASCADE,
+            filename VARCHAR(255) NOT NULL,
             file_path TEXT NOT NULL,
-            file_type TEXT NOT NULL,
-            file_size INTEGER NOT NULL,
-            hash_sha256 TEXT NOT NULL,
-            metadata TEXT DEFAULT '{}', -- JSON string
-            anchor_points TEXT DEFAULT '[]', -- JSON string
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )",
-        [],
-    )?;
+            file_type VARCHAR(100) NOT NULL,
+            file_size BIGINT NOT NULL,
+            hash_sha256 VARCHAR(64) NOT NULL,
+            metadata JSONB DEFAULT '{}',
+            anchor_points JSONB DEFAULT '[]',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+        )"
+    )
+    .execute(db.as_ref())
+    .await?;
 
-    // Create embeddings table
-    conn.execute(
+    // Create embeddings table with pgvector support
+    sqlx::query(
         "CREATE TABLE IF NOT EXISTS embeddings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            content_id TEXT NOT NULL,
-            content_type TEXT NOT NULL,
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            content_id VARCHAR(255) NOT NULL,
+            content_type VARCHAR(100) NOT NULL,
             content_text TEXT NOT NULL,
-            embedding_vector TEXT NOT NULL, -- JSON string
-            metadata TEXT DEFAULT '{}', -- JSON string
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            embedding_vector vector(1536), -- OpenAI embedding dimension
+            metadata JSONB DEFAULT '{}',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
             UNIQUE(content_id, content_type)
-        )",
-        [],
-    )?;
+        )"
+    )
+    .execute(db.as_ref())
+    .await?;
 
-    // Create index on embeddings for faster searches
-    conn.execute(
+    // Create indexes for faster searches
+    sqlx::query(
         "CREATE INDEX IF NOT EXISTS idx_embeddings_content_type 
-         ON embeddings(content_type)",
-        [],
-    )?;
+         ON embeddings(content_type)"
+    )
+    .execute(db.as_ref())
+    .await?;
 
-    conn.execute(
+    sqlx::query(
         "CREATE INDEX IF NOT EXISTS idx_embeddings_content_id 
-         ON embeddings(content_id)",
-        [],
-    )?;
+         ON embeddings(content_id)"
+    )
+    .execute(db.as_ref())
+    .await?;
 
-    tracing::info!("✅ SQLite schema initialized");
+    // Create vector similarity search index
+    sqlx::query(
+        "CREATE INDEX IF NOT EXISTS idx_embeddings_vector 
+         ON embeddings USING ivfflat (embedding_vector vector_cosine_ops) WITH (lists = 100)"
+    )
+    .execute(db.as_ref())
+    .await
+    .ok(); // Don't fail if index can't be created (might not have pgvector)
+
+    tracing::info!("✅ PostgreSQL schema initialized");
     Ok(())
 }

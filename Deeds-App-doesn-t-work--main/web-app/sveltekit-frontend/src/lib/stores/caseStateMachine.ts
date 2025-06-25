@@ -89,7 +89,8 @@ export class CaseWorkflowManager {
   transition(caseId: string, currentState: CaseState, event: CaseEvent, userId?: string, reason?: string): CaseState | null {
     if (!this.canTransition(caseId, currentState, event)) {
       return null;
-    }    const stateConfig = caseStateMachine.states[currentState];
+    }
+    const stateConfig = caseStateMachine.states[currentState];
     const newState = ('on' in stateConfig && stateConfig.on && event in stateConfig.on) ? 
       (stateConfig.on as any)[event] as CaseState : undefined;
 
@@ -98,71 +99,56 @@ export class CaseWorkflowManager {
     // Record transition
     this.recordTransition(caseId, currentState, newState, event, userId, reason);
 
+    // Update state
+    let caseState = this.caseStates.get(caseId);
+    if (caseState) {
+      caseState.currentState = newState;
+      caseState.availableTransitions = this.getAvailableTransitions(caseId, newState);
+    }
+
     return newState;
   }
 
   private recordTransition(caseId: string, from: CaseState, to: CaseState, event: CaseEvent, userId?: string, reason?: string) {
-    const transition: CaseStateTransition = {
-      from,
-      to,
-      event,
-      timestamp: new Date(),
-      userId,
-      reason
-    };
-
-    // This would typically be saved to the database
-    console.log(`Case ${caseId} transitioned from ${from} to ${to} via ${event}`, transition);
+    const caseState = this.caseStates.get(caseId);
+    if (caseState) {
+      caseState.history.push({
+        from,
+        to,
+        event,
+        timestamp: new Date(),
+        userId,
+        reason
+      });
+    }
   }
 
-  getCaseStateMachine(caseId: string): CaseStateMachine | undefined {
-    return this.caseStates.get(caseId);
-  }
-
-  initializeCaseStateMachine(caseId: string, initialState: CaseState = 'draft'): CaseStateMachine {
-    const stateMachine: CaseStateMachine = {
-      id: caseId,
-      currentState: initialState,
-      availableTransitions: this.getAvailableTransitions(caseId, initialState),
-      history: []
-    };
-
-    this.caseStates.set(caseId, stateMachine);
-    return stateMachine;
+  initializeCaseState(caseId: string, initialState: CaseState = 'draft') {
+    if (!this.caseStates.has(caseId)) {
+      this.caseStates.set(caseId, {
+        id: caseId,
+        currentState: initialState,
+        availableTransitions: this.getAvailableTransitions(caseId, initialState),
+        history: []
+      });
+    }
   }
 }
 
-// Global instance
 export const caseWorkflowManager = new CaseWorkflowManager();
 
-// Svelte stores for reactive state management
-export const activeCaseState = writable<CaseState>('draft');
-export const availableTransitions = derived(
-  activeCaseState,
-  ($state) => caseWorkflowManager.getAvailableTransitions('current', $state)
-);
+export const getStateLabel = (state: CaseState): string => {
+  return state.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
 
-// Helper functions for state management
-export function getStateColor(state: CaseState): string {
-  switch (state) {
-    case 'draft': return 'bg-gray-500';
-    case 'under_review': return 'bg-yellow-500';
-    case 'active': return 'bg-blue-500';
-    case 'suspended': return 'bg-orange-500';
-    case 'closed': return 'bg-green-500';
-    case 'merged': return 'bg-purple-500';
-    default: return 'bg-gray-500';
-  }
-}
-
-export function getStateLabel(state: CaseState): string {
-  switch (state) {
-    case 'draft': return 'Draft';
-    case 'under_review': return 'Under Review';
-    case 'active': return 'Active';
-    case 'suspended': return 'Suspended';
-    case 'closed': return 'Closed';
-    case 'merged': return 'Merged';
-    default: return 'Unknown';
-  }
-}
+export const getStateColor = (state: CaseState): string => {
+  const colors: Record<CaseState, string> = {
+    draft: 'bg-gray-200 text-gray-800',
+    under_review: 'bg-yellow-200 text-yellow-800',
+    active: 'bg-green-200 text-green-800',
+    suspended: 'bg-orange-200 text-orange-800',
+    closed: 'bg-blue-200 text-blue-800',
+    merged: 'bg-purple-200 text-purple-800',
+  };
+  return colors[state] || 'bg-gray-200 text-gray-800';
+};

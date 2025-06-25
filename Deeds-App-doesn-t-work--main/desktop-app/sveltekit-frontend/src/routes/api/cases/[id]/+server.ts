@@ -10,7 +10,10 @@ export async function GET({ params, locals }) {
         return json({ error: 'Unauthorized' }, { status: 401 });
     }
     try {
-        const caseId = params.id;
+        const caseId = parseInt(params.id);
+        if (isNaN(caseId)) {
+            return json({ error: 'Invalid case ID' }, { status: 400 });
+        }
         const singleCase = await db.select().from(cases).where(and(eq(cases.id, caseId), eq(cases.createdBy, userId))).limit(1);
         if (singleCase.length === 0) {
             return json({ error: 'Case not found' }, { status: 404 });
@@ -28,7 +31,10 @@ export async function PUT({ params, request, locals }) {
     if (!userId) {
         return json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const caseId = params.id;
+    const caseId = parseInt(params.id);
+    if (isNaN(caseId)) {
+        return json({ error: 'Invalid case ID' }, { status: 400 });
+    }
     try {
         // Only update if the case belongs to the user
         const existing = await db.select().from(cases).where(and(eq(cases.id, caseId), eq(cases.createdBy, userId))).limit(1);
@@ -53,7 +59,10 @@ export async function DELETE({ params, locals }) {
     if (!userId) {
         return json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const caseId = params.id;
+    const caseId = parseInt(params.id);
+    if (isNaN(caseId)) {
+        return json({ error: 'Invalid case ID' }, { status: 400 });
+    }
     try {
         // Only delete if the case belongs to the user
         const deletedCase = await db.delete(cases)

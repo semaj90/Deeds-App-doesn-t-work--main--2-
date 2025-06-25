@@ -11,6 +11,10 @@ const config = {
 
 	kit: {
 		adapter: adapter(), // Use Vercel adapter for deployment
+		alias: {
+			'$ui/*': './packages/ui/src/lib/*',
+			'$lib/*': './packages/lib/src/*'
+		}
 	}
 };
 

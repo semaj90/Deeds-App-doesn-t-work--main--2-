@@ -40,11 +40,10 @@ export async function POST({ request, locals }) {
         return json({ message: 'Title, description, and user ID are required' }, { status: 400 });
     }
     try {
-        const id = crypto.randomUUID();
         const newCase = await db.insert(cases).values({
-            id,
             title,
             description,
+            caseNumber: `CASE-${Date.now()}`, // Generate a case number
             dangerScore: dangerScore || 0,
             status: status || 'open',
             aiSummary: aiSummary || null,

@@ -23,9 +23,9 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { dndzone } from 'svelte-dnd-action';
   import Button from './Button.svelte';
-  import Card from './Card.svelte';
-  import Grid from './Grid.svelte';
-  import Tooltip from './Tooltip.svelte';
+  import Card from '$ui/components/Card.svelte';
+  import Grid from '$ui/components/Grid.svelte';
+  import Tooltip from '$ui/components/Tooltip.svelte';
 
   // Props
   export let layoutData: any = null;

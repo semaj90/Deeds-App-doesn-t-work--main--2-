@@ -12,7 +12,11 @@
 		"moduleResolution": "bundler",
 		"allowImportingTsExtensions": true,
 		"lib": ["esnext", "dom", "dom.iterable"],
-		"verbatimModuleSyntax": false
+		"verbatimModuleSyntax": false,
+		"paths": {
+			"$ui/*": ["../../../packages/ui/src/lib/*"],
+			"$lib/*": ["../../../packages/lib/src/*"]
+		}
 	}
 	// Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
 	// except $lib which is handled by https://svelte.dev/docs/kit/configuration#files

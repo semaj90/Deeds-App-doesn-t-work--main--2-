@@ -29,8 +29,11 @@ export async function GET({ url }) {
 
 
     if (filterThreatLevel) {
-        query = query.where(eq(criminals.threatLevel, filterThreatLevel));
-        countQuery = countQuery.where(eq(criminals.threatLevel, filterThreatLevel));
+        const threatLevelNum = parseInt(filterThreatLevel);
+        if (!isNaN(threatLevelNum)) {
+            query = query.where(eq(criminals.threatLevel, threatLevelNum));
+            countQuery = countQuery.where(eq(criminals.threatLevel, threatLevelNum));
+        }
     }
 
     const fetchedCriminals = await query.limit(limit).offset(offset);
@@ -54,8 +57,8 @@ export async function POST({ request }) {
             name,
             aliases: aliases || [],
             priors: priors || [],
-            convictions: convictions || [],
-            threatLevel
+            // convictions field doesn't exist in schema, use priors instead
+            threatLevel: threatLevel ? parseInt(threatLevel) : 1
         }).returning();
         return json(newCriminal[0], { status: 201 });
     } catch (error) {

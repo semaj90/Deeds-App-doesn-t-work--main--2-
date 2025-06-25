@@ -3,7 +3,7 @@ import type { Actions } from './$types';
 
 export const actions: Actions = {
   default: async ({ request, locals }) => {
-    const { user } = await locals.auth.validate();
+    const user = locals.user;
     if (!user) {
       throw redirect(302, '/login');
     }

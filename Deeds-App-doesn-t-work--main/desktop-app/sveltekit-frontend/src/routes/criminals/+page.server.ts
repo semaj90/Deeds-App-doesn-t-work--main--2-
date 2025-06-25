@@ -3,10 +3,10 @@ import type { ServerLoad } from '@sveltejs/kit';
 import type { Criminal } from '$lib/data/types';
 
 export const load: ServerLoad = async ({ locals, fetch, url }) => {
-    if (!locals.session?.user) {
+    if (!locals.user) {
         throw redirect(302, '/login');
     }
-    const user = locals.session.user;
+    const user = locals.user;
 
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '10');
@@ -26,7 +26,7 @@ export const load: ServerLoad = async ({ locals, fetch, url }) => {
 
     return {
         userId: user.id,
-        username: user.username,
+        username: user.name || user.email, // Use name or email as username
         criminals: criminals,
         currentPage: page,
         limit: limit,

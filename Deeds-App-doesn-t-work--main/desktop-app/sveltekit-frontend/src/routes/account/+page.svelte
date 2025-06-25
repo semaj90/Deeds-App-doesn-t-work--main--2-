@@ -20,7 +20,7 @@
       </div>
       <div class="card-body">
         <p><strong>Email:</strong> {user.email}</p>
-        <p><strong>Role:</strong> {user.role}</p>
+        <p><strong>Role:</strong> {user.role || 'User'}</p>
         <p>This is your prosecutor account page. From here, you can manage cases, criminals, and evidence.</p>
       </div>
     </div>

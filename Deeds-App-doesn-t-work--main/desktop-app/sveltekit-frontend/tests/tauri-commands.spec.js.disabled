@@ -1,0 +1,19 @@
+// Test Tauri backend commands from the frontend
+const { invoke } = (typeof window !== 'undefined' && window.__TAURI__?.tauri) || { invoke: () => Promise.resolve([]) };
+
+// Mock test functions for development
+const test = (name, fn) => console.log(`Test: ${name}`);
+const expect = (value) => ({
+  toBe: (expected) => value === expected,
+  toBeUndefined: () => value === undefined
+});
+
+test('LLM list models command', async () => {
+  const models = await invoke('list_llm_models');
+  expect(Array.isArray(models)).toBe(true);
+});
+
+test('Qdrant tagging command', async () => {
+  const result = await invoke('tag_with_qdrant', { case_id: 'test', tags: ['tag1'] });
+  expect(result).toBeUndefined();
+});

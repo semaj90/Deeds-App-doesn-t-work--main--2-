@@ -24,9 +24,9 @@ export async function PUT({ params, request }) {
 
     const updatedEvidence = await db.update(evidence)
         .set({
-            aiSummary: summary,
+            summary: summary,
             tags: tags,
-            caseId: caseId ? String(caseId) : undefined,
+            caseId: caseId ? parseInt(caseId) : undefined,
             
         })
         .where(eq(evidence.id, parseInt(id)))

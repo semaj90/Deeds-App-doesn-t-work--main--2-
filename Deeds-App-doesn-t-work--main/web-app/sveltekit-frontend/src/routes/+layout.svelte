@@ -141,17 +141,6 @@
     background-color: rgba(0, 123, 255, 0.05);
   }
   
-  :global(.card) {
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    border: 1px solid rgba(0, 0, 0, 0.125);
-  }
-  
-  :global(.card:hover) {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
-    transition: all 0.3s ease;
-  }
-  
   :global(.fade-in) {    animation: -global-fadeIn 0.5s ease-in-out;
   }
   

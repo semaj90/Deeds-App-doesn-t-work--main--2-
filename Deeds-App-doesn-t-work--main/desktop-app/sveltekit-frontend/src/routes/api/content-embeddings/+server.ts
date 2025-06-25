@@ -11,9 +11,12 @@ export async function POST({ request }) {
 
     try {
         const newEmbedding = await db.insert(contentEmbeddings).values({
+            content: 'Generated embedding content', // Required field
             contentId: parseInt(contentId),
             contentType,
             embedding,
+            sourceType: contentType || 'case', // Required field
+            sourceId: parseInt(contentId), // Required field
         }).returning();
 
         return json(newEmbedding[0], { status: 201 });

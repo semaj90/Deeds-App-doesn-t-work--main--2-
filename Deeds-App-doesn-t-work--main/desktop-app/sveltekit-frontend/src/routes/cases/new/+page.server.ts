@@ -25,9 +25,9 @@ export const actions: Actions = {
     }
     try {
       await db.insert(cases).values({
-        id,
         title,
         description,
+        caseNumber: `CASE-${Date.now()}`, // Generate case number
         dangerScore,
         status,
         aiSummary,

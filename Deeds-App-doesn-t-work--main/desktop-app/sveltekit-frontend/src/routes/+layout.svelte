@@ -15,11 +15,11 @@
     if (data.user) {
       userSessionStore.set({
         user: {
-          id: data.user.id ?? '',
+          id: String(data.user.id) ?? '',
           name: data.user.name ?? '',
           email: data.user.email ?? '',
           image: data.user.image ?? undefined,
-          username: data.user.username ?? '',
+          username: data.user.username ?? data.user.name ?? data.user.email ?? '',
           role: data.user.role ?? ''
         },
         expires: null

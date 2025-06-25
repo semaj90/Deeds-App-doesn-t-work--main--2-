@@ -27,10 +27,9 @@ export const POST: RequestHandler = async ({ request }) => {
         // Create user
         const [newUser] = await db.insert(users).values({
             email,
-            hashedPassword,
+            username: email.split('@')[0], // Generate username from email
+            password: hashedPassword, // Use password field (should be hashed)
             name,
-            firstName: name.split(' ')[0] || '',
-            lastName: name.split(' ').slice(1).join(' ') || '',
             role: 'prosecutor'
         }).returning();
 

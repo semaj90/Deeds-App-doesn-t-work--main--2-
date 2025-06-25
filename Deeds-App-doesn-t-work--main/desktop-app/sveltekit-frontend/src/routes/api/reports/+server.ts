@@ -102,7 +102,7 @@ export async function GET({ url }) {
                 doc.moveDown();
                 paragraphs.forEach(paragraph => {
                     doc.fontSize(12).text(`Anchor ID: ${paragraph.anchorId}`);
-                    doc.text(paragraph.paragraphText);
+                    doc.text(paragraph.paragraphText || 'No text available');
                     doc.text(`Linked Cases: ${(paragraph.linkedCaseIds as number[]).join(', ') || 'N/A'}`);
                     doc.text(`Crime Suggestions: ${(paragraph.crimeSuggestions as string[]).join(', ') || 'N/A'}`);
                     doc.moveDown();

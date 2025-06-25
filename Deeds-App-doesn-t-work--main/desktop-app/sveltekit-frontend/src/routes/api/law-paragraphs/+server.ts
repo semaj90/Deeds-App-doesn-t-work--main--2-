@@ -17,6 +17,7 @@ export async function POST({ request }) {
     try {
         const newLawParagraph = await db.insert(lawParagraphs).values({
             statuteId: parseInt(statuteId),
+            content: paragraphText, // Required field
             paragraphText,
             anchorId,
             linkedCaseIds: [], // Initialize as empty array

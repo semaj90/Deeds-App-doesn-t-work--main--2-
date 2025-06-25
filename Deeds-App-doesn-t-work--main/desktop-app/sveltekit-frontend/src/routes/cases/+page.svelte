@@ -54,8 +54,9 @@
     return 'text-error';
   }
 
-  function formatDate(dateString: string) {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  function formatDate(dateInput: string | Date) {
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'

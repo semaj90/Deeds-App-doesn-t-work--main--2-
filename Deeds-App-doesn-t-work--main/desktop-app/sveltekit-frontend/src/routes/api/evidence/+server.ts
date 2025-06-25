@@ -43,16 +43,19 @@ export const POST: RequestHandler = async ({ request }) => {
   const tags = await generateTags(extractedText);
 
   await db.insert(evidence).values({
+    title: file.name,
+    type: file.type,
+    fileSize: file.size,
+    url: `/uploads/evidence/${uniqueFilename}`,
     fileName: file.name,
     fileType: file.type,
-    fileSize: file.size,
-    filePath: `/uploads/evidence/${uniqueFilename}`,
+    fileUrl: `/uploads/evidence/${uniqueFilename}`,
     summary,
     tags: JSON.stringify(tags),
-    originalContent: extractedText,
-    uploadDate: new Date(),
+    uploadedAt: new Date(),
+    uploadedBy: 1, // TODO: Get from session
     caseId: caseId ? parseInt(caseId.toString()) : null,
-    poiId: poiId ? parseInt(poiId.toString()) : null,
+    criminalId: poiId ? parseInt(poiId.toString()) : null,
   });
 
   return new Response(JSON.stringify({ success: true }), { status: 201 });

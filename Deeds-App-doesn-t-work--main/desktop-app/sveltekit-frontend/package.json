@@ -2,7 +2,8 @@
 	"name": "prosecutor-desktop-frontend",
 	"private": true,
 	"version": "0.0.1",
-	"type": "module","scripts": {
+	"type": "module",
+	"scripts": {
 		"dev": "npm run db:migrate && vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
@@ -21,7 +22,9 @@
 		"db:reset": "node -r dotenv/config ./node_modules/drizzle-kit/bin.cjs reset",
 		"db:clear-users": "tsx scripts/clear-users.ts",
 		"db:studio": "node -r dotenv/config ./node_modules/drizzle-kit/bin.cjs studio --verbose",
-		"switch-db": "node scripts/switch-db.js"
+		"switch-db": "node scripts/switch-db.js",
+		"docker:up": "docker compose up -d",
+		"docker:down": "docker compose down"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^6.0.1",
@@ -36,7 +39,6 @@
 		"@types/pg": "^8.15.4",
 		"@types/uuid": "^10.0.0",
 		"autoprefixer": "10.4.x",
-		"daisyui": "^5.0.43",
 		"dotenv": "^16.5.0",
 		"drizzle-kit": "^0.31.1",
 		"postcss": "8.5.x",
@@ -62,14 +64,15 @@
 		"@tauri-apps/api": "^1.5.3",
 		"@toast-ui/editor": "^3.2.2",
 		"@types/better-sqlite3": "^7.6.13",
+		"@types/lokijs": "^1.5.14",
 		"@uploadthing/svelte": "^7.3.1",
 		"bcrypt": "^6.0.0",
 		"bcryptjs": "^3.0.2",
-		"better-sqlite3": "^11.10.0",
 		"bootstrap": "^5.3.6",
 		"drizzle-orm": "^0.40.1",
 		"jsonwebtoken": "^9.0.2",
 		"lodash-es": "^4.17.21",
+		"lokijs": "^1.5.12",
 		"lucia": "^3.2.2",
 		"marked": "^15.0.12",
 		"pdfkit": "^0.17.1",

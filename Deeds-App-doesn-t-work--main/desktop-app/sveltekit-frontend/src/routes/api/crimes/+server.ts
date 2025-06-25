@@ -59,8 +59,10 @@ export async function POST({ request }) {
 
     try {
         const newCrime = await db.insert(crimes).values({
+            title: name, // Map name to title for the database
             name,
             description,
+            type: 'crime', // Set required type field
             statuteId: parseInt(statuteId),
             criminalId: parseInt(criminalId)
         }).returning();

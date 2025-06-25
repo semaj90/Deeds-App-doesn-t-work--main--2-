@@ -2,14 +2,6 @@ import { json, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { users } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import bcrypt from 'bcrypt';
-import { createSession, generateSessionToken, setSessionTokenCookie } from '$lib/server/session';
-import type { RequestHandler } from './$types';
-
-import { json, redirect } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { users } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
 import { verifyPassword } from '$lib/server/authUtils';
 import { createSession, generateSessionToken, setSessionTokenCookie } from '$lib/server/session';
 import type { RequestHandler } from './$types';

@@ -5,6 +5,7 @@
   import { invalidate } from '$app/navigation';
   import { enhance } from '$app/forms';
   import { writable } from 'svelte/store';
+  import AttractivenessMeter from '$lib/components/AttractivenessMeter.svelte';
 
   export let data;
   
@@ -260,13 +261,25 @@
               <div class="stat">
                 <div class="stat-title">Total Size</div>
                 <div class="stat-value text-sm">
-                  {formatFileSize(evidenceList.reduce((sum, e) => sum + e.fileSize, 0))}
+                  {formatFileSize(evidenceList.reduce((sum, e) => sum + (e.fileSize || 0), 0))}
                 </div>
               </div>
               <div class="stat">
                 <div class="stat-title">Created</div>
                 <div class="stat-value text-sm">
                   {caseDetails.createdAt ? new Date(caseDetails.createdAt).toLocaleDateString() : 'N/A'}
+                </div>
+              </div>
+              <div class="stat">
+                <div class="stat-title">Witness Appeal</div>
+                <div class="stat-value text-sm">
+                  <AttractivenessMeter 
+                    score={7}
+                    readOnly={true}
+                    size="sm"
+                    showDescription={false}
+                    label=""
+                  />
                 </div>
               </div>
             </div>
@@ -418,7 +431,7 @@
                       <h4 class="card-title text-sm">{evidence.title}</h4>
                       <div class="text-xs text-base-content/70 space-y-1">
                         <p><span class="badge badge-outline badge-xs">{evidence.fileType}</span></p>
-                        <p>Size: {formatFileSize(evidence.fileSize)}</p>
+                        <p>Size: {formatFileSize(evidence.fileSize || 0)}</p>
                         <p>Uploaded: {evidence.uploadedAt ? new Date(evidence.uploadedAt).toLocaleDateString() : 'N/A'}</p>
                       </div>
                       <div class="card-actions justify-end mt-2">

@@ -11,7 +11,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     throw redirect(302, '/login');
   }
 
-  const caseId = params.id; // Keep as string since schema uses varchar
+  const caseId = parseInt(params.id || '');
+  if (isNaN(caseId)) {
+    throw redirect(302, '/cases');
+  }
   const userId = session.user.id;
 
   try {
@@ -46,7 +49,10 @@ export const actions: Actions = {
       throw redirect(302, '/login');
     }
 
-    const caseId = params.id;
+    const caseId = parseInt(params.id || '');
+    if (isNaN(caseId)) {
+      return { success: false, error: 'Invalid case ID' };
+    }
     
     try {
       const data = await request.formData();

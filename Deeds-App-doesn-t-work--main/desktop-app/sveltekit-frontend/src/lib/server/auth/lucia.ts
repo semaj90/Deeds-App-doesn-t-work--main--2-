@@ -6,7 +6,7 @@ import { users, sessions } from '$lib/server/db/schema';
 const isProd = process.env.NODE_ENV === 'production';
 
 export const lucia = new Lucia(
-  new DrizzlePostgreSQLAdapter(db, sessions, users),
+  new DrizzlePostgreSQLAdapter(db as any, sessions as any, users as any),
   {
     sessionCookie: {
       attributes: {

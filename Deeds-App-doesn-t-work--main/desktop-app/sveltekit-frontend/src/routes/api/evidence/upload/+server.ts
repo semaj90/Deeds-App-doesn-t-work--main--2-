@@ -30,10 +30,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const newEvidence = await db.insert(evidence).values({
       title: file.name,
       description: '',
-      fileUrl,
+      type: file.type || 'file',
+      url: fileUrl,
+      fileName: file.name,
       fileType: file.type,
       fileSize: file.size,
-      caseId,
+      caseId: caseId ? parseInt(caseId.toString()) : null,
       uploadedBy: userId,
     }).returning();
     uploaded.push(newEvidence[0]);

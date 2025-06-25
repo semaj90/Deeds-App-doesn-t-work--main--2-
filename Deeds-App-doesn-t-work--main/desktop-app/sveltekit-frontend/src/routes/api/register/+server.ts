@@ -10,13 +10,12 @@ export async function POST(event: RequestEvent) {
   
   try {
     const passwordHash = await hashPassword(password);
-    const id = crypto.randomUUID();
 
     const [newUser] = await db.insert(users).values({ 
-      id, 
       email, 
+      username: email.split('@')[0], // Generate username from email
       name: name || null,
-      hashedPassword: passwordHash,
+      password: passwordHash, // Use password field
       role: 'user' // Default role
     }).returning();
     

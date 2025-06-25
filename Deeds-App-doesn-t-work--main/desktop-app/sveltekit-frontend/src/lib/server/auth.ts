@@ -15,56 +15,37 @@ import {
 } from './session.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret';
-
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { env } from './env';
-
-export async function hashPassword(password: string): Promise<string> {
-  return await bcrypt.hash(password, env.BCRYPT_ROUNDS);
-}
-
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return await bcrypt.compare(password, hashedPassword);
-}
-
-export function signJWT(payload: object): string {
-  return jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: `${env.JWT_EXPIRATION}s`,
-  });
-}
-
-export function verifyJWT(token: string): any {
-  try {
-    return jwt.verify(token, env.JWT_SECRET);
-  } catch (error) {
-    return null;
-  }
-}
-
-export function generateSecureToken(): string {
-  return crypto.randomUUID();
-}
+const JWT_EXPIRATION = 7 * 24 * 60 * 60; // 7 days in seconds
 
 // Hash a password (Node.js, bcrypt)
-export async function hashPassword(password: string) {
+export async function hashPassword(password: string): Promise<string> {
   return await bcrypt.hash(password, 10);
 }
 
 // Compare a password to a hash (Node.js, bcrypt)
-export async function comparePasswords(password: string, hash: string) {
+export async function comparePasswords(password: string, hash: string): Promise<boolean> {
   return await bcrypt.compare(password, hash);
 }
 
+// Verify password (alias for compatibility)
+export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+  return await bcrypt.compare(password, hashedPassword);
+}
+
 // Sign a JWT (Node.js, jsonwebtoken) - for API use
-export function signToken(payload: { userId: string, role?: string }) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+export function signToken(payload: { userId: number, role?: string }): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: `${JWT_EXPIRATION}s` });
+}
+
+// Sign JWT (alias for compatibility)
+export function signJWT(payload: object): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: `${JWT_EXPIRATION}s` });
 }
 
 // Verify a JWT and fetch user data - for API use
 export async function verifyToken(token: string) {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
     
     // Fetch full user data from database
     const user = await db.select().from(users).where(eq(users.id, decoded.userId)).limit(1);
@@ -73,13 +54,28 @@ export async function verifyToken(token: string) {
       return null;
     }
     
-    return user[0];  } catch {
+    return user[0];
+  } catch {
     return null;
   }
 }
 
+// Verify JWT (alias for compatibility)
+export function verifyJWT(token: string): any {
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch (error) {
+    return null;
+  }
+}
+
+// Generate secure token
+export function generateSecureToken(): string {
+  return crypto.randomUUID();
+}
+
 // Create a new user session (primary method for web auth)
-export async function createUserSession(event: RequestEvent, userId: string) {
+export async function createUserSession(event: RequestEvent, userId: number) {
   const sessionToken = generateSessionToken();
   const session = await createSession(sessionToken, userId);
   setSessionTokenCookie(event, sessionToken, session.expiresAt);
@@ -96,7 +92,7 @@ export function setJWTCookie(event: RequestEvent, token: string): void {
   event.cookies.set('jwt', token, {
     httpOnly: true,
     sameSite: 'lax',
-    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
+    expires: new Date(Date.now() + JWT_EXPIRATION * 1000),
     path: '/',
     secure: process.env.NODE_ENV === 'production'
   });
@@ -124,9 +120,46 @@ export function deleteAuthCookie(event: RequestEvent): void {
   deleteJWTCookie(event);
 }
 
-// --- Tauri/Rust integration notes ---
-// To port this logic to Rust (for Tauri backend):
-// - Use the 'jsonwebtoken' crate for JWT sign/verify in Rust.
-// - Use the 'bcrypt' crate for password hashing/comparison in Rust.
-// - Store JWT in Tauri's secure storage or filesystem for offline mode.
-// - Expose Rust commands to SvelteKit frontend via Tauri API for login/register.
+// Sign out function (alias for logoutUser)
+export async function signOut(event: RequestEvent) {
+  return await logoutUser(event);
+}
+
+// Handle auth function for API routes
+export async function handleAuth(event: RequestEvent) {
+  const { request } = event;
+  
+  if (request.method === 'POST') {
+    // Handle login/register
+    const formData = await request.formData();
+    const action = formData.get('action') as string;
+    
+    if (action === 'login') {
+      const email = formData.get('email') as string;
+      const password = formData.get('password') as string;
+      
+      if (!email || !password) {
+        return new Response('Missing email or password', { status: 400 });
+      }
+      
+      // Find user by email
+      const user = await db.query.users.findFirst({
+        where: eq(users.email, email)
+      });
+      
+      if (user && user.hashedPassword && await comparePasswords(password, user.hashedPassword)) {
+        await createUserSession(event, user.id);
+        return new Response('Login successful', { status: 200 });
+      } else {
+        return new Response('Invalid credentials', { status: 401 });
+      }
+    }
+    
+    if (action === 'logout') {
+      await logoutUser(event);
+      return new Response('Logout successful', { status: 200 });
+    }
+  }
+  
+  return new Response('Method not allowed', { status: 405 });
+}

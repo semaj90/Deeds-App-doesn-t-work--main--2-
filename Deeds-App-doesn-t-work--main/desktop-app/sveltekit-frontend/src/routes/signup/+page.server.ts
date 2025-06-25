@@ -28,10 +28,10 @@ export const actions: Actions = {
 
 		try {
 			await db.insert(users).values({
-				id: crypto.randomUUID(),
 				name,
 				email,
-				hashedPassword,
+				username: email.split('@')[0], // Generate username from email
+				password: hashedPassword, // Use password field
 				role: 'user'
 			});
 		} catch (e) {

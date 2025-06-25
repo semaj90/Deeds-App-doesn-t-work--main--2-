@@ -91,7 +91,7 @@
 <div class="d-flex">
     <Sidebar />
     <div class="flex-grow-1 d-flex flex-column">
-        <Header />
+        <Header user={data.user} />
         <main class="container-fluid mt-4 flex-grow-1 text-dark">
             <h1 class="mb-4 text-primary">WardenNet Dashboard</h1>
 

@@ -4,11 +4,14 @@ use std::env;
 #[derive(Clone, Debug)]
 pub struct Config {
     pub database_url: String,
+    pub qdrant_url: String,
     pub jwt_secret: String,
     pub bcrypt_cost: u32,
     pub port: u16,
     pub upload_dir: String,
     pub max_file_size: usize,
+    pub llm_models_dir: String,
+    pub llm_uploads_dir: String,
 }
 
 impl Config {
@@ -16,7 +19,10 @@ impl Config {
         dotenv::dotenv().ok();
 
         let database_url = env::var("DATABASE_URL")
-            .unwrap_or_else(|_| "sqlite:./prosecutor.db".to_string());
+            .unwrap_or_else(|_| "postgresql://postgres:postgres@localhost:5433/prosecutor_db".to_string());
+        
+        let qdrant_url = env::var("QDRANT_URL")
+            .unwrap_or_else(|_| "http://localhost:6333".to_string());
         
         let jwt_secret = env::var("JWT_SECRET")
             .unwrap_or_else(|_| "your_very_secure_jwt_secret_key_here_at_least_32_characters_long_for_security".to_string());
@@ -39,13 +45,22 @@ impl Config {
             .parse::<usize>()
             .unwrap_or(52428800);
 
+        let llm_models_dir = env::var("LLM_MODELS_DIR")
+            .unwrap_or_else(|_| "./llm-models".to_string());
+        
+        let llm_uploads_dir = env::var("LLM_UPLOADS_DIR")
+            .unwrap_or_else(|_| "./llm-uploads".to_string());
+
         Ok(Config {
             database_url,
+            qdrant_url,
             jwt_secret,
             bcrypt_cost,
             port,
             upload_dir,
             max_file_size,
+            llm_models_dir,
+            llm_uploads_dir,
         })
     }
 

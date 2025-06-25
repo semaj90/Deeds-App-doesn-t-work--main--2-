@@ -19,7 +19,11 @@ export const handle: Handle = async ({ event, resolve }) => {
         if (session !== null && user !== null) {
             // Refresh session cookie with updated expiration
             setSessionTokenCookie(event, token, session.expiresAt);
-            event.locals.session = session;
+            // Create session object with user included
+            event.locals.session = {
+                ...session,
+                user: user
+            };
             event.locals.user = user;
         } else {
             // Invalid or expired session, clean up cookie
@@ -45,7 +49,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     const isProtectedAPI = event.url.pathname.startsWith('/api/') && !isPublicAPI;
 
     // Redirect unauthenticated users from protected routes
-    if (isProtectedRoute && !event.locals.user) {
+    if (isProtectedRoute && !event.locals.session?.user) {
         throw redirect(303, `/login?from=${encodeURIComponent(event.url.pathname)}`);
     }
 

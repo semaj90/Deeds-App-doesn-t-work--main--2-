@@ -7,6 +7,7 @@ use std::env;
 // Import our custom modules
 mod llm_commands;
 mod evidence_processor;
+mod llm;
 
 // Define a struct that mirrors your `cases` table schema
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -179,7 +180,9 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             create_case,
             update_case,
-            delete_case
+            delete_case,
+            llm::list_llm_models,
+            llm::run_llm_inference
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

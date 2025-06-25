@@ -5,6 +5,7 @@
     import type { Criminal, Evidence } from '$lib/data/types';
     import { invoke } from '@tauri-apps/api/tauri';
     import FileUploadSection from '$lib/components/+FileUploadSection.svelte';
+    import AttractivenessMeter from '$lib/components/AttractivenessMeter.svelte';
 
     export let data: { criminal: Criminal; evidence: Evidence[] };
 
@@ -13,6 +14,14 @@
     let activeTab = 'profile';
     let editMode = false;
     let uploadingPhoto = false;
+    let attractivenessScore = 5; // Default attractiveness score
+    
+    // Handle attractiveness score changes
+    function handleAttractivenessChange(event: CustomEvent) {
+        attractivenessScore = event.detail.score;
+        // TODO: Save to database
+        console.log('Attractiveness score updated:', attractivenessScore);
+    }
 
     function goToEdit() {
         if (criminalItem && criminalItem.id) {
@@ -157,20 +166,35 @@
                                     <p><strong>Address:</strong> {data.criminal.address}</p>
                                     <p><strong>Email:</strong> {data.criminal.email}</p>
                                     <p><strong>Phone:</strong> {data.criminal.phone}</p>
+                                    
+                                    <!-- Attractiveness Meter -->
+                                    <div class="mt-4">
+                                        <AttractivenessMeter 
+                                            bind:score={attractivenessScore}
+                                            on:change={handleAttractivenessChange}
+                                            label="Attractiveness Rating"
+                                            size="md"
+                                        />
+                                    </div>
                                 </div>
                                 <div class="col-md-6">
                                     <h4>Aliases</h4>
                                     <ul>
-                                        {#each data.criminal.aliases as alias}
+                                        {#each (data.criminal.aliases as string[] || []) as alias}
                                             <li>{alias}</li>
                                         {/each}
                                     </ul>
                                 </div>
                             </div>
+                            <!-- Attractiveness meter -->
+                            <div class="mt-4">
+                                <h4>Attractiveness Score</h4>
+                                <AttractivenessMeter {attractivenessScore} />
+                            </div>
                         </div>
                     {:else if activeTab === 'evidence'}
                         <!-- Evidence section -->
-                        <FileUploadSection criminalId={data.criminal.id} />
+                        <FileUploadSection criminalId={Number(data.criminal.id)} />
                         <div class="evidence-list mt-4">
                             {#each data.evidence as item}
                                 <div class="evidence-item card mb-2">
@@ -178,7 +202,7 @@
                                         <h5 class="card-title">{item.title}</h5>
                                         <p class="card-text">{item.description}</p>
                                         <div class="tags">
-                                            {#each item.tags as tag}
+                                            {#each (item.tags as string[] || []) as tag}
                                                 <span class="badge bg-secondary me-1">{tag}</span>
                                             {/each}
                                         </div>
@@ -191,7 +215,7 @@
                         <div class="analysis-section">
                             <h4>AI Analysis Results</h4>
                             <pre class="bg-light p-3 rounded">
-                                {JSON.stringify(data.criminal.aiAnalysis, null, 2)}
+                                {JSON.stringify((data.criminal as any).aiAnalysis || 'No AI analysis available', null, 2)}
                             </pre>
                         </div>
                     {/if}

@@ -34,10 +34,10 @@ export const actions: Actions = {
 			const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
 			await db.insert(users).values({
-				id: uuidv4(), // Generate a unique ID
 				name,
 				email,
-				hashedPassword,
+				username: email.split('@')[0], // Generate username from email
+				password: hashedPassword, // Use password field
 			});
 
 		} catch (e) {

@@ -9,6 +9,9 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::{Manager, State};
 use tokio::sync::Mutex;
+use tauri::api::file::copy_file;
+use tauri::api::dialog::FileDialogBuilder;
+use std::path::PathBuf;
 
 // Tauri application state
 struct TauriAppState {
@@ -65,6 +68,31 @@ async fn download_llm_model(model_name: String) -> Result<String, String> {
     Ok(format!("Model {} download started", model_name))
 }
 
+#[tauri::command]
+async fn upload_llm_model() -> Result<String, String> {
+    // Open a file picker dialog for the user to select a model file
+    let selected = FileDialogBuilder::new()
+        .set_title("Select LLM Model File")
+        .pick_file();
+
+    if let Some(path) = selected {
+        // Define the destination directory (e.g., llm-models/ in app data dir)
+        let app_dir = tauri::api::path::app_data_dir(&tauri::Config::default())
+            .ok_or("Could not get app data directory")?;
+        let dest_dir = app_dir.join("llm-models");
+        std::fs::create_dir_all(&dest_dir).map_err(|e| format!("Failed to create model dir: {}", e))?;
+        let dest_path = dest_dir.join(path.file_name().unwrap());
+        copy_file(&path, &dest_path, None).map_err(|e| format!("Failed to copy file: {}", e))?;
+        Ok(format!("Model uploaded to {}", dest_path.display()))
+    } else {
+        Err("No file selected".to_string())
+    }
+}
+
+mod llm;
+mod database;
+mod commands;
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::init();
@@ -78,13 +106,31 @@ async fn main() {
         core: Arc::new(Mutex::new(core_state)),
     };
 
+    let pool = sqlx::SqlitePool::connect("sqlite::memory:")
+        .await
+        .expect("Failed to create database pool");
+
     tauri::Builder::default()
         .manage(tauri_state)
+        .manage(DatabaseState { pool: Arc::new(pool) })
         .invoke_handler(tauri::generate_handler![
-            get_app_info,
+            list_llm_models,
+            run_llm_inference,
+            upload_llm_model,
             get_cases,
             create_case,
-            download_llm_model
+            commands::save_case,
+            commands::summarize_case,
+            commands::tag_with_qdrant,
+            commands::cache_recent_case,
+            commands::process_evidence,
+            commands::llm_inference,
+            commands::ai_search_query,
+            commands::upload_evidence_file,
+            commands::analyze_evidence,
+            commands::get_ai_suggestions,
+            commands::save_settings,
+            commands::load_settings,
         ])
         .setup(|app| {
             // You can perform additional setup here

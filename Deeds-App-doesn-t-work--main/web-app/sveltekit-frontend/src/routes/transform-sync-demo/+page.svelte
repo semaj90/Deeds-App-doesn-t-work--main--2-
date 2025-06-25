@@ -12,10 +12,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import CanvasEditor from '$lib/components/CanvasEditor.svelte';
-  import Button from '$lib/components/Button.svelte';
-  import Card from '$lib/components/Card.svelte';
-  import Grid from '$lib/components/Grid.svelte';
-  import Tooltip from '$lib/components/Tooltip.svelte';
+  import Button from '$ui/components/Button.svelte';
+  import Card from '$ui/components/Card.svelte';
+  import Grid from '$ui/components/Grid.svelte';
+  import Tooltip from '$ui/components/Tooltip.svelte';
   import {
     canUndo,
     canRedo,

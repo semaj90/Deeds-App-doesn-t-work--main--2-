@@ -10,10 +10,8 @@ pub mod middleware;
 pub mod models;
 pub mod utils;
 
-// AI modules (commented out for now due to Windows build issues)
-// pub mod llm;
-// pub mod file_processor;
-// pub mod qdrant;
+// AI modules
+pub mod qdrant;
 
 // Re-export commonly used types
 pub use auth_simple::*;
@@ -22,29 +20,35 @@ pub use database::*;
 pub use models::*;
 
 use database::DbConnection;
+use qdrant::QdrantClient;
 
 /// Application state that can be shared across different deployment targets
 #[derive(Clone)]
 pub struct AppState {
     pub config: Config,
     pub db: DbConnection,
+    pub qdrant: QdrantClient,
 }
 
 impl AppState {
     pub async fn new() -> anyhow::Result<Self> {
         let config = Config::from_env()?;
         
-        let db = database::create_connection(&config.database_url)?;
+        let db = database::create_connection(&config.database_url).await?;
         
         // Initialize schema
-        database::init_schema(&db)?;
+        database::init_schema(&db).await?;
         
         // Test connection
-        database::test_connection(&db)?;
+        database::test_connection(&db).await?;
+        
+        // Initialize Qdrant
+        let qdrant = qdrant::QdrantClient::new(&config.qdrant_url, "prosecutor_cases").await?;
         
         Ok(Self {
             config,
             db,
+            qdrant,
         })
     }
 }

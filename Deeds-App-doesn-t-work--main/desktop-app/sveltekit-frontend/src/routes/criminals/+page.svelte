@@ -1,5 +1,6 @@
 <script lang="ts">
     import Header from '$lib/components/+Header.svelte';
+    import AttractivenessMeter from '$lib/components/AttractivenessMeter.svelte';
     import type { Criminal } from '$lib/data/types';
 
     // Explicitly define PageData type to resolve TypeScript errors
@@ -117,6 +118,18 @@
                         <p class="card-text">
                             <strong>Email:</strong> {criminal.email || 'N/A'}
                         </p>
+                        
+                        <!-- Attractiveness Meter -->
+                        <div class="mt-3 mb-3">
+                            <AttractivenessMeter 
+                                score={5}
+                                readOnly={true}
+                                size="sm"
+                                label="Attractiveness"
+                                showDescription={false}
+                            />
+                        </div>
+                        
                         <a href="/criminals/{criminal.id}" class="btn btn-info">View Details</a>
                     </div>
                 </div>

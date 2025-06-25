@@ -8,9 +8,8 @@ config();
 export default defineConfig({
   schema: './web-app/sveltekit-frontend/src/lib/server/db/schema-new.ts',
   out: './drizzle',
-  dialect: 'postgresql',
-  dbCredentials: {
-    url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/prosecutor_app',
+  dialect: 'postgresql',  dbCredentials: {
+    url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/prosecutor_db',
   },
   strict: true,
   verbose: true,

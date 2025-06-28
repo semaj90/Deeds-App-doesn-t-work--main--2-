@@ -1,7 +1,11 @@
 import { json } from '@sveltejs/kit';
+import { db } from '$lib/server/db';
+import { users } from '$lib/server/db/schema';
+import { verifyPassword } from '$lib/server/authUtils';
+import { eq } from 'drizzle-orm';
 import type { RequestHandler } from '@sveltejs/kit';
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, cookies }) => {
   try {
     const { email, password } = await request.json();
     
@@ -9,38 +13,50 @@ export const POST: RequestHandler = async ({ request }) => {
       return json({ error: 'Email and password are required' }, { status: 400 });
     }
     
-    // Mock authentication - replace with actual auth logic
-    if (email === 'admin@prosecutor.gov' && password === 'admin123') {
-      const user = {
-        id: '1',
-        email: 'admin@prosecutor.gov',
-        name: 'Admin User',
-        role: 'prosecutor',
-        department: 'District Attorney Office'
-      };
-      
-      return json({ 
-        success: true, 
-        user,
-        message: 'Login successful' 
-      });
-    } else if (email === 'demo@prosecutor.gov' && password === 'demo123') {
-      const user = {
-        id: '2',
-        email: 'demo@prosecutor.gov',
-        name: 'Demo User',
-        role: 'prosecutor',
-        department: 'District Attorney Office'
-      };
-      
-      return json({ 
-        success: true, 
-        user,
-        message: 'Login successful' 
-      });
-    } else {
+    // Find user in database
+    const user = await db.query.users.findFirst({
+      where: eq(users.email, email),
+      columns: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        hashedPassword: true,
+        avatarUrl: true
+      }
+    });
+    
+    if (!user || !user.hashedPassword) {
       return json({ error: 'Invalid credentials' }, { status: 401 });
     }
+    
+    // Verify password
+    const isValidPassword = await verifyPassword(password, user.hashedPassword);
+    
+    if (!isValidPassword) {
+      return json({ error: 'Invalid credentials' }, { status: 401 });
+    }
+    
+    // Set session cookie (for now, use user ID as session token)
+    cookies.set('session', user.id, {
+      path: '/',
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7 // 7 days
+    });
+    
+    // Return user info (excluding password)
+    const { hashedPassword, ...userInfo } = user;
+    
+    return json({ 
+      success: true, 
+      user: {
+        ...userInfo,
+        avatarUrl: userInfo.avatarUrl || '/images/default-avatar.svg'
+      },
+      message: 'Login successful' 
+    });
     
   } catch (error) {
     console.error('Login error:', error);

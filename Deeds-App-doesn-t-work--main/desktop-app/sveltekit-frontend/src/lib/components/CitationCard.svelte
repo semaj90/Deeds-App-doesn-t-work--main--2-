@@ -1,9 +1,9 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { CitationPoint, Case } from '$lib/data/types';
+  import type { LegacyCitationPoint, Case } from '$lib/data/types';
   import { citationStore } from '$lib/citations/lokiStore';
   
-  export let citation: CitationPoint;
+  export let citation: LegacyCitationPoint;
   export let isDraggable: boolean = true;
   export let showAddToCase: boolean = true;
   export let onAddToCase: ((citationId: string, caseId: string) => Promise<void>) | null = null;

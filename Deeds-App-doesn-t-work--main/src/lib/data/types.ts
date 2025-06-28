@@ -1,27 +1,15 @@
 import type { InferSelectModel, InferInsertModel } from 'drizzle-orm';
-import { cases, criminals, statutes, users, evidence } from '$lib/server/db/schema';
+import { cases, criminals, users, evidence, statutes } from '$lib/server/db/unified-schema';
 
 export type Case = InferSelectModel<typeof cases>;
 export type NewCase = InferInsertModel<typeof cases>;
 
-export type Criminal = Omit<InferSelectModel<typeof criminals>, 'name'> & {
-  firstName: string;
-  lastName: string;
-  dateOfBirth: Date | null;
-  address: string | null;
-  email: string | null;
-};
-export type NewCriminal = Omit<InferInsertModel<typeof criminals>, 'name'> & {
-  firstName: string;
-  lastName: string;
-  dateOfBirth: Date | null;
-  address: string | null;
-  email: string | null;
-};
+export type Criminal = InferSelectModel<typeof criminals>;
+export type NewCriminal = InferInsertModel<typeof criminals>;
 
 export type Statute = InferSelectModel<typeof statutes>;
 
-export type Crime = InferSelectModel<typeof crimes>;
+export type Evidence = InferSelectModel<typeof evidence>;
 
 export type User = InferSelectModel<typeof users>;
 

@@ -1,16 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { CitationPoint } from '$lib/data/types';
+  import type { LegacyCitationPoint } from '$lib/data/types';
   import { citationStore } from '$lib/citations/lokiStore';
-  import CitationCard from './CitationCard.svelte';
+  import CitationCard from '$lib/components/CitationCard.svelte';
   
   export let caseId: string | null = null; // If set, shows citations for this case
   export let allowCreation: boolean = true;
   export let title: string = 'Citation Points';
   
   let searchQuery = '';
-  let citations: CitationPoint[] = [];
-  let filteredCitations: CitationPoint[] = [];
+  let citations: LegacyCitationPoint[] = [];
+  let filteredCitations: LegacyCitationPoint[] = [];
   let showCreateForm = false;
   let loading = false;
   let stats = { total: 0, linked: 0, unlinked: 0, labels: [] };

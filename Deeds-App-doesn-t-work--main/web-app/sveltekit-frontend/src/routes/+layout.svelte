@@ -1,4 +1,5 @@
 <script lang="ts">
+  import '$lib/styles/unified.css';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import Settings from '$lib/components/Settings.svelte';
@@ -6,6 +7,7 @@
 
   let user = $page.data?.user;
   let showSettings = false;
+  let showMobileMenu = false;
 
   // Settings state
   let settings = {
@@ -35,42 +37,84 @@
     showSettings = false;
   }
 
+  function toggleMobileMenu() {
+    showMobileMenu = !showMobileMenu;
+  }
+
+  function closeMobileMenu() {
+    showMobileMenu = false;
+  }
+
   onMount(() => {
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-theme', settings.theme);
     }
+
+    // Update user from page data
+    const unsubscribe = page.subscribe((pageData) => {
+      user = pageData.data?.user;
+    });
+
+    return unsubscribe;
   });
 </script>
 
-<nav class="navbar bg-base-100 shadow mb-4">
-  <div class="container mx-auto flex justify-between items-center py-2 px-4">
-    <div class="flex items-center gap-4">
-      <a href="/" class="font-bold text-lg">WardenNet</a>
-      <a href="/cases">Cases</a>
-      <a href="/evidence">Evidence</a>
-      <a href="/law">Law</a>
-      <a href="/ai">AI Prompt</a>
-      <a href="/ai-assistant">AI Assistant</a>
+<nav class="main-navbar">
+  <div class="navbar-container">
+    <!-- Logo and Brand -->
+    <div class="navbar-brand">
+      <a href="/" class="brand-link">
+        <div class="brand-icon">⚖️</div>
+        <span class="brand-text">WardenNet</span>
+      </a>
     </div>
-    <div class="flex items-center gap-2">
-      <button 
-        class="btn btn-ghost btn-sm" 
-        on:click={() => showSettings = true}
-        title="Settings"
-      >
-        ⚙️
-      </button>
-      {#if user}
-        <a href="/profile">Profile</a>
-        <a href="/logout">Logout</a>
-      {:else}
-        <a href="/login">Login</a>
-        <a href="/register">Register</a>
-      {/if}
+
+    <!-- Mobile Menu Button -->
+    <button 
+      class="mobile-menu-button"
+      on:click={toggleMobileMenu}
+      aria-label="Toggle menu"
+    >
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
+
+    <!-- Navigation Links -->
+    <div class="navbar-links {showMobileMenu ? 'mobile-open' : ''}">
+      <div class="nav-section">
+        <a href="/cases" class="nav-link" on:click={closeMobileMenu}>Cases</a>
+        <a href="/evidence" class="nav-link" on:click={closeMobileMenu}>Evidence</a>
+        <a href="/ai" class="nav-link" on:click={closeMobileMenu}>AI Assistant</a>
+      </div>
+
+      <div class="nav-section user-section">
+        <button 
+          class="settings-button" 
+          on:click={() => showSettings = true}
+          title="Settings"
+        >
+          ⚙️
+        </button>
+        
+        {#if user}
+          <div class="user-menu">
+            <span class="user-name">Welcome, {user.firstName || user.email}</span>
+            <a href="/profile" class="nav-link" on:click={closeMobileMenu}>Profile</a>
+            <a href="/logout" class="nav-link logout-link" on:click={closeMobileMenu}>Logout</a>
+          </div>
+        {:else}
+          <div class="auth-links">
+            <a href="/login" class="nav-link login-link" on:click={closeMobileMenu}>Login</a>
+            <a href="/register" class="nav-link register-link" on:click={closeMobileMenu}>Register</a>
+          </div>
+        {/if}
+      </div>
     </div>
   </div>
 </nav>
-<main class="container mx-auto px-4">
+
+<main class="main-content">
   <slot />
 </main>
 
@@ -84,74 +128,268 @@
 
 <style>
   :global(body) {
-    background-color: #f8f9fa;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8fafc;
+    font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.6;
   }
   
-  :global(.navbar-brand) {
+  :global(*, *::before, *::after) {
+    box-sizing: border-box;
+  }
+
+  .main-navbar {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .navbar-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+  }
+
+  .navbar-brand {
+    display: flex;
+    align-items: center;
+  }
+
+  .brand-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 1.25rem;
+    transition: color 0.2s;
+  }
+
+  .brand-link:hover {
+    color: #3b82f6;
+  }
+
+  .brand-icon {
     font-size: 1.5rem;
   }
-  
-  :global(.nav-link.active) {
-    font-weight: 600;
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    border-radius: 0.375rem;
+
+  .brand-text {
+    font-size: 1.5rem;
   }
-  
-  :global(main) {
-    min-height: calc(100vh - 200px);
-  }
-  
-  :global(.highlight-word) {
-    background-color: rgba(255, 193, 7, 0.3);
-    border-bottom: 2px solid #ffc107;
+
+  .mobile-menu-button {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    background: none;
+    border: none;
     cursor: pointer;
-    transition: all 0.2s ease;
-    padding: 0 2px;
+    padding: 8px;
+  }
+
+  .hamburger-line {
+    width: 24px;
+    height: 3px;
+    background: #374151;
     border-radius: 2px;
+    transition: all 0.3s;
   }
-  
-  :global(.highlight-word:hover) {
-    background-color: rgba(255, 193, 7, 0.5);
-    border-bottom-color: #ff8c00;
-    transform: translateY(-1px);
+
+  .navbar-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
   }
-  :global(.typewriter) {
-    border-right: 2px solid #007bff;
-    animation: -global-blink 1s infinite;
+
+  .nav-section {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
   }
-  
-  @keyframes -global-blink {
-    0%, 50% { border-color: #007bff; }
-    51%, 100% { border-color: transparent; }
+
+  .nav-link {
+    text-decoration: none;
+    color: #64748b;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+    position: relative;
   }
-  
-  :global(.drop-zone) {
-    border: 2px dashed #dee2e6;
-    border-radius: 0.5rem;
-    padding: 3rem;
-    text-align: center;
-    transition: all 0.3s ease;
-    background-color: #f8f9fa;
+
+  .nav-link:hover {
+    color: #3b82f6;
+    background: #f1f5f9;
   }
-  
-  :global(.drop-zone:hover),
-  :global(.drop-zone.dragover) {
-    border-color: #007bff;
-    background-color: rgba(0, 123, 255, 0.05);
+
+  .nav-link:global(.active) {
+    color: #3b82f6;
+    background: #eff6ff;
+    font-weight: 600;
   }
-  
-  :global(.fade-in) {    animation: -global-fadeIn 0.5s ease-in-out;
+
+  .settings-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    font-size: 1.25rem;
+    transition: background-color 0.2s;
   }
-  
-  @keyframes -global-fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+
+  .settings-button:hover {
+    background: #f1f5f9;
   }
-  .navbar-brand {
-    font-size: 1.3rem;
+
+  .user-section {
+    border-left: 1px solid #e2e8f0;
+    padding-left: 1.5rem;
+    margin-left: 1rem;
   }
-  .dropdown-toggle::after {
-    margin-left: 0.5em;
+
+  .user-menu {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .user-name {
+    color: #374151;
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+
+  .auth-links {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .login-link {
+    color: #64748b;
+  }
+
+  .register-link {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .register-link:hover {
+    background: #2563eb;
+    color: white;
+  }
+
+  .logout-link {
+    color: #ef4444;
+  }
+
+  .logout-link:hover {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  .main-content {
+    min-height: calc(100vh - 80px);
+    padding: 2rem 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* Mobile Styles */
+  @media (max-width: 768px) {
+    .mobile-menu-button {
+      display: flex;
+    }
+
+    .navbar-links {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+      padding: 1rem;
+      border-bottom: 1px solid #e2e8f0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transform: translateY(-100%);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s;
+    }
+
+    .navbar-links.mobile-open {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .nav-section {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    .user-section {
+      border-left: none;
+      border-top: 1px solid #e2e8f0;
+      padding-left: 0;
+      padding-top: 1rem;
+      margin-left: 0;
+      margin-top: 1rem;
+    }
+
+    .user-menu {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+    }
+
+    .user-name {
+      padding: 0.5rem 1rem;
+      background: #f8fafc;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .auth-links {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .nav-link {
+      padding: 0.75rem 1rem;
+      text-align: center;
+    }
+
+    .main-content {
+      padding: 1rem;
+    }
+  }
+
+  /* Small Mobile */
+  @media (max-width: 480px) {
+    .navbar-container {
+      padding: 0.75rem 1rem;
+    }
+
+    .brand-text {
+      font-size: 1.25rem;
+    }
+
+    .main-content {
+      padding: 0.5rem;
+    }
   }
 </style>

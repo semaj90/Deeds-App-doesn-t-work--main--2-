@@ -1,0 +1,774 @@
+import { writable, derived, type Writable } from 'svelte/store';
+import { createMachine, interpret, assign, type StateFrom } from 'xstate';
+import Loki from 'lokijs';
+import Fuse from 'fuse.js';
+import { v4 as uuidv4 } from 'uuid';
+import debounce from 'lodash.debounce';
+import throttle from 'lodash.throttle';
+import type { 
+  CitationPoint, 
+  CitationSearchResult, 
+  AIAnalysis, 
+  Report, 
+  EditorState,
+  CanvasState,
+  AutocompleteState
+} from '$lib/data/types';
+
+// --- Enhanced Types for AI Integration ---
+export type AIPromptAction = {
+  type: 'next_paragraph' | 'citation_suggestion' | 'legal_analysis' | 'evidence_summary' | 'tell_me_what_to_do';
+  context: {
+    currentContent: string;
+    selectedText?: string;
+    caseId?: string;
+    reportId?: string;
+    evidenceIds?: string[];
+    userProfile?: UserProfile;
+  };
+  priority: 'low' | 'medium' | 'high';
+};
+
+export type UserProfile = {
+  id: string;
+  preferences: {
+    citationStyle: 'bluebook' | 'apa' | 'mla' | 'custom';
+    aiSuggestionsEnabled: boolean;
+    autoSaveInterval: number;
+    preferredTemplates: string[];
+  };
+  workPatterns: {
+    commonCitations: CitationPoint[];
+    frequentPhrases: string[];
+    writingStyle?: string;
+    avgWordsPerParagraph?: number;
+  };
+  memory: {
+    recentActions: UserAction[];
+    searchHistory: string[];
+    aiInteractions: AIInteraction[];
+  };
+};
+
+export type UserAction = {
+  id: string;
+  type: 'citation_added' | 'text_edited' | 'ai_suggestion_accepted' | 'canvas_modified';
+  timestamp: string;
+  context: any;
+  embedding?: number[];
+};
+
+export type AIInteraction = {
+  id: string;
+  prompt: string;
+  response: string;
+  type: AIPromptAction['type'];
+  timestamp: string;
+  feedback?: 'helpful' | 'not_helpful' | 'partially_helpful';
+  embedding?: number[];
+};
+
+export type NotificationState = {
+  id: string;
+  type: 'info' | 'success' | 'warning' | 'error' | 'ai_suggestion';
+  title: string;
+  message: string;
+  timestamp: string;
+  action?: {
+    label: string;
+    handler: () => void;
+  };
+  autoRemove?: boolean;
+  duration?: number;
+};
+
+export type EvidenceAnalysis = {
+  id: string;
+  imageId: string;
+  faces: Array<{
+    id: string;
+    boundingBox: { x: number; y: number; width: number; height: number };
+    confidence: number;
+    features: any;
+  }>;
+  objects: Array<{
+    id: string;
+    type: string;
+    boundingBox: { x: number; y: number; width: number; height: number };
+    confidence: number;
+  }>;
+  tags: string[];
+  metadata: any;
+  createdAt: string;
+};
+
+// --- XState Machine for Citation Store ---
+const citationStoreMachine = createMachine({
+  id: 'citationStore',
+  initial: 'initializing',
+  context: {
+    citations: [] as CitationPoint[],
+    searchQuery: '',
+    searchResults: [] as CitationSearchResult[],
+    selectedCitation: null as CitationPoint | null,
+    syncStatus: 'idle' as 'idle' | 'syncing' | 'error',
+    notifications: [] as NotificationState[],
+    aiSuggestions: [] as AIAnalysis[],
+    isProcessingAI: false,
+    userProfile: null as UserProfile | null,
+    pendingActions: [] as AIPromptAction[],
+    canvas: null as CanvasState | null,
+    currentReport: null as Report | null,
+    editorState: {
+      content: '',
+      selection: undefined,
+      cursor: undefined,
+      autocomplete: {
+        state: 'idle' as AutocompleteState,
+        query: '',
+        suggestions: [],
+        selectedIndex: -1
+      },
+      ai: {
+        isAnalyzing: false,
+        lastAnalysis: undefined,
+        suggestions: []
+      }
+    } as EditorState,
+    evidenceAnalyses: [] as EvidenceAnalysis[],
+    notifications: [] as Array<{
+      id: string;
+      type: 'info' | 'success' | 'warning' | 'error';
+      message: string;
+      timestamp: Date;
+      read: boolean;
+    }>
+  },
+  states: {
+    idle: {
+      on: {
+        LOAD: 'loading',
+        SYNC: 'syncing',
+        ADD_CITATION: {
+          actions: 'addCitationToContext'
+        },
+        UPDATE_CITATION: {
+          actions: 'updateCitationInContext'
+        },
+        DELETE_CITATION: {
+          actions: 'deleteCitationFromContext'
+        },
+        SEARCH: {
+          actions: 'performSearch'
+        },
+        ANALYZE_EVIDENCE: 'analyzingEvidence',
+        GENERATE_AI_ANALYSIS: 'generatingAIAnalysis'
+      }
+    },
+    loading: {
+      invoke: {
+        id: 'loadCitations',
+        src: 'loadFromServer',
+        onDone: {
+          target: 'ready',
+          actions: ['setCitations', 'addNotification']
+        },
+        onError: {
+          target: 'error',
+          actions: 'setError'
+        }
+      }
+    },
+    ready: {
+      on: {
+        SYNC: 'syncing',
+        ADD_CITATION: {
+          actions: ['addCitationToContext', 'addToPendingSync', 'addSuccessNotification']
+        },
+        UPDATE_CITATION: {
+          actions: ['updateCitationInContext', 'addToPendingSync']
+        },
+        DELETE_CITATION: {
+          actions: ['deleteCitationFromContext', 'addInfoNotification']
+        },
+        SEARCH: {
+          actions: 'performSearch'
+        },
+        ANALYZE_EVIDENCE: 'analyzingEvidence',
+        GENERATE_AI_ANALYSIS: 'generatingAIAnalysis',
+        SYNC_TO_QDRANT: 'syncingToQdrant'
+      }
+    },
+    syncing: {
+      invoke: {
+        id: 'syncCitations',
+        src: 'syncToServer',
+        onDone: {
+          target: 'ready',
+          actions: ['completeSync', 'addSuccessNotification']
+        },
+        onError: {
+          target: 'syncError',
+          actions: 'setSyncError'
+        }
+      }
+    },
+    syncingToQdrant: {
+      invoke: {
+        id: 'syncToQdrant',
+        src: 'syncToQdrant',
+        onDone: {
+          target: 'ready',
+          actions: 'addSuccessNotification'
+        },
+        onError: {
+          target: 'ready',
+          actions: 'addErrorNotification'
+        }
+      }
+    },
+    analyzingEvidence: {
+      invoke: {
+        id: 'analyzeEvidence',
+        src: 'analyzeEvidence',
+        onDone: {
+          target: 'ready',
+          actions: ['setEvidenceAnalysis', 'addSuccessNotification']
+        },
+        onError: {
+          target: 'ready',
+          actions: 'addErrorNotification'
+        }
+      }
+    },
+    generatingAIAnalysis: {
+      invoke: {
+        id: 'generateAIAnalysis',
+        src: 'generateAIAnalysis',
+        onDone: {
+          target: 'ready',
+          actions: ['setAIAnalysis', 'addSuccessNotification']
+        },
+        onError: {
+          target: 'ready',
+          actions: 'addErrorNotification'
+        }
+      }
+    },
+    syncError: {
+      on: {
+        RETRY_SYNC: 'syncing',
+        DISMISS_ERROR: 'ready'
+      }
+    },
+    error: {
+      on: {
+        RETRY: 'loading',
+        DISMISS_ERROR: 'idle'
+      }
+    }
+  }
+}, {
+  actions: {
+    addCitationToContext: (context, event: any) => {
+      context.citations.push(event.citation);
+    },
+    updateCitationInContext: (context, event: any) => {
+      const index = context.citations.findIndex(c => c.id === event.citation.id);
+      if (index !== -1) {
+        context.citations[index] = { ...context.citations[index], ...event.citation };
+      }
+    },
+    deleteCitationFromContext: (context, event: any) => {
+      context.citations = context.citations.filter(c => c.id !== event.citationId);
+    },
+    addToPendingSync: (context, event: any) => {
+      const existing = context.pendingSync.findIndex(c => c.id === event.citation.id);
+      if (existing !== -1) {
+        context.pendingSync[existing] = event.citation;
+      } else {
+        context.pendingSync.push(event.citation);
+      }
+    },
+    setCitations: (context, event: any) => {
+      context.citations = event.data;
+    },
+    setError: (context, event: any) => {
+      context.error = event.data.message || 'An error occurred';
+    },
+    setSyncError: (context, event: any) => {
+      context.syncStatus = 'error';
+      context.error = event.data.message || 'Sync failed';
+    },
+    completeSync: (context) => {
+      context.syncStatus = 'success';
+      context.lastSyncTime = new Date();
+      context.pendingSync = [];
+      context.error = null;
+    },
+    performSearch: (context, event: any) => {
+      // Search results will be handled by the store manager
+      context.searchResults = event.results || [];
+    },
+    setEvidenceAnalysis: (context, event: any) => {
+      context.evidenceAnalyses.push(event.data);
+    },
+    setAIAnalysis: (context, event: any) => {
+      context.aiAnalyses.push(event.data);
+    },
+    addNotification: (context, event: any) => {
+      context.notifications.push({
+        id: crypto.randomUUID(),
+        type: 'info',
+        message: event.message || 'Citations loaded successfully',
+        timestamp: new Date(),
+        read: false
+      });
+    },
+    addSuccessNotification: (context, event: any) => {
+      context.notifications.push({
+        id: crypto.randomUUID(),
+        type: 'success',
+        message: event.message || 'Operation completed successfully',
+        timestamp: new Date(),
+        read: false
+      });
+    },
+    addErrorNotification: (context, event: any) => {
+      context.notifications.push({
+        id: crypto.randomUUID(),
+        type: 'error',
+        message: event.data?.message || 'An error occurred',
+        timestamp: new Date(),
+        read: false
+      });
+    },
+    addInfoNotification: (context, event: any) => {
+      context.notifications.push({
+        id: crypto.randomUUID(),
+        type: 'info',
+        message: event.message || 'Citation deleted',
+        timestamp: new Date(),
+        read: false
+      });
+    }
+  },
+  services: {
+    loadFromServer: async () => {
+      const response = await fetch('/api/citations');
+      if (!response.ok) throw new Error('Failed to load citations');
+      return await response.json();
+    },
+    syncToServer: async (context) => {
+      for (const citation of context.pendingSync) {
+        const method = citation.synced ? 'PUT' : 'POST';
+        const url = citation.synced ? `/api/citations/${citation.id}` : '/api/citations';
+        
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(citation)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to sync citation ${citation.id}`);
+        }
+      }
+      return true;
+    },
+    syncToQdrant: async (context) => {
+      const response = await fetch('/api/qdrant/sync-citations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ citations: context.citations })
+      });
+      if (!response.ok) throw new Error('Failed to sync with Qdrant');
+      return true;
+    },
+    analyzeEvidence: async (context, event: any) => {
+      const response = await fetch('/api/ai/analyze-evidence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ evidenceId: event.evidenceId, imageData: event.imageData })
+      });
+      if (!response.ok) throw new Error('Failed to analyze evidence');
+      return await response.json();
+    },
+    generateAIAnalysis: async (context, event: any) => {
+      const response = await fetch('/api/ai/legal-bert/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: event.text, context: event.context })
+      });
+      if (!response.ok) throw new Error('Failed to generate AI analysis');
+      return await response.json();
+    }
+  }
+});
+
+// IndexedDB adapter for browser persistence
+const idbAdapter = {
+  loadDatabase: (dbname: string, callback: (value: any) => void) => {
+    const request = indexedDB.open(dbname, 1);
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(['loki'], 'readonly');
+      const store = transaction.objectStore('loki');
+      const getReq = store.get(1);
+      getReq.onsuccess = () => callback(getReq.result?.data || null);
+      getReq.onerror = () => callback(null);
+    };
+    request.onerror = () => callback(null);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('loki')) {
+        db.createObjectStore('loki');
+      }
+    };
+  },
+  saveDatabase: (dbname: string, dbstring: string, callback: () => void) => {
+    const request = indexedDB.open(dbname, 1);
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(['loki'], 'readwrite');
+      const store = transaction.objectStore('loki');
+      store.put({ data: dbstring }, 1);
+      transaction.oncomplete = callback;
+    };
+    request.onerror = callback;
+  }
+};
+
+export class EnhancedCitationStoreManager {
+  private db!: Loki;
+  private citations!: Collection<CitationPoint>;
+  private aiAnalyses!: Collection<AIAnalysis>;
+  private evidenceAnalyses!: Collection<EvidenceAnalysis>;
+  private fuse!: Fuse<CitationPoint>;
+  private store: Writable<CitationPoint[]>;
+  private stateStore: Writable<StateFrom<typeof citationMachine>>;
+  private notificationStore: Writable<any[]>;
+  private machine = citationMachine;
+  private service = interpret(this.machine);
+  private initialized = false;
+  private debouncedSync = debounce(() => this.syncAll(), 2000);
+
+  constructor() {
+    this.store = writable([]);
+    this.stateStore = writable(this.service.initialState);
+    this.notificationStore = writable([]);
+    
+    this.service.onTransition(state => {
+      this.stateStore.set(state);
+      this.store.set(state.context.citations);
+      this.notificationStore.set(state.context.notifications);
+    });
+    
+    this.service.start();
+    this.initializeDb();
+  }
+
+  private async initializeDb() {
+    if (typeof window === 'undefined') {
+      this.initialized = true;
+      return;
+    }
+
+    this.db = new Loki('prosecutor-citations-enhanced.db', {
+      adapter: idbAdapter,
+      autoload: true,
+      autoloadCallback: () => this.onDbLoad(),
+      autosave: true,
+      autosaveInterval: 5000
+    });
+  }
+
+  private onDbLoad() {
+    // Citations collection
+    let citations = this.db.getCollection('citations');
+    if (!citations) {
+      citations = this.db.addCollection('citations', {
+        unique: ['id'],
+        indices: ['label', 'sourceType', 'caseId', 'reportId', 'createdAt']
+      });
+    }
+    this.citations = citations;
+
+    // AI analyses collection
+    let aiAnalyses = this.db.getCollection('ai_analyses');
+    if (!aiAnalyses) {
+      aiAnalyses = this.db.addCollection('ai_analyses', {
+        unique: ['id'],
+        indices: ['citationId', 'createdAt']
+      });
+    }
+    this.aiAnalyses = aiAnalyses;
+
+    // Evidence analyses collection
+    let evidenceAnalyses = this.db.getCollection('evidence_analyses');
+    if (!evidenceAnalyses) {
+      evidenceAnalyses = this.db.addCollection('evidence_analyses', {
+        unique: ['id'],
+        indices: ['evidenceId', 'createdAt']
+      });
+    }
+    this.evidenceAnalyses = evidenceAnalyses;
+
+    this.updateFuse();
+    this.initialized = true;
+    
+    // Load from server on initialization
+    this.service.send('LOAD');
+  }
+
+  private updateFuse() {
+    if (!this.citations) return;
+    const data = this.citations.find();
+    this.fuse = new Fuse(data, {
+      keys: [
+        { name: 'label', weight: 2.0 },
+        { name: 'content', weight: 1.0 },
+        { name: 'tags', weight: 0.5 }
+      ],
+      threshold: 0.3,
+      includeScore: true,
+      includeMatches: true
+    });
+  }
+
+  // Public subscription methods
+  subscribe = this.store.subscribe;
+  subscribeToState = this.stateStore.subscribe;
+  subscribeToNotifications = this.notificationStore.subscribe;
+
+  // Citation management methods
+  async addCitation(citation: Omit<CitationPoint, 'id' | 'createdAt' | 'synced'>) {
+    if (!this.initialized) await this.waitForInitialization();
+
+    const newCitation: CitationPoint = {
+      ...citation,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      synced: false
+    };
+
+    this.citations.insert(newCitation);
+    this.updateFuse();
+    this.db.saveDatabase();
+
+    this.service.send({ type: 'ADD_CITATION', citation: newCitation });
+    this.debouncedSync();
+
+    return newCitation;
+  }
+
+  async updateCitation(id: string, updates: Partial<CitationPoint>) {
+    if (!this.initialized) await this.waitForInitialization();
+
+    const citation = this.citations.findOne({ id });
+    if (!citation) return null;
+
+    const updatedCitation = { ...citation, ...updates, synced: false };
+    this.citations.update(updatedCitation);
+    this.updateFuse();
+    this.db.saveDatabase();
+
+    this.service.send({ type: 'UPDATE_CITATION', citation: updatedCitation });
+    this.debouncedSync();
+
+    return updatedCitation;
+  }
+
+  async deleteCitation(id: string) {
+    if (!this.initialized) await this.waitForInitialization();
+
+    const citation = this.citations.findOne({ id });
+    if (!citation) return false;
+
+    this.citations.remove(citation);
+    this.updateFuse();
+    this.db.saveDatabase();
+
+    this.service.send({ type: 'DELETE_CITATION', citationId: id });
+
+    try {
+      await fetch(`/api/citations/${id}`, { method: 'DELETE' });
+    } catch (error) {
+      console.error('Failed to delete citation on server:', error);
+    }
+
+    return true;
+  }
+
+  // Search methods
+  search(query: string, limit: number = 10): CitationSearchResult[] {
+    if (!this.fuse || !query) {
+      return this.citations?.find() || [];
+    }
+
+    const results = this.fuse.search(query, { limit }) as CitationSearchResult[];
+    this.service.send({ type: 'SEARCH', results });
+    return results;
+  }
+
+  async semanticSearch(query: string, limit: number = 10): Promise<CitationPoint[]> {
+    try {
+      const response = await fetch('/api/qdrant/search-citations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, limit })
+      });
+
+      if (!response.ok) throw new Error('Semantic search failed');
+      return await response.json();
+    } catch (error) {
+      console.error('Semantic search failed, falling back to Fuse.js:', error);
+      return this.search(query, limit).map(result => result.item);
+    }
+  }
+
+  // AI Analysis methods
+  async analyzeEvidence(evidenceId: string, imageData: string): Promise<EvidenceAnalysis> {
+    this.service.send({ type: 'ANALYZE_EVIDENCE', evidenceId, imageData });
+    
+    // This will be handled by the state machine
+    return new Promise((resolve, reject) => {
+      const unsubscribe = this.stateStore.subscribe(state => {
+        if (state.matches('ready') && state.context.evidenceAnalyses.length > 0) {
+          const analysis = state.context.evidenceAnalyses.find(a => a.evidenceId === evidenceId);
+          if (analysis) {
+            unsubscribe();
+            resolve(analysis);
+          }
+        }
+        if (state.matches('error')) {
+          unsubscribe();
+          reject(new Error(state.context.error || 'Analysis failed'));
+        }
+      });
+    });
+  }
+
+  async generateAIAnalysis(text: string, context?: any): Promise<AIAnalysis> {
+    this.service.send({ type: 'GENERATE_AI_ANALYSIS', text, context });
+    
+    return new Promise((resolve, reject) => {
+      const unsubscribe = this.stateStore.subscribe(state => {
+        if (state.matches('ready') && state.context.aiAnalyses.length > 0) {
+          const analysis = state.context.aiAnalyses[state.context.aiAnalyses.length - 1];
+          unsubscribe();
+          resolve(analysis);
+        }
+        if (state.matches('error')) {
+          unsubscribe();
+          reject(new Error(state.context.error || 'Analysis failed'));
+        }
+      });
+    });
+  }
+
+  // Sync methods
+  async syncAll() {
+    this.service.send('SYNC');
+  }
+
+  async syncToQdrant() {
+    this.service.send('SYNC_TO_QDRANT');
+  }
+
+  // Utility methods
+  getCitationsByCase(caseId: string): CitationPoint[] {
+    if (!this.citations) return [];
+    return this.citations.find({ caseId });
+  }
+
+  getCitationsByReport(reportId: string): CitationPoint[] {
+    if (!this.citations) return [];
+    return this.citations.find({ reportId });
+  }
+
+  getMostUsed(limit: number = 5): CitationPoint[] {
+    if (!this.citations) return [];
+    return this.citations.chain()
+      .simplesort('createdAt', { desc: true })
+      .limit(limit)
+      .data();
+  }
+
+  getEvidenceAnalyses(evidenceId?: string): EvidenceAnalysis[] {
+    if (!this.evidenceAnalyses) return [];
+    return evidenceId 
+      ? this.evidenceAnalyses.find({ evidenceId })
+      : this.evidenceAnalyses.find();
+  }
+
+  getAIAnalyses(citationId?: string): AIAnalysis[] {
+    if (!this.aiAnalyses) return [];
+    return citationId 
+      ? this.aiAnalyses.find({ citationId })
+      : this.aiAnalyses.find();
+  }
+
+  // Notification methods
+  markNotificationAsRead(notificationId: string) {
+    const state = this.service.state;
+    const notification = state.context.notifications.find(n => n.id === notificationId);
+    if (notification) {
+      notification.read = true;
+      this.notificationStore.set(state.context.notifications);
+    }
+  }
+
+  clearNotifications() {
+    const state = this.service.state;
+    state.context.notifications = [];
+    this.notificationStore.set([]);
+  }
+
+  // State introspection
+  getCurrentState() {
+    return this.service.state;
+  }
+
+  isReady() {
+    return this.service.state.matches('ready');
+  }
+
+  isLoading() {
+    return this.service.state.matches('loading');
+  }
+
+  isSyncing() {
+    return this.service.state.matches('syncing') || this.service.
+    
+    
+    
+    
+    .matches('syncingToQdrant');
+  }
+
+  hasError() {
+    return this.service.state.matches('error') || this.service.state.matches('syncError');
+  }
+
+  // Cleanup
+  private async waitForInitialization(): Promise<void> {
+    return new Promise(resolve => {
+      const checkInit = () => {
+        if (this.initialized) resolve();
+        else setTimeout(checkInit, 50);
+      };
+      checkInit();
+    });
+  }
+
+  destroy() {
+    this.service.stop();
+    if (this.db) {
+      this.db.close();
+    }
+  }
+}
+
+// Export singleton instance
+export const enhancedCitationStore = new EnhancedCitationStoreManager();

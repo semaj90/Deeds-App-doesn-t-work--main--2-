@@ -793,3 +793,7 @@ export const account = pgTable("account", {
 //   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 // });
 // All SQLite-specific code is now commented out. Use only schema-new.ts for all DB operations.
+
+// TypeScript types
+export type User = typeof users.$inferSelect;
+export type Session = typeof sessions.$inferSelect;

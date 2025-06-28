@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import CitationCard from './CitationCard.svelte';
   import type { CitationPoint } from '$lib/data/types';
-  import { hybridCitationSearch, getCitationPoints, addCitationPoint } from '$lib/search';
+  import { citationStore } from '$lib/citations/lokiStore';
   
   export let caseId: string | null = null; // If set, shows citations for this case
   export let allowCreation: boolean = true;
@@ -13,6 +13,7 @@
   let filteredCitations: CitationPoint[] = [];
   let loading = false;
   let showCreateForm = false;
+  let stats = { total: 0, linked: 0, unlinked: 0, labels: [] };
   let newCitation = {
     summary: '',
     source: '',
@@ -21,22 +22,33 @@
   };
   
   onMount(() => {
-    loadCitations();
+    initializeCitations();
   });
   
-  async function loadCitations() {
+  async function initializeCitations() {
     loading = true;
     try {
-      citationPoints = getCitationPoints();
-      if (caseId) {
-        citationPoints = citationPoints.filter(c => c.linkedTo === caseId);
-      }
-      filteredCitations = citationPoints;
+      await citationStore.initialize();
+      loadCitations();
+      updateStats();
     } catch (error) {
-      console.error('Failed to load citations:', error);
+      console.error('Failed to initialize citations:', error);
     } finally {
       loading = false;
     }
+  }
+  
+  function loadCitations() {
+    if (caseId) {
+      citationPoints = citationStore.getCitationsByCase(caseId);
+    } else {
+      citationPoints = citationStore.searchCitations('', 100);
+    }
+    filteredCitations = citationPoints;
+  }
+  
+  function updateStats() {
+    stats = citationStore.getStats();
   }
   
   async function searchCitations() {
@@ -47,8 +59,10 @@
     
     loading = true;
     try {
-      const results = await hybridCitationSearch(searchQuery);
-      filteredCitations = results;
+      const results = citationStore.searchCitations(searchQuery);
+      filteredCitations = caseId ? 
+        results.filter(c => c.linkedTo === caseId) : 
+        results;
     } catch (error) {
       console.error('Search failed:', error);
       filteredCitations = citationPoints.filter(c => 
@@ -67,19 +81,15 @@
   function createCitation() {
     if (!newCitation.summary || !newCitation.source) return;
     
-    const citation: CitationPoint = {
-      id: crypto.randomUUID(),
+    const citation = citationStore.addCitation({
       summary: newCitation.summary,
       source: newCitation.source,
       labels: newCitation.labels,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
       linkedTo: caseId || undefined
-    };
+    });
     
-    addCitationPoint(citation);
-    citationPoints = [...citationPoints, citation];
-    filteredCitations = [...filteredCitations, citation];
+    loadCitations();
+    updateStats();
     
     // Reset form
     newCitation = {

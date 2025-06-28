@@ -23,232 +23,271 @@
 
   $: passwordStrength = checkPasswordStrength(password);
   $: strengthText = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'][passwordStrength] || 'Very Weak';
-  $: strengthColor = ['error', 'warning', 'info', 'success', 'success'][passwordStrength] || 'error';
+  $: strengthColor = ['var(--pico-del-color)', 'var(--pico-color-orange)', 'var(--pico-color-amber-500)', 'var(--pico-ins-color)', 'var(--pico-ins-color)'][passwordStrength] || 'var(--pico-del-color)';
 </script>
 
 <svelte:head>
-  <title>WardenNet - Register</title>
+  <title>Legal Case Management - Register</title>
+  <meta name="description" content="Create your account for the Legal Case Management System" />
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-secondary/20 via-base-200 to-primary/20">
-  <div class="hero min-h-screen">
-    <div class="hero-content flex-col lg:flex-row w-full max-w-6xl">
-      <div class="text-center lg:text-left lg:w-1/2">
-        <div class="flex items-center justify-center lg:justify-start mb-6">
-          <div class="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center mr-4">
-            <svg class="w-6 h-6 text-secondary-content" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"/>
-            </svg>
-          </div>
-          <div>
-            <h1 class="text-4xl lg:text-6xl font-bold text-secondary">Join WardenNet</h1>
-            <p class="text-lg text-base-content/70">Start Your Journey</p>
-          </div>
+<main class="container">
+  <div class="auth-layout">
+    <div class="auth-info">
+      <div class="auth-header">
+        <div class="brand-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1Z"/>
+          </svg>
         </div>
-        <p class="text-lg leading-relaxed text-base-content/80 mb-6">
-          Create your WardenNet account to access powerful case management tools, 
-          evidence tracking, and streamlined prosecution workflows designed for modern legal professionals.
-        </p>
-        
-        <div class="space-y-4">
-          <div class="flex items-center space-x-3">
-            <div class="w-6 h-6 bg-success rounded-full flex items-center justify-center">
-              <svg class="w-3 h-3 text-success-content" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-              </svg>
-            </div>
-            <span class="text-base-content/80">Complete case management system</span>
-          </div>
-          <div class="flex items-center space-x-3">
-            <div class="w-6 h-6 bg-success rounded-full flex items-center justify-center">
-              <svg class="w-3 h-3 text-success-content" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-              </svg>
-            </div>
-            <span class="text-base-content/80">Secure evidence handling</span>
-          </div>
-          <div class="flex items-center space-x-3">
-            <div class="w-6 h-6 bg-success rounded-full flex items-center justify-center">
-              <svg class="w-3 h-3 text-success-content" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-              </svg>
-            </div>
-            <span class="text-base-content/80">Advanced analytics & reporting</span>
-          </div>
+        <div>
+          <h1>Join Legal Case Management</h1>
+          <p class="auth-subtitle">Start Your Journey</p>
         </div>
       </div>
       
-      <div class="card shrink-0 w-full max-w-md shadow-2xl bg-base-100 lg:w-1/2">
-        <div class="card-body">
-          <h2 class="card-title text-2xl font-bold text-center justify-center mb-6">
-            Create Your Account
-          </h2>
-          
-          <form method="POST" use:enhance={(({ formElement, formData, action, cancel, submitter }) => {
-            loading = true;
-            return async ({ result, update }) => {
-              loading = false;
-              await update();
-            };
-          })} class="space-y-4">
-            
-            {#if form?.error}
-              <div role="alert" class="alert alert-error">
-                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>{form?.error}</span>
-              </div>
-            {/if}
-
-            <div class="form-control">
-              <label class="label" for="name">
-                <span class="label-text font-medium">Full Name</span>
-              </label>
-              <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="h-4 w-4 text-base-content/40" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  placeholder="John Doe"
-                  class="input input-bordered w-full pl-10"
-                  required
-                  autocomplete="name"
-                  aria-required="true"
-                />
-              </div>
-            </div>
-            
-            <div class="form-control">
-              <label class="label" for="email">
-                <span class="label-text font-medium">Email Address</span>
-              </label>
-              <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="h-4 w-4 text-base-content/40" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-                  </svg>
-                </div>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  placeholder="prosecutor@example.com"
-                  class="input input-bordered w-full pl-10"
-                  required
-                  autocomplete="email"
-                  aria-required="true"
-                />
-              </div>
-            </div>
-            
-            <div class="form-control">
-              <label class="label" for="password">
-                <span class="label-text font-medium">Password</span>
-              </label>
-              <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="h-5 w-5 text-base-content/40" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clip-rule="evenodd"/>
-                  </svg>
-                </div>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  bind:value={password}
-                  placeholder="••••••••"
-                  class="input input-bordered w-full pl-10"
-                  required
-                  autocomplete="new-password"
-                  minlength="8"
-                  aria-required="true"
-                />
-              </div>
-              {#if password}
-                <div class="mt-2">
-                  <div class="flex justify-between items-center mb-1">
-                    <span class="text-sm">Password Strength:</span>
-                    <span class="text-sm font-medium text-{strengthColor}">{strengthText}</span>
-                  </div>
-                  <progress class="progress progress-{strengthColor} w-full" value={passwordStrength} max="5"></progress>
-                </div>
-              {/if}
-              <div class="label">
-                <span class="label-text-alt text-base-content/60">
-                  Must be at least 8 characters with mixed case, numbers & symbols
-                </span>
-              </div>
-            </div>
-            
-            <div class="form-control">
-              <label class="label" for="confirmPassword">
-                <span class="label-text font-medium">Confirm Password</span>
-              </label>
-              <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg class="h-5 w-5 text-base-content/40" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clip-rule="evenodd"/>
-                  </svg>
-                </div>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  placeholder="••••••••"
-                  class="input input-bordered w-full pl-10"
-                  required
-                  autocomplete="new-password"
-                  aria-required="true"
-                />
-              </div>
-            </div>
-            
-            <div class="form-control">
-              <label class="label cursor-pointer" for="agreeToTerms">
-                <input type="checkbox" id="agreeToTerms" name="agreeToTerms" class="checkbox checkbox-primary" required aria-required="true" />
-                <span class="label-text">
-                  I agree to the 
-                  <a href="/terms" class="link link-primary">Terms of Service</a> 
-                  and 
-                  <a href="/privacy" class="link link-primary">Privacy Policy</a>
-                </span>
-              </label>
-            </div>
-            
-            <div class="form-control mt-8">
-              <button type="submit" class="btn btn-secondary btn-lg" class:loading disabled={loading}>
-                {#if loading}
-                  <span class="loading loading-spinner loading-sm"></span>
-                  Creating Account...
-                {:else}
-                  <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 616-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"/>
-                  </svg>
-                  Create Account
-                {/if}
-              </button>
-            </div>
-            
-            <div class="divider">or</div>
-            
-            <div class="text-center">
-              <p class="text-base-content/70">
-                Already have an account? 
-                <a href="/login" class="link link-primary font-medium">
-                  Sign in here
-                </a>
-              </p>
-            </div>
-          </form>
+      <p class="auth-description">
+        Create your account to access powerful case management tools, 
+        evidence tracking, and streamlined legal workflows designed for modern legal professionals.
+      </p>
+      
+      <div class="feature-list">
+        <div class="feature-item">
+          <span class="feature-icon">✓</span>
+          <span>Complete case management system</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">✓</span>
+          <span>Secure evidence handling</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">✓</span>
+          <span>Advanced analytics & reporting</span>
         </div>
       </div>
     </div>
+    
+    <div class="auth-form">
+      <article>
+        <header>
+          <h2>Create Your Account</h2>
+        </header>
+        
+        <form method="POST" use:enhance={(({ formElement, formData, action, cancel, submitter }) => {
+          loading = true;
+          return async ({ result, update }) => {
+            loading = false;
+            await update();
+          };
+        })}>
+          
+          {#if form?.error}
+            <div class="error-alert" role="alert">
+              <strong>Error:</strong> {form?.error}
+            </div>
+          {/if}
+
+          <label for="name">
+            Full Name
+            <input
+              type="text"
+              id="name"
+              name="name"
+              placeholder="John Doe"
+              required
+              autocomplete="name"
+              aria-required="true"
+            />
+          </label>
+          
+          <label for="email">
+            Email Address
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="prosecutor@example.com"
+              required
+              autocomplete="email"
+              aria-required="true"
+            />
+          </label>
+          
+          <label for="password">
+            Password
+            <input
+              type="password"
+              id="password"
+              name="password"
+              bind:value={password}
+              placeholder="••••••••"
+              required
+              autocomplete="new-password"
+              minlength="8"
+              aria-required="true"
+            />
+            {#if password}
+              <small>
+                Password Strength: <span style="color: {strengthColor};">{strengthText}</span>
+                <progress value={passwordStrength} max="5" style="margin-top: 0.5rem;"></progress>
+              </small>
+            {/if}
+            <small>Must be at least 8 characters with mixed case, numbers & symbols</small>
+          </label>
+          
+          <label for="confirmPassword">
+            Confirm Password
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              placeholder="••••••••"
+              required
+              autocomplete="new-password"
+              aria-required="true"
+            />
+          </label>
+          
+          <label for="role">
+            Role
+            <select id="role" name="role" required aria-required="true">
+              <option value="">Select your role...</option>
+              <option value="prosecutor">Prosecutor</option>
+              <option value="investigator">Investigator</option>
+              <option value="admin">Administrator</option>
+              <option value="analyst">Legal Analyst</option>
+            </select>
+          </label>
+          
+          <label>
+            <input type="checkbox" name="terms" required />
+            I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>
+          </label>
+          
+          <button type="submit" class="contrast" disabled={loading} aria-busy={loading}>
+            {loading ? 'Creating Account...' : 'Create Account'}
+          </button>
+        </form>
+        
+        <footer>
+          Already have an account? <a href="/login">Sign in here</a>
+        </footer>
+      </article>
+    </div>
   </div>
-</div>
+</main>
+
+<style>
+  .auth-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    min-height: 80vh;
+    align-items: center;
+    padding: 2rem 0;
+  }
+  
+  .auth-info {
+    padding: 2rem;
+  }
+  
+  .auth-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .brand-icon {
+    color: var(--pico-primary);
+    flex-shrink: 0;
+  }
+  
+  .auth-header h1 {
+    font-size: 2.5rem;
+    margin: 0;
+    line-height: 1.2;
+  }
+  
+  .auth-subtitle {
+    color: var(--pico-muted-color);
+    margin: 0;
+    font-size: 1.1rem;
+  }
+  
+  .auth-description {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    color: var(--pico-muted-color);
+  }
+  
+  .feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: var(--pico-ins-color);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+  
+  .auth-form {
+    padding: 1rem;
+  }
+  
+  .auth-form article {
+    margin: 0;
+    max-width: 400px;
+  }
+  
+  .auth-form h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .error-alert {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: var(--pico-del-background-color);
+    border: 1px solid var(--pico-del-color);
+    border-radius: var(--pico-border-radius);
+    color: var(--pico-del-color);
+  }
+  
+  @media (max-width: 768px) {
+    .auth-layout {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+    
+    .auth-info {
+      padding: 1rem;
+      text-align: center;
+    }
+    
+    .auth-header {
+      justify-content: center;
+    }
+    
+    .auth-header h1 {
+      font-size: 2rem;
+    }
+  }
+</style>

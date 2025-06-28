@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
-import { db } from './db';
-import { sessions, users } from './db/shared-db';
+import { db } from './db/index.js';
+import { sessions, users } from './db/schema.js';
 import { eq } from 'drizzle-orm';
 import type { RequestEvent } from '@sveltejs/kit';
 
@@ -16,7 +16,7 @@ export async function createSession(token: string, userId: string) {
   const [session] = await db.insert(sessions).values({
     id: token,
     userId,
-    expiresAt
+    expiresAt: expiresAt.toISOString()
   }).returning();
   
   return session;
@@ -40,14 +40,16 @@ export async function validateSessionToken(token: string) {
 
     const { session, user } = result;
 
-    if (Date.now() >= session.expiresAt.getTime()) {
+    const expiresAtTime = new Date(session.expiresAt).getTime();
+    if (Date.now() >= expiresAtTime) {
       await db.delete(sessions).where(eq(sessions.id, token));
       return { session: null, user: null };
     }
 
     // Refresh session if it's close to expiring
-    if (Date.now() >= session.expiresAt.getTime() - 1000 * 60 * 60 * 24 * 15) {
-      session.expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
+    if (Date.now() >= expiresAtTime - 1000 * 60 * 60 * 24 * 15) {
+      const newExpiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
+      session.expiresAt = newExpiresAt.toISOString();
       await db.update(sessions)
         .set({ expiresAt: session.expiresAt })
         .where(eq(sessions.id, token));

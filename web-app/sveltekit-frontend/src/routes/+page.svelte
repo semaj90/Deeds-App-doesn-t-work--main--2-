@@ -1,246 +1,304 @@
 <script lang="ts">
+  import HeadlessDemo from '$lib/components/HeadlessDemo.svelte';
+  import BitsDemo from '$lib/components/BitsDemo.svelte';
   import { onMount } from 'svelte';
-  import Typewriter from '$lib/components/Typewriter.svelte';
-  import UploadArea from '$lib/components/UploadArea.svelte';
-  import { browser } from '$app/environment';
   
-  let recentCases: any[] = [];
-  let heroText = "Advanced Legal Case Management";
+  let mounted = false;
   
-  onMount(async () => {
-    // Load recent cases
-    try {
-      const casesRes = await fetch('/api/cases/recent');
-      
-      if (casesRes.ok) {
-        recentCases = await casesRes.json();
-      }
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-    }
-
-    // Setup AI search functionality
-    if (browser) {
-      const aiSearchBtn = document.getElementById('aiSearchBtn');
-      const aiSearchInputEl = document.getElementById('aiSearchInput') as HTMLInputElement;
-      
-      if (aiSearchBtn && aiSearchInputEl) {
-        aiSearchBtn.addEventListener('click', () => handleAiSearch(aiSearchInputEl.value));
-        aiSearchInputEl.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') {
-            handleAiSearch(aiSearchInputEl.value);
-          }
-        });
-      }
-    }
+  onMount(() => {
+    mounted = true;
   });
-  
-  function handleQuickUpload(files: any) {
-    // Handle quick upload from homepage
-    if (files.length > 0) {
-      window.location.href = `/upload?files=${files.length}`;
-    }
-  }
-
-  async function handleAiSearch(query: string) {
-    if (!query.trim()) return;
-    
-    try {
-      // Navigate to AI search results page
-      window.location.href = `/ai/search?q=${encodeURIComponent(query)}`;
-    } catch (error) {
-      console.error('AI search failed:', error);
-    }
-  }
 </script>
 
 <svelte:head>
-  <title>Prosecutor Case Management System</title>
-  <meta name="description" content="Advanced legal case management with AI-powered document analysis" />
+  <title>Legal Case Management System - UI Components Demo</title>
+  <meta name="description" content="Modern legal case management with PicoCSS, UnoCSS, Melt UI, and Bits UI integration" />
 </svelte:head>
 
-<!-- Hero Section -->
-<section class="hero-section min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 text-white flex items-center justify-center">
-  <div class="container mx-auto px-6 text-center">
-    <div class="max-w-4xl mx-auto">
-      <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-        <Typewriter text={heroText} speed={100} />
+<div class="demo-page">
+  <header class="demo-header">
+    <div class="container">
+      <h1 class="text-3xl font-bold text-center mb-4">
+        🏛️ Legal Case Management System
       </h1>
-      
-      <p class="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto leading-relaxed">
-        Harness the power of AI to analyze evidence, build stronger cases, and streamline your prosecution workflow
+      <p class="text-lg text-center text-muted mb-6">
+        Demonstrating PicoCSS + UnoCSS + Melt UI + Bits UI Integration
       </p>
       
-      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-        <a href="/cases" class="bg-yellow-500 hover:bg-yellow-600 text-black px-8 py-4 rounded-lg font-semibold transition-colors duration-200 text-lg shadow-lg">
-          View Cases
-        </a>
-        <a href="/upload" class="bg-transparent border-2 border-white hover:bg-white hover:text-gray-900 px-8 py-4 rounded-lg font-semibold transition-colors duration-200 text-lg">
-          Upload Evidence
-        </a>
+      <div class="tech-stack">
+        <div class="tech-item">
+          <span class="tech-icon">🎨</span>
+          <span>PicoCSS</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-icon">⚡</span>
+          <span>UnoCSS</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-icon">🧩</span>
+          <span>Melt UI</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-icon">🔧</span>
+          <span>Bits UI</span>
+        </div>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- Quick Actions Section -->
-<section class="py-16 bg-gray-50">
-  <div class="container mx-auto px-6">
-    <h2 class="text-4xl font-bold text-center mb-12 text-gray-800">Quick Actions</h2>
-    
-    <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-      <!-- AI Search -->
-      <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow duration-300">
-        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-        </div>
-        <h3 class="text-xl font-semibold mb-4 text-gray-800">AI-Powered Search</h3>
-        <p class="text-gray-600 mb-6">Search through cases and evidence using natural language queries</p>
+  </header>
+  
+  {#if mounted}
+    <main class="container">
+      <div class="demo-grid">
         
-        <div class="flex gap-2">
-          <input 
-            id="aiSearchInput"
-            type="text" 
-            placeholder="Search cases, evidence, or legal precedents..."
-            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          <button 
-            id="aiSearchBtn"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-          >
-            Search
-          </button>
-        </div>
-      </div>
-      
-      <!-- Quick Upload -->
-      <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow duration-300">
-        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-          </svg>
-        </div>
-        <h3 class="text-xl font-semibold mb-4 text-gray-800">Quick Evidence Upload</h3>
-        <p class="text-gray-600 mb-6">Drag and drop files for instant AI analysis</p>
+        <!-- Styling Examples -->
+        <section class="demo-section">
+          <h2 class="section-title">📋 PicoCSS + Custom Styling</h2>
+          <div class="card">
+            <div class="card-header">
+              <h3>Case Information</h3>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Case Number</label>
+                <input type="text" class="form-input" value="CAS-2025-001234" readonly />
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Case Status</label>
+                <select class="form-select">
+                  <option>Active Investigation</option>
+                  <option>Pending Review</option>
+                  <option>Closed</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Priority Level</label>
+                <div class="priority-indicators">
+                  <div class="priority-high evidence-item">High Priority Case</div>
+                  <div class="priority-medium evidence-item">Medium Priority Case</div>
+                  <div class="priority-low evidence-item">Low Priority Case</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-primary">Save Changes</button>
+              <button class="btn btn-secondary">Cancel</button>
+            </div>
+          </div>
+        </section>
         
-        <UploadArea on:upload={handleQuickUpload} />
-      </div>
-      
-      <!-- Case Analytics -->
-      <div class="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow duration-300">
-        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-          </svg>
-        </div>
-        <h3 class="text-xl font-semibold mb-4 text-gray-800">Case Analytics</h3>
-        <p class="text-gray-600 mb-6">View insights and patterns across your cases</p>
-        <a href="/dashboard" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors duration-200 inline-block">
-          View Dashboard
-        </a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Recent Cases Section -->
-{#if recentCases && recentCases.length > 0}
-<section class="py-16 bg-white">
-  <div class="container mx-auto px-6">
-    <h2 class="text-4xl font-bold text-center mb-12 text-gray-800">Recent Cases</h2>
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-      {#each recentCases.slice(0, 6) as caseItem}
-        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-lg transition-shadow duration-300 border">
-          <div class="flex justify-between items-start mb-4">
-            <h3 class="text-lg font-semibold text-gray-800 truncate">{caseItem.title}</h3>
-            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{caseItem.status || 'Active'}</span>
+        <!-- UnoCSS Utilities -->
+        <section class="demo-section">
+          <h2 class="section-title">⚡ UnoCSS Utilities</h2>
+          <div class="card">
+            <div class="card-body">
+              <div class="case-card mb-3">
+                <div class="flex justify-between items-center mb-2">
+                  <h4 class="font-semibold">State vs. Johnson</h4>
+                  <span class="status-badge case-status-active">Active</span>
+                </div>
+                <p class="text-sm text-muted">Criminal case involving financial fraud</p>
+                <div class="flex gap-2 mt-2">
+                  <button class="btn btn-sm btn-primary">View Details</button>
+                  <button class="btn btn-sm btn-secondary">Edit</button>
+                </div>
+              </div>
+              
+              <div class="case-card mb-3">
+                <div class="flex justify-between items-center mb-2">
+                  <h4 class="font-semibold">Miller Corp Dispute</h4>
+                  <span class="status-badge case-status-pending">Pending</span>
+                </div>
+                <p class="text-sm text-muted">Contract dispute resolution</p>
+                <div class="flex gap-2 mt-2">
+                  <button class="btn btn-sm btn-primary">View Details</button>
+                  <button class="btn btn-sm btn-secondary">Edit</button>
+                </div>
+              </div>
+              
+              <div class="case-card">
+                <div class="flex justify-between items-center mb-2">
+                  <h4 class="font-semibold">Estate Settlement</h4>
+                  <span class="status-badge case-status-closed">Closed</span>
+                </div>
+                <p class="text-sm text-muted">Probate and estate administration</p>
+                <div class="flex gap-2 mt-2">
+                  <button class="btn btn-sm btn-secondary">View Archive</button>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <p class="text-gray-600 text-sm mb-4 line-clamp-3">{caseItem.description || 'No description available'}</p>
-          
-          <div class="flex justify-between items-center text-sm text-gray-500">
-            <span>Case #{caseItem.id}</span>
-            <span>{new Date(caseItem.createdAt).toLocaleDateString()}</span>
+        </section>
+        
+        <!-- Melt UI Demo -->
+        <section class="demo-section">
+          <h2 class="section-title">🧩 Melt UI Headless Components</h2>
+          <div class="card">
+            <div class="card-body">
+              <HeadlessDemo />
+            </div>
           </div>
-          
-          <a href="/cases/{caseItem.id}" class="block mt-4 text-blue-600 hover:text-blue-800 font-medium text-sm">
-            View Details →
-          </a>
-        </div>
-      {/each}
-    </div>
-    
-    <div class="text-center mt-12">
-      <a href="/cases" class="bg-gray-800 hover:bg-gray-900 text-white px-8 py-3 rounded-lg font-semibold transition-colors duration-200">
-        View All Cases
-      </a>
-    </div>
-  </div>
-</section>
-{/if}
-
-<!-- Features Section -->
-<section class="py-16 bg-gray-900 text-white">
-  <div class="container mx-auto px-6">
-    <h2 class="text-4xl font-bold text-center mb-12">Powerful Features</h2>
-    
-    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-      <div class="text-center">
-        <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-          </svg>
-        </div>
-        <h3 class="text-lg font-semibold mb-2">Document Analysis</h3>
-        <p class="text-gray-300 text-sm">AI-powered analysis of legal documents and evidence</p>
+        </section>
+        
+        <!-- Bits UI Demo -->
+        <section class="demo-section">
+          <h2 class="section-title">🔧 Bits UI Components</h2>
+          <div class="card">
+            <div class="card-body">
+              <BitsDemo />
+            </div>
+          </div>
+        </section>
+        
+        <!-- Alert Examples -->
+        <section class="demo-section">
+          <h2 class="section-title">🚨 Alert System</h2>
+          <div class="card">
+            <div class="card-body">
+              <div class="alert alert-success">
+                <strong>Success!</strong> Case has been successfully saved and is now active.
+              </div>
+              
+              <div class="alert alert-warning">
+                <strong>Warning!</strong> This case has a pending deadline in 3 days.
+              </div>
+              
+              <div class="alert alert-error">
+                <strong>Error!</strong> Unable to upload evidence file. Please try again.
+              </div>
+              
+              <div class="alert alert-info">
+                <strong>Info:</strong> New evidence has been added to this case by another team member.
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- File Upload Demo -->
+        <section class="demo-section">
+          <h2 class="section-title">📎 Evidence Upload</h2>
+          <div class="card">
+            <div class="card-body">
+              <div class="file-drop-zone">
+                <div class="text-center">
+                  <span class="text-2xl mb-2 block">📄</span>
+                  <h3>Drop evidence files here</h3>
+                  <p class="text-sm text-muted">
+                    Or click to browse files
+                  </p>
+                  <p class="text-xs text-muted mt-2">
+                    Supported: PDF, DOC, IMG, VIDEO
+                  </p>
+                </div>
+              </div>
+              
+              <div class="mt-4">
+                <div class="progress">
+                  <div class="progress-bar" style="width: 75%"></div>
+                </div>
+                <p class="text-sm text-muted mt-1">
+                  Uploading evidence_document.pdf... 75%
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+        
       </div>
-      
-      <div class="text-center">
-        <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-        </div>
-        <h3 class="text-lg font-semibold mb-2">Case Tracking</h3>
-        <p class="text-gray-300 text-sm">Comprehensive case management and progress tracking</p>
-      </div>
-      
-      <div class="text-center">
-        <div class="w-16 h-16 bg-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-          </svg>
-        </div>
-        <h3 class="text-lg font-semibold mb-2">Smart Insights</h3>
-        <p class="text-gray-300 text-sm">Generate insights and recommendations from case data</p>
-      </div>
-      
-      <div class="text-center">
-        <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-          </svg>
-        </div>
-        <h3 class="text-lg font-semibold mb-2">Secure & Private</h3>
-        <p class="text-gray-300 text-sm">Bank-level security for sensitive legal information</p>
-      </div>
-    </div>
-  </div>
-</section>
+    </main>
+  {/if}
+</div>
 
 <style>
-  .hero-section {
-    background-image: radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-                      radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-                      radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+  .demo-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    padding: var(--spacing-lg) 0;
   }
-    .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
+  
+  .demo-header {
+    background: var(--color-background);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--spacing-2xl);
+    padding: var(--spacing-2xl) 0;
+  }
+  
+  .tech-stack {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    flex-wrap: wrap;
+  }
+  
+  .tech-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+  }
+  
+  .tech-icon {
+    font-size: var(--font-size-lg);
+  }
+  
+  .demo-grid {
+    display: grid;
+    gap: var(--spacing-2xl);
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  
+  .demo-section {
+    background: var(--color-background);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
     overflow: hidden;
+  }
+  
+  .section-title {
+    background: var(--color-primary);
+    color: white;
+    padding: var(--spacing-lg);
+    margin: 0;
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+  }
+  
+  .priority-indicators {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  
+  .text-muted {
+    color: var(--color-text-muted);
+  }
+  
+  @media (max-width: 768px) {
+    .demo-page {
+      padding: var(--spacing-md) 0;
+    }
+    
+    .demo-header {
+      padding: var(--spacing-lg) 0;
+    }
+    
+    .tech-stack {
+      gap: var(--spacing-sm);
+    }
+    
+    .tech-item {
+      font-size: var(--font-size-xs);
+      padding: var(--spacing-xs) var(--spacing-sm);
+    }
+    
+    .demo-grid {
+      gap: var(--spacing-lg);
+    }
   }
 </style>

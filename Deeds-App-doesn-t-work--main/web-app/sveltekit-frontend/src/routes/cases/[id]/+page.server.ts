@@ -1,5 +1,5 @@
-import { db } from '$lib/server/db';
-import { cases, evidence } from '$lib/server/db/schema-new'; // Use unified schema
+import { db } from '../../../lib/server/db/index.js';
+import { cases } from '../../../lib/server/db/unified-schema.js';
 import { redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
@@ -15,18 +15,15 @@ export const load: PageServerLoad = async ({ params, locals }) => {
   const caseId = params.id;
 
   try {
-    const caseDetails = await db.query.cases.findFirst({
-      where: eq(cases.id, caseId),
-      with: { evidence: true, criminals: { with: { criminal: true } } } // Eager load evidence and criminals
-    });
+    const caseDetails = await db.select().from(cases).where(eq(cases.id, caseId)).limit(1);
     
-    if (!caseDetails) {
+    if (!caseDetails || caseDetails.length === 0) {
       throw redirect(302, '/cases'); // Redirect if case not found
     }
 
     return { 
       session,
-      caseDetails,
+      caseDetails: caseDetails[0],
     };
   } catch (error) {
     console.error('Error loading case:', error);

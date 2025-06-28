@@ -46,61 +46,21 @@
 
 <div class="card">
   <div class="card-header">
-    <h3>Automate Upload</h3>
+    <h3 class="card-title">Automate Upload</h3>
   </div>
   <div class="card-body">
-    <div class="mb-3">
+    <div class="form-group">
       <label for="automationTypeSelect" class="form-label">Automation Type:</label>
       <Dropdown id="automationTypeSelect" bind:selected={selectedAutomationType} options={automationTypeOptions} />
     </div>
-    <div class="mb-3">
+    <div class="form-group">
       <label for="sourceSelect" class="form-label">Source:</label>
       <Dropdown id="sourceSelect" bind:selected={selectedSource} options={sourceOptions} />
     </div>
-    <div class="mb-3 form-check">
+    <div class="form-group form-check">
       <Checkbox id="autoProcessCheckbox" bind:checked={enableAutoProcessing} label="Enable Auto-Processing" />
     </div>
     <button class="btn btn-primary" on:click={handleSubmit}>Save Automation</button>
   </div>
 </div>
 
-<style>
-  .card {
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 1.5rem;
-  }
-
-  .card-header {
-    border-bottom: 1px solid #eee;
-    padding-bottom: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .card-header h3 {
-    margin: 0;
-    font-size: 1.25rem;
-    color: #333;
-  }
-
-  .form-label {
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-    display: block;
-  }
-
-  .btn-primary {
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1rem;
-  }
-
-  .btn-primary:hover {
-    background-color: #0056b3;
-  }
-</style>

@@ -1,9 +1,11 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
 
-export const POST: RequestHandler = async () => {
+export const POST: RequestHandler = async ({ cookies }) => {
   try {
-    // Mock logout - replace with actual session cleanup
+    // Clear the session cookie
+    cookies.delete('session', { path: '/' });
+    
     return json({ 
       success: true, 
       message: 'Logout successful' 

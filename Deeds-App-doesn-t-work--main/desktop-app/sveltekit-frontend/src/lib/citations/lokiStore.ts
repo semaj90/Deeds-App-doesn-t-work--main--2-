@@ -1,10 +1,10 @@
 import Loki from 'lokijs';
-import type { CitationPoint } from '$lib/data/types';
+import type { LegacyCitationPoint } from '$lib/data/types';
 
 // In-memory Loki.js database for fast Citation Point operations
 class CitationStore {
   private db: Loki;
-  private citations: Collection<CitationPoint>;
+  private citations: Collection<LegacyCitationPoint>;
   private initialized = false;
 
   constructor() {
@@ -28,7 +28,7 @@ class CitationStore {
   }
 
   private async loadMockData() {
-    const mockCitations: CitationPoint[] = [
+    const mockCitations: LegacyCitationPoint[] = [
       {
         id: 'cit_001',
         summary: 'Defendant showed suspicious behavior at 2:30 AM near the crime scene, captured on surveillance footage',
@@ -83,7 +83,7 @@ class CitationStore {
   }
 
   // Search citations with fuzzy matching and semantic ranking
-  searchCitations(query: string, limit = 10): CitationPoint[] {
+  searchCitations(query: string, limit = 10): LegacyCitationPoint[] {
     if (!query.trim()) {
       return this.citations.chain()
         .simplesort('updatedAt', true)
@@ -95,9 +95,9 @@ class CitationStore {
     
     // Fuzzy search across summary and labels
     const results = this.citations.chain()
-      .where((obj: CitationPoint) => {
+      .where((obj: LegacyCitationPoint) => {
         const summaryMatch = obj.summary.toLowerCase().includes(queryLower);
-        const labelMatch = obj.labels.some(label => 
+        const labelMatch = obj.labels.some((label: string) => 
           label.toLowerCase().includes(queryLower)
         );
         const sourceMatch = obj.source.toLowerCase().includes(queryLower);
@@ -112,22 +112,22 @@ class CitationStore {
   }
 
   // Get all citations linked to a specific case
-  getCitationsByCase(caseId: string): CitationPoint[] {
+  getCitationsByCase(caseId: string): LegacyCitationPoint[] {
     return this.citations.find({ linkedTo: caseId });
   }
 
   // Get unlinked citations (available to add to cases)
-  getUnlinkedCitations(limit = 20): CitationPoint[] {
+  getUnlinkedCitations(limit = 20): LegacyCitationPoint[] {
     return this.citations.chain()
-      .where((obj: CitationPoint) => !obj.linkedTo)
+      .where((obj: LegacyCitationPoint) => !obj.linkedTo)
       .simplesort('updatedAt', true)
       .limit(limit)
       .data();
   }
 
   // Add new citation point
-  addCitation(citation: Omit<CitationPoint, 'id' | 'createdAt' | 'updatedAt'>): CitationPoint {
-    const newCitation: CitationPoint = {
+  addCitation(citation: Omit<LegacyCitationPoint, 'id' | 'createdAt' | 'updatedAt'>): LegacyCitationPoint {
+    const newCitation: LegacyCitationPoint = {
       ...citation,
       id: `cit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       createdAt: Date.now(),
@@ -174,12 +174,12 @@ class CitationStore {
   }
 
   // Get citation by ID
-  getCitation(id: string): CitationPoint | null {
+  getCitation(id: string): LegacyCitationPoint | null {
     return this.citations.findOne({ id });
   }
 
   // Update citation
-  updateCitation(id: string, updates: Partial<CitationPoint>): boolean {
+  updateCitation(id: string, updates: Partial<LegacyCitationPoint>): boolean {
     try {
       const citation = this.citations.findOne({ id });
       if (citation) {
@@ -226,7 +226,7 @@ class CitationStore {
   private getUniqueLabels(): string[] {
     const allLabels = this.citations.chain()
       .mapReduce(
-        (obj: CitationPoint) => obj.labels,
+        (obj: LegacyCitationPoint) => obj.labels,
         (array: string[][]) => array.flat()
       );
     

@@ -15,7 +15,10 @@ export const POST: RequestHandler = async ({ request }) => {
         }
 
         // Check if user already exists
-        const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
+        const existingUser = await db.select({
+            id: users.id,
+            email: users.email
+        }).from(users).where(eq(users.email, email)).limit(1);
         
         if (existingUser.length > 0) {
             return json({ error: 'User already exists' }, { status: 400 });

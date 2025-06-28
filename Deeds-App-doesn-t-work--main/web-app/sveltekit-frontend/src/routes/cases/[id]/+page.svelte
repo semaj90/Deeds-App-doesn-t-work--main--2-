@@ -1,103 +1,342 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import type { Case, Book } from '$lib/data/types';
+	import type { PageData } from './$types';
 	
-	let caseData: any = null;
-	let loading = true;
-	let error = '';
-	let userSession: any = null;
-	let canEdit = false;
+	export let data: PageData;
 	
-	const caseId = $page.params.id;
-	
-	onMount(async () => {
-		await loadUserSession();
-		await loadCase();
-	});
-	
-	async function loadUserSession() {
-		try {
-			const response = await fetch('/api/auth/session');
-			if (response.ok) {
-				userSession = await response.json();
-				canEdit = !!userSession?.user;
-			}
-		} catch (e) {
-			console.error('Failed to load user session:', e);
-		}
-	}
-	
-	async function loadCase() {
-		if (!caseId) {
-			error = 'Invalid case ID';
-			loading = false;
-			return;
-		}
-		
-		try {
-			const response = await fetch(`/api/cases/${caseId}`);
-			
-			if (response.status === 404) {
-				error = 'Case not found';
-			} else if (response.status === 403) {
-				error = 'Access denied - insufficient permissions';
-			} else if (!response.ok) {
-				error = `Failed to load case (${response.status})`;
-			} else {
-				const result = await response.json();
-				if (result.success && result.case) {
-					caseData = result.case;
-				} else {
-					error = 'Case data not available';
-				}
-			}
-		} catch (e) {
-			console.error('Error loading case:', e);
-			error = 'Network error - please try again';
-		} finally {
-			loading = false;
-		}
-	}
+	const caseDetails = data.caseDetails;
+	const user = data.session?.user;
+	const canEdit = !!user;
 	
 	function handleBack() {
 		goto('/cases');
 	}
 	
 	function handleEdit() {
-		if (canEdit && caseData) {
-			goto(`/cases/${caseId}/edit`);
+		if (canEdit && caseDetails) {
+			goto(`/cases/${caseDetails.id}/edit`);
 		}
+	}
+
+	function getStatusColor(status: string) {
+		switch (status) {
+			case 'open': return 'bg-blue-100 text-blue-800';
+			case 'in-progress': return 'bg-yellow-100 text-yellow-800';
+			case 'under-review': return 'bg-orange-100 text-orange-800';
+			case 'closed': return 'bg-green-100 text-green-800';
+			case 'archived': return 'bg-gray-100 text-gray-800';
+			default: return 'bg-gray-100 text-gray-800';
+		}
+	}
+
+	function getDangerScoreColor(score: number) {
+		if (score >= 80) return 'text-red-600 bg-red-100';
+		if (score >= 60) return 'text-orange-600 bg-orange-100';
+		if (score >= 40) return 'text-yellow-600 bg-yellow-100';
+		return 'text-green-600 bg-green-100';
 	}
 </script>
 
 <svelte:head>
-	<title>{caseData?.title || 'Case Details'} - Legal AI CMS</title>
+	<title>{caseDetails?.title || 'Case Details'} - WardenNet</title>
 </svelte:head>
 
-<div class="container mx-auto p-6 min-h-screen">
-	{#if loading}
-		<div class="flex justify-center items-center h-64">
-			<div class="flex flex-col items-center space-y-4">
-				<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-				<p class="text-gray-600">Loading case details...</p>
+<div class="case-details-container">
+	{#if caseDetails}
+		<div class="header-section">
+			<button 
+				class="back-button" 
+				on:click={handleBack}
+				type="button"
+			>
+				← Back to Cases
+			</button>
+			
+			<div class="case-header">
+				<div class="case-title-section">
+					<h1>{caseDetails.title}</h1>
+					<p class="case-number">{caseDetails.caseNumber}</p>
+				</div>
+				
+				{#if canEdit}
+					<button 
+						class="edit-button"
+						on:click={handleEdit}
+						type="button"
+					>
+						Edit Case
+					</button>
+				{/if}
 			</div>
 		</div>
-	
-	{:else if error}
-		<div class="max-w-2xl mx-auto">
-			<div class="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
-				<div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
-					<svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-					</svg>
+
+		<div class="case-content">
+			<div class="case-info-grid">
+				<div class="info-card">
+					<h3>Status</h3>
+					<span class="status-badge {getStatusColor(caseDetails.status)}">
+						{caseDetails.status || 'Unknown'}
+					</span>
 				</div>
-				<h2 class="text-xl font-semibold text-red-800 mb-2">Nothing to see here</h2>
-				<p class="text-red-700 mb-6">{error}</p>
-				<div class="space-x-4">
-					<button 
-						on:click={handleBack}
+
+				<div class="info-card">
+					<h3>Danger Score</h3>
+					<div class="danger-score {getDangerScoreColor(caseDetails.dangerScore || 0)}">
+						{caseDetails.dangerScore || 0}/100
+					</div>
+				</div>
+
+				<div class="info-card">
+					<h3>Created</h3>
+					<p class="date-text">
+						{new Date(caseDetails.createdAt).toLocaleDateString()}
+					</p>
+				</div>
+
+				<div class="info-card">
+					<h3>Last Updated</h3>
+					<p class="date-text">
+						{new Date(caseDetails.updatedAt || caseDetails.createdAt).toLocaleDateString()}
+					</p>
+				</div>
+			</div>
+
+			<div class="description-section">
+				<h3>Description</h3>
+				<div class="description-content">
+					{caseDetails.description || 'No description available.'}
+				</div>
+			</div>
+
+			{#if caseDetails.aiSummary}
+				<div class="ai-summary-section">
+					<h3>AI Summary</h3>
+					<div class="ai-summary-content">
+						{caseDetails.aiSummary}
+					</div>
+				</div>
+			{/if}
+		</div>
+	{:else}
+		<div class="error-state">
+			<div class="error-icon">⚠️</div>
+			<h2>Case Not Found</h2>
+			<p>The requested case could not be found or you don't have permission to view it.</p>
+			<button class="back-button" on:click={handleBack}>
+				← Back to Cases
+			</button>
+		</div>
+	{/if}
+</div>
+
+<style>
+	.case-details-container {
+		max-width: 1000px;
+		margin: 0 auto;
+		padding: 2rem;
+	}
+
+	.header-section {
+		margin-bottom: 2rem;
+	}
+
+	.back-button {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: #6b7280;
+		color: white;
+		border: none;
+		padding: 0.5rem 1rem;
+		border-radius: 6px;
+		cursor: pointer;
+		font-size: 0.9rem;
+		margin-bottom: 1.5rem;
+		transition: background-color 0.2s;
+	}
+
+	.back-button:hover {
+		background: #4b5563;
+	}
+
+	.case-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 1rem;
+		background: white;
+		padding: 2rem;
+		border-radius: 12px;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	}
+
+	.case-title-section h1 {
+		font-size: 2.5rem;
+		font-weight: 700;
+		color: #1f2937;
+		margin: 0 0 0.5rem 0;
+		line-height: 1.2;
+	}
+
+	.case-number {
+		font-size: 1.1rem;
+		color: #6b7280;
+		font-weight: 500;
+		margin: 0;
+	}
+
+	.edit-button {
+		background: #3b82f6;
+		color: white;
+		border: none;
+		padding: 0.75rem 1.5rem;
+		border-radius: 8px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background-color 0.2s;
+		white-space: nowrap;
+	}
+
+	.edit-button:hover {
+		background: #2563eb;
+	}
+
+	.case-content {
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
+
+	.case-info-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: 1.5rem;
+	}
+
+	.info-card {
+		background: white;
+		padding: 1.5rem;
+		border-radius: 12px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	.info-card h3 {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: #6b7280;
+		margin: 0 0 0.75rem 0;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.status-badge {
+		display: inline-block;
+		padding: 0.5rem 1rem;
+		border-radius: 20px;
+		font-size: 0.9rem;
+		font-weight: 600;
+		text-transform: capitalize;
+	}
+
+	.danger-score {
+		display: inline-block;
+		padding: 0.5rem 1rem;
+		border-radius: 8px;
+		font-size: 1.25rem;
+		font-weight: 700;
+	}
+
+	.date-text {
+		font-size: 1rem;
+		color: #374151;
+		margin: 0;
+	}
+
+	.description-section,
+	.ai-summary-section {
+		background: white;
+		padding: 2rem;
+		border-radius: 12px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	.description-section h3,
+	.ai-summary-section h3 {
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: #1f2937;
+		margin: 0 0 1rem 0;
+	}
+
+	.description-content {
+		font-size: 1.1rem;
+		line-height: 1.6;
+		color: #374151;
+		white-space: pre-wrap;
+	}
+
+	.ai-summary-content {
+		font-size: 1rem;
+		line-height: 1.6;
+		color: #374151;
+		background: #f8fafc;
+		padding: 1.5rem;
+		border-radius: 8px;
+		border-left: 4px solid #3b82f6;
+		white-space: pre-wrap;
+	}
+
+	.error-state {
+		text-align: center;
+		padding: 4rem 2rem;
+		background: white;
+		border-radius: 12px;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	}
+
+	.error-icon {
+		font-size: 4rem;
+		margin-bottom: 1rem;
+	}
+
+	.error-state h2 {
+		font-size: 2rem;
+		font-weight: 700;
+		color: #1f2937;
+		margin: 0 0 1rem 0;
+	}
+
+	.error-state p {
+		font-size: 1.1rem;
+		color: #6b7280;
+		margin: 0 0 2rem 0;
+	}
+
+	@media (max-width: 768px) {
+		.case-details-container {
+			padding: 1rem;
+		}
+
+		.case-header {
+			flex-direction: column;
+			align-items: stretch;
+			text-align: center;
+		}
+
+		.case-title-section h1 {
+			font-size: 2rem;
+		}
+
+		.case-info-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.edit-button {
+			width: 100%;
+		}
+	}
+</style>
 						class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md transition-colors"
 					>
 						← Back to Cases

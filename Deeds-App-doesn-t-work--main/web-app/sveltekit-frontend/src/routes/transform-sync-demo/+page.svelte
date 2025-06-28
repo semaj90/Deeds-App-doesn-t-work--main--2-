@@ -454,6 +454,17 @@
   .w-full { width: 100%; }
   .flex-1 { flex: 1; }
 
+  /* Icon styling - make icons smaller */
+  :global([slot="icon"]) {
+    font-size: 0.75rem;
+  }
+
+  /* Make circular elements smaller */
+  .s-y_bCXRrkrYfP {
+    width: 32px;
+    height: 32px;
+  }
+
   /* Responsive design */
   @media (max-width: 768px) {
     .demo-actions {

@@ -4,7 +4,7 @@
 	
 	import { onMount } from 'svelte';
 	import { marked } from 'marked';
-	import type { EvidenceFile, EvidenceAnchorPoint, CaseEvidenceSummary } from '$lib/types';
+	import type { EvidenceFile, EvidenceAnchorPoint, CaseEvidenceSummary } from '../types/multimodal';
 	
 	export let evidenceFile: EvidenceFile;
 	export let anchorPoints: EvidenceAnchorPoint[] = [];

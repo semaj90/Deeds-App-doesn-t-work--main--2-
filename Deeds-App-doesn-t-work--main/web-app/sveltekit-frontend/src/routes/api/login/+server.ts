@@ -1,7 +1,7 @@
-import { db } from '$lib/server/db';
-import { users } from '$lib/server/db/schema';
+import { db } from '../../../lib/server/db/index.js';
+import { users } from '../../../lib/server/db/schema.js';
 import bcrypt from 'bcrypt';
-import { createSession, generateSessionToken, setSessionTokenCookie } from '$lib/server/session';
+import { createSession, generateSessionToken, setSessionTokenCookie } from '../../../lib/server/session.js';
 import { eq } from 'drizzle-orm';
 import { json } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
@@ -55,7 +55,7 @@ export async function POST(event: RequestEvent) {
     const session = await createSession(sessionToken, user.id);
     
     // Set session cookie
-    setSessionTokenCookie(event, sessionToken, session.expiresAt);
+    setSessionTokenCookie(event, sessionToken, new Date(session.expiresAt));
     
     console.log('✅ Session created and cookie set');
     

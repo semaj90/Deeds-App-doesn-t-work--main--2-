@@ -12,6 +12,9 @@
 	"/api/ai/prompt": [
 		"src/routes/api/ai/prompt/+server.ts"
 	],
+	"/api/ai/suggestions": [
+		"src/routes/api/ai/suggestions/+server.ts"
+	],
 	"/api/auth/login": [
 		"src/routes/api/auth/login/+server.ts"
 	],
@@ -20,6 +23,9 @@
 	],
 	"/api/auth/register": [
 		"src/routes/api/auth/register/+server.ts"
+	],
+	"/api/canvas-states": [
+		"src/routes/api/canvas-states/+server.ts"
 	],
 	"/api/cases": [
 		"src/routes/api/cases/+server.ts"
@@ -30,14 +36,44 @@
 	"/api/cases/suggest-title": [
 		"src/routes/api/cases/suggest-title/+server.ts"
 	],
+	"/api/cases/[caseId]": [
+		"src/routes/api/cases/[caseId]/+server.ts"
+	],
+	"/api/cases/[caseId]/analysis": [
+		"src/routes/api/cases/[caseId]/analysis/+server.ts"
+	],
+	"/api/cases/[caseId]/deep-analysis": [
+		"src/routes/api/cases/[caseId]/deep-analysis/+server.ts"
+	],
+	"/api/cases/[caseId]/recommendations": [
+		"src/routes/api/cases/[caseId]/recommendations/+server.ts"
+	],
+	"/api/citation-points": [
+		"src/routes/api/citation-points/+server.ts"
+	],
+	"/api/citations": [
+		"src/routes/api/citations/+server.ts"
+	],
 	"/api/evidence": [
 		"src/routes/api/evidence/+server.ts"
 	],
 	"/api/llm/chat": [
 		"src/routes/api/llm/chat/+server.ts"
 	],
+	"/api/reports": [
+		"src/routes/api/reports/+server.ts"
+	],
+	"/api/reports/[reportId]/export/pdf": [
+		"src/routes/api/reports/[reportId]/export/pdf/+server.ts"
+	],
 	"/api/statutes": [
 		"src/routes/api/statutes/+server.ts"
+	],
+	"/api/user/avatar/upload": [
+		"src/routes/api/user/avatar/upload/+server.ts"
+	],
+	"/api/user/profile": [
+		"src/routes/api/user/profile/+server.ts"
 	],
 	"/cases": [
 		"src/routes/cases/+page.server.ts",
@@ -67,12 +103,24 @@
 	"/logout": [
 		"src/routes/+layout.server.ts"
 	],
+	"/original-home": [
+		"src/routes/+layout.server.ts"
+	],
 	"/profile": [
 		"src/routes/profile/+page.server.ts",
 		"src/routes/+layout.server.ts"
 	],
 	"/register": [
 		"src/routes/register/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/report-builder": [
+		"src/routes/+layout.server.ts"
+	],
+	"/reports": [
+		"src/routes/+layout.server.ts"
+	],
+	"/ui-demo": [
 		"src/routes/+layout.server.ts"
 	]
 }

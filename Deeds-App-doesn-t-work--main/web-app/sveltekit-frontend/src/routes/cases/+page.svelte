@@ -13,6 +13,31 @@
     // Any initialization logic for the enhanced case list
     console.log('Advanced case list loaded with', data.cases.length, 'cases');
   });
+
+  function createNewCase() {
+    goto('/cases/new');
+  }
 </script>
 
-<AdvancedCaseList {data} />
+<svelte:head>
+  <title>Cases - WardenNet</title>
+</svelte:head>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">Case Management</h1>
+    <p class="page-description">Manage your legal cases, track progress, and organize evidence</p>
+    
+    <button 
+      class="btn btn-success"
+      on:click={createNewCase}
+      type="button"
+    >
+      + Create New Case
+    </button>
+  </div>
+
+  <AdvancedCaseList {data} />
+</div>
+
+

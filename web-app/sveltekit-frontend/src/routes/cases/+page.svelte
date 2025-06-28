@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import TauriAPI from '$lib/tauri';
   
   let cases: any[] = [];
   let loading = true;
@@ -7,12 +8,7 @@
   
   onMount(async () => {
     try {
-      const response = await fetch('/api/cases');
-      if (response.ok) {
-        cases = await response.json();
-      } else {
-        error = 'Failed to load cases';
-      }
+      cases = await TauriAPI.getCases();
     } catch (err) {
       error = 'Error loading cases';
       console.error('Error:', err);

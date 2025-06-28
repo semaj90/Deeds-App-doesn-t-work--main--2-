@@ -1,5 +1,5 @@
-import { db } from '$lib/server/db';
-import { cases } from '$lib/server/db/schema';
+import { db } from '../../lib/server/db/index.js';
+import { cases } from '../../lib/server/db/unified-schema.js';
 import { eq } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';

@@ -1,5 +1,5 @@
 import { db } from '$lib/server/db';
-import { cases, statutes, criminals, evidence, caseCriminals } from '$lib/server/db/schema-new';
+import { reports, cases, statutes, criminals, evidence, caseCriminals } from '$lib/server/db/schema-new';
 import { eq } from 'drizzle-orm';
 import PDFDocument from 'pdfkit';
 

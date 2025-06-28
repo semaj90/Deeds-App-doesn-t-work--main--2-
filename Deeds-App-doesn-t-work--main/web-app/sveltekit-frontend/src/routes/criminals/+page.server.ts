@@ -1,5 +1,5 @@
-import { db } from '$lib/server/db';
-import { criminals } from '$lib/server/db/schema-new'; // Use unified schema
+import { db } from '../../lib/server/db/index.js';
+import { criminals } from '../../lib/server/db/unified-schema.js';
 import { eq, sql, count, ilike, or } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
@@ -18,11 +18,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
         ilike(criminals.lastName, `%${searchTerm}%`)
     );
 
-    const list = await db.query.criminals.findMany({
-        where: whereClause,
-        limit: limit,
-        offset: (page - 1) * limit,
-    });
+    const list = await db.select().from(criminals)
+        .where(whereClause)
+        .limit(limit)
+        .offset((page - 1) * limit);
 
     const totalCriminalsResult = await db.select({ count: count() }).from(criminals).where(whereClause);
     const totalCriminals = totalCriminalsResult[0].count;

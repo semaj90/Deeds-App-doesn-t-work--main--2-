@@ -46,6 +46,21 @@ async fn create_case(
     database::create_case(&state.pool, title, description).await
 }
 
+#[tauri::command]
+async fn get_reports(state: tauri::State<'_, DatabaseState>) -> Result<Vec<serde_json::Value>, String> {
+    database::get_reports(&state.pool).await
+}
+
+#[tauri::command]
+async fn create_report(
+    state: tauri::State<'_, DatabaseState>,
+    title: String,
+    content: String,
+    summary: String,
+) -> Result<serde_json::Value, String> {
+    database::create_report(&state.pool, title, content, summary).await
+}
+
 #[tokio::main]
 async fn main() {
     // Initialize database connection
@@ -69,7 +84,9 @@ async fn main() {
             run_llm_inference,
             upload_llm_model,
             get_cases,
-            create_case
+            create_case,
+            get_reports,
+            create_report
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

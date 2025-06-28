@@ -348,3 +348,217 @@ export const account = pgTable("account", {
 		}).onDelete("cascade"),
 	primaryKey({ columns: [table.provider, table.providerAccountId], name: "account_provider_providerAccountId_pk"}),
 ]);
+
+// === REPORT BUILDER TABLES ===
+
+// Reports table for the Case Books and Report Builder feature
+export const reports = pgTable("reports", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	title: varchar({ length: 255 }).notNull(),
+	content: text(), // HTML content from contenteditable editor
+	summary: text(),
+	caseId: uuid("case_id").notNull(),
+	reportType: varchar("report_type", { length: 50 }).default('prosecution_memo').notNull(), // 'prosecution_memo', 'case_brief', 'evidence_summary', 'timeline', 'custom'
+	status: varchar({ length: 20 }).default('draft').notNull(), // 'draft', 'in_review', 'final', 'archived'
+	confidentialityLevel: varchar("confidentiality_level", { length: 20 }).default('restricted').notNull(),
+	jurisdiction: varchar({ length: 100 }),
+	tags: jsonb().default([]).notNull(),
+	metadata: jsonb().default({}).notNull(), // Store additional properties like priority, category, etc.
+	sections: jsonb().default([]).notNull(), // Array of ReportSection objects
+	aiSummary: text("ai_summary"),
+	aiTags: jsonb("ai_tags").default([]).notNull(),
+	wordCount: integer("word_count").default(0).notNull(),
+	estimatedReadTime: integer("estimated_read_time").default(0).notNull(), // in minutes
+	templateId: uuid("template_id"), // Future: link to report templates
+	createdBy: uuid("created_by").notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+	lastEditedBy: uuid("last_edited_by"),
+	publishedAt: timestamp("published_at", { mode: 'string' }),
+	archivedAt: timestamp("archived_at", { mode: 'string' }),
+}, (table) => [
+	foreignKey({
+		columns: [table.caseId],
+		foreignColumns: [cases.id],
+		name: "reports_case_id_cases_id_fk"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.createdBy],
+		foreignColumns: [users.id],
+		name: "reports_created_by_users_id_fk"
+	}),
+	foreignKey({
+		columns: [table.lastEditedBy],
+		foreignColumns: [users.id],
+		name: "reports_last_edited_by_users_id_fk"
+	}),
+]);
+
+// Citation Points table for managing citations and references
+export const citationPoints = pgTable("citation_points", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	text: text().notNull(), // The actual citation text
+	source: varchar({ length: 500 }).notNull(), // Source reference (statute code, case name, etc.)
+	page: integer(), // Page number if applicable
+	context: text(), // Surrounding context or quote
+	type: varchar({ length: 50 }).default('statute').notNull(), // 'statute', 'case_law', 'evidence', 'expert_opinion', 'testimony'
+	jurisdiction: varchar({ length: 100 }),
+	tags: jsonb().default([]).notNull(),
+	caseId: uuid("case_id"),
+	reportId: uuid("report_id"),
+	evidenceId: uuid("evidence_id"), // Link to evidence if applicable
+	statuteId: uuid("statute_id"), // Link to statute if applicable
+	aiSummary: text("ai_summary"),
+	relevanceScore: numeric("relevance_score", { precision: 4, scale: 3 }).default('0.0'), // AI-computed relevance 0.0-1.0
+	metadata: jsonb().default({}).notNull(), // Additional properties, AI analysis, etc.
+	isBookmarked: boolean("is_bookmarked").default(false).notNull(),
+	usageCount: integer("usage_count").default(0).notNull(), // How many times cited
+	createdBy: uuid("created_by").notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	foreignKey({
+		columns: [table.caseId],
+		foreignColumns: [cases.id],
+		name: "citation_points_case_id_cases_id_fk"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.reportId],
+		foreignColumns: [reports.id],
+		name: "citation_points_report_id_reports_id_fk"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.evidenceId],
+		foreignColumns: [evidence.id],
+		name: "citation_points_evidence_id_evidence_id_fk"
+	}).onDelete("set null"),
+	foreignKey({
+		columns: [table.statuteId],
+		foreignColumns: [statutes.id],
+		name: "citation_points_statute_id_statutes_id_fk"
+	}).onDelete("set null"),
+	foreignKey({
+		columns: [table.createdBy],
+		foreignColumns: [users.id],
+		name: "citation_points_created_by_users_id_fk"
+	}),
+]);
+
+// Canvas States table for storing Fabric.js canvas data
+export const canvasStates = pgTable("canvas_states", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	title: varchar({ length: 255 }),
+	reportId: uuid("report_id").notNull(),
+	canvasData: jsonb("canvas_data").notNull(), // Serialized Fabric.js canvas state
+	thumbnailUrl: text("thumbnail_url"), // Generated thumbnail for quick preview
+	dimensions: jsonb().default({ width: 800, height: 600 }).notNull(),
+	backgroundColor: varchar("background_color", { length: 20 }).default('#ffffff'),
+	metadata: jsonb().default({}).notNull(), // Evidence IDs, citation IDs, annotations, etc.
+	version: integer().default(1).notNull(), // For version control
+	isTemplate: boolean("is_template").default(false).notNull(),
+	createdBy: uuid("created_by").notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	foreignKey({
+		columns: [table.reportId],
+		foreignColumns: [reports.id],
+		name: "canvas_states_report_id_reports_id_fk"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.createdBy],
+		foreignColumns: [users.id],
+		name: "canvas_states_created_by_users_id_fk"
+	}),
+]);
+
+// AI Analysis table for storing AI-generated insights
+export const aiAnalyses = pgTable("ai_analyses", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	reportId: uuid("report_id"),
+	citationId: uuid("citation_id"),
+	caseId: uuid("case_id"),
+	analysisType: varchar("analysis_type", { length: 50 }).notNull(), // 'summary', 'keyword_extraction', 'sentiment', 'citation_suggestion', 'legal_precedent'
+	inputData: jsonb("input_data").notNull(), // The data that was analyzed
+	result: jsonb().notNull(), // AI analysis result with confidence, content, metadata
+	model: varchar({ length: 100 }), // AI model used (e.g., 'gpt-4', 'claude-3', 'local-llm')
+	tokens: integer().default(0), // Token count for cost tracking
+	processingTime: integer("processing_time").default(0), // milliseconds
+	confidence: numeric({ precision: 4, scale: 3 }).default('0.0'), // 0.0-1.0
+	status: varchar({ length: 20 }).default('completed').notNull(), // 'pending', 'completed', 'failed'
+	errorMessage: text("error_message"),
+	createdBy: uuid("created_by").notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	foreignKey({
+		columns: [table.reportId],
+		foreignColumns: [reports.id],
+		name: "ai_analyses_report_id_reports_id_fk"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.citationId],
+		foreignColumns: [citationPoints.id],
+		name: "ai_analyses_citation_id_citation_points_id_fk"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.caseId],
+		foreignColumns: [cases.id],
+		name: "ai_analyses_case_id_cases_id_fk"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.createdBy],
+		foreignColumns: [users.id],
+		name: "ai_analyses_created_by_users_id_fk"
+	}),
+]);
+
+// Report Templates table for standardized report formats
+export const reportTemplates = pgTable("report_templates", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	description: text(),
+	templateContent: text("template_content").notNull(), // HTML template with placeholders
+	reportType: varchar("report_type", { length: 50 }).notNull(),
+	jurisdiction: varchar({ length: 100 }),
+	isDefault: boolean("is_default").default(false).notNull(),
+	isActive: boolean("is_active").default(true).notNull(),
+	metadata: jsonb().default({}).notNull(), // Template-specific configuration
+	usageCount: integer("usage_count").default(0).notNull(),
+	createdBy: uuid("created_by").notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	foreignKey({
+		columns: [table.createdBy],
+		foreignColumns: [users.id],
+		name: "report_templates_created_by_users_id_fk"
+	}),
+]);
+
+// Export History table for tracking PDF/document exports
+export const exportHistory = pgTable("export_history", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	reportId: uuid("report_id").notNull(),
+	exportFormat: varchar("export_format", { length: 20 }).notNull(), // 'pdf', 'docx', 'html', 'json'
+	fileName: varchar("file_name", { length: 500 }).notNull(),
+	fileSize: integer("file_size"), // in bytes
+	downloadUrl: text("download_url"),
+	status: varchar({ length: 20 }).default('pending').notNull(), // 'pending', 'completed', 'failed', 'expired'
+	options: jsonb().default({}).notNull(), // Export options used
+	errorMessage: text("error_message"),
+	expiresAt: timestamp("expires_at", { mode: 'string' }), // When download link expires
+	downloadCount: integer("download_count").default(0).notNull(),
+	createdBy: uuid("created_by").notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	foreignKey({
+		columns: [table.reportId],
+		foreignColumns: [reports.id],
+		name: "export_history_report_id_reports_id_fk"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.createdBy],
+		foreignColumns: [users.id],
+		name: "export_history_created_by_users_id_fk"
+	}),
+]);

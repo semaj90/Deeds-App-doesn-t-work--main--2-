@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { evidenceFiles, criminals } from '$lib/server/db/schema-new'; // Use unified schema
+import { evidence, criminals } from '$lib/server/db/schema';
 import { eq, and, ilike } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
@@ -99,19 +99,18 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       aiTags = ['document', 'uploaded']; // Placeholder
     }
 
-    const newEvidenceArr = await db.insert(evidenceFiles).values({
+    const newEvidenceArr = await db.insert(evidence).values({
       caseId,
+      title: file.name,
+      description: `Uploaded file: ${file.name}`,
+      evidenceType: file.type.split('/')[0], // e.g., 'application' -> 'document'
+      fileUrl,
       fileName: file.name,
-      filePath,
-      fileType: file.type.split('/')[0], // e.g., 'application' -> 'document'
       fileSize: file.size,
       mimeType: file.type,
       uploadedBy: userId,
-      aiSummary,
-      embedding: embedding,
-      tags: Array.isArray(aiTags) ? aiTags : [],
-      metadata: { verdictDate, criminalNames },
-      processingStatus: 'completed'
+      aiAnalysis: { summary: aiSummary, tags: aiTags },
+      aiTags: Array.isArray(aiTags) ? aiTags : [],
     }).returning();
     const newEvidence = newEvidenceArr[0];
     uploaded.push({ ...newEvidence, matchedCriminals, extracted: { verdictDate, criminalNames } });

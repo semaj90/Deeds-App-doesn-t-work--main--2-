@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import CitationManager from '$lib/citations/CitationManager.svelte';
-  import type { CitationPoint } from '$lib/data/types';
+  import CitationManager from '$lib/components/CitationManager.svelte';
+  import type { LegacyCitationPoint } from '$lib/data/types';
   
   let selectedTab: 'manager' | 'search' | 'api' = 'manager';
-  let demoResults: CitationPoint[] = [];
+  let demoResults: LegacyCitationPoint[] = [];
   let searchQuery = '';
   let loading = false;
 

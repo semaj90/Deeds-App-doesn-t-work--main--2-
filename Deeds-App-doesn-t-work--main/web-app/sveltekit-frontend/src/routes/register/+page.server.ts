@@ -1,9 +1,8 @@
-import { db } from '$lib/server/db';
-import { users } from '$lib/server/db/schema';
+import { db } from '../../lib/server/db/index.js';
+import { users } from '../../lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
 import type { Actions } from './$types';
 
 const SALT_ROUNDS = 10;
@@ -39,7 +38,6 @@ export const actions: Actions = {
 			const lastName = nameParts.slice(1).join(' ') || '';
 
 			await db.insert(users).values({
-				id: uuidv4(), // Generate a unique ID
 				firstName,
 				lastName,
 				name, // Also store the full name

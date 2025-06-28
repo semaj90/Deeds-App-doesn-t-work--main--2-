@@ -1,8 +1,12 @@
 <script lang="ts">
-  import '../app.css';
+  import '$lib/styles/unified.css';
+  import 'uno.css';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
   import Settings from '$lib/components/Settings.svelte';
+  import UserDropdown from '$lib/components/UserDropdown.svelte';
+  import { initializeTauri } from '$lib/tauri';
   
   let user = $page.data?.user;
   let showSettings = false;
@@ -44,38 +48,51 @@
     document.documentElement.setAttribute('data-theme', settings.theme);
     showSettings = false;
   }
+
+  // Initialize Tauri when component mounts
+  onMount(() => {
+    initializeTauri();
+  });
 </script>
 
-<nav class="navbar bg-base-100 shadow mb-4">
-  <div class="container mx-auto flex justify-between items-center py-2 px-4">
-    <div class="flex items-center gap-4">
-      <a href="/" class="font-bold text-lg">WardenNet</a>
-      <a href="/cases">Cases</a>
-      <a href="/evidence">Evidence</a>
-      <a href="/law">Law</a>
-      <a href="/ai">AI Prompt</a>
-      <a href="/ai-assistant">AI Assistant</a>
-    </div>
-    <div class="flex items-center gap-2">
-      <button 
-        class="btn btn-ghost btn-sm" 
-        on:click={() => showSettings = true}
-        title="Settings"
-      >
-        ⚙️
-      </button>
-      {#if user}
-        <a href="/profile">Profile</a>
-        <a href="/logout">Logout</a>
-      {:else}
-        <a href="/login">Login</a>
-        <a href="/register">Register</a>
-      {/if}
+<nav class="main-nav">
+  <div class="container">
+    <div class="nav-content">
+      <div class="nav-brand">
+        <a href="/" class="brand-link">⚖️ Legal Case Management</a>
+      </div>
+      <div class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/cases">Cases</a>
+        <a href="/reports">Reports</a>
+        <a href="/evidence">Evidence</a>
+        <a href="/law">Law</a>
+        <a href="/ai">AI Prompt</a>
+        <a href="/ai-assistant">AI Assistant</a>
+        <a href="/ui-demo" class="highlight">🎨 UI Demo</a>
+        <a href="/original-home">Original Home</a>
+      </div>
+      <div class="nav-actions">
+        <button 
+          type="button"
+          class="secondary outline"
+          on:click={() => showSettings = true}
+          title="Settings"
+        >
+          ⚙️
+        </button>
+        {#if user}
+          <UserDropdown {user} />
+        {:else}
+          <a href="/login" role="button" class="contrast">Login</a>
+          <a href="/register" role="button" class="outline">Register</a>
+        {/if}
+      </div>
     </div>
   </div>
 </nav>
 
-<main class="container mx-auto px-4">
+<main class="container">
   <slot />
 </main>
 

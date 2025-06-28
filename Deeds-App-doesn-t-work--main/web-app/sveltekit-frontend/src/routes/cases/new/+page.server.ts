@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { cases } from '$lib/server/db/schema';
+import { db } from '../../../lib/server/db/index.js';
+import { cases } from '../../../lib/server/db/unified-schema.js';
 import { randomUUID } from 'crypto';
 import type { Actions } from './$types';
 

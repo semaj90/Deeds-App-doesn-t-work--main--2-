@@ -37,7 +37,7 @@ This plan outlines the steps to develop an interactive canvas for the Deeds-App,
 ## II. AI Integration (Backend - Python NLP Service & Qdrant)
 
 **Goal:** Integrate Qdrant for efficient vector search and auto-tagging, and enable AI summarization.
-
+integrate loki.js and fuse.js? for cacching of qdrant tagging. (for web-app, desktop-app, mobile-app all use dockersetup. explain the difference)
 1.  **Qdrant Integration (Backend):**
     *   **Vector Database Setup:** Ensure Qdrant is running and accessible from the Python NLP service.
     *   **Indexing Evidence Embeddings:** Modify the evidence upload process (`Deeds-App-doesn-t-work--main/web-app/sveltekit-frontend/src/routes/api/evidence/upload/+server.ts`) to send the generated embeddings to Qdrant for indexing. Each evidence piece will be a document in Qdrant, with its embedding and relevant metadata (caseId, fileType, original content hash, etc.).

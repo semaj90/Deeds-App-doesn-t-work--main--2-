@@ -269,6 +269,25 @@ export const settings = pgTable('settings', {
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 });
 
+// Citation Points table for AI-powered legal citations
+export const citationPoints = pgTable('citation_points', {
+  id: serial('id').primaryKey(),
+  uuid: text('uuid').notNull().unique().default('gen_random_uuid()'), // For external references
+  summary: text('summary').notNull(), // AI-generated snippet
+  source: text('source').notNull(), // e.g., "evidence/123", "document/456"
+  sourceId: integer('source_id'), // Reference to actual source record
+  sourceType: text('source_type').notNull(),
+  labels: jsonb('labels').default('[]'), // Array of string labels
+  vector: jsonb('vector'), // Semantic search embedding vector
+  confidence: integer('confidence'), // AI confidence score (0-100)
+  linkedTo: integer('linked_to').references(() => cases.id), // Case this citation is linked to
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  isArchived: boolean('is_archived').default(false),
+  metadata: jsonb('metadata').default('{}') // Additional AI/processing metadata
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
@@ -431,6 +450,17 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   })
 }));
 
+export const citationPointsRelations = relations(citationPoints, ({ one }) => ({
+  case: one(cases, {
+    fields: [citationPoints.linkedTo],
+    references: [cases.id]
+  }),
+  creator: one(users, {
+    fields: [citationPoints.createdBy],
+    references: [users.id]
+  })
+}));
+
 // Type exports
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -464,3 +494,5 @@ export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;
 export type Setting = typeof settings.$inferSelect;
 export type NewSetting = typeof settings.$inferInsert;
+export type CitationPoint = typeof citationPoints.$inferSelect;
+export type NewCitationPoint = typeof citationPoints.$inferInsert;

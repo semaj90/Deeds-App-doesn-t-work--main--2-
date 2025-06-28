@@ -1,0 +1,43 @@
+{
+  "productName": "Legal Case Management",
+  "version": "1.0.0",
+  "identifier": "com.legal.case-management",
+  "build": {
+    "beforeBuildCommand": "cd ../web-app/sveltekit-frontend && npm run build",
+    "beforeDevCommand": "",
+    "frontendDist": "../web-app/sveltekit-frontend/build",
+    "devUrl": "http://localhost:5175"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Legal Case Management",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: https: http: ws: wss:; img-src 'self' data: https: http:; media-src 'self' data: https: http:; connect-src 'self' data: https: http: ws: wss:;"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "category": "Productivity",
+    "copyright": "",
+    "longDescription": "A comprehensive legal case management system with AI-powered analysis and evidence tracking.",
+    "shortDescription": "Legal Case Management System",
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {}
+}

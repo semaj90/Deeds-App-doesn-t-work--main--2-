@@ -32,11 +32,10 @@ The goal is a very high-resolution and polished UI/UX design with a modern, slee
     *   **Interactive Canvas:** A visual interface for describing cases, potentially using drag-and-drop elements (`DropZone.svelte`, `DraggableItem.svelte`).
     *   **LLM Response Display:** Area to show LLM-generated content, potentially with a typewriter effect.
     *   **3D Model Viewer (Live2D/OBJ):** Svelte component integrating Three.js to display 3D models that "output" LLM responses.
-*   **General UI Components (Bootstrap-enhanced):
-    *   [`+Modal.svelte`](Deeds-App-doesn-t-work--main/web-app/sveltekit-frontend/src/lib/components/+Modal.svelte): Reusable modal dialogs.
+*  (Deeds-App-doesn-t-work--main/web-app/sveltekit-frontend/src/lib/components/+Modal.svelte): Reusable modal dialogs.
     *   [`+Dropdown.svelte`](Deeds-App-doesn-t-work--main/web-app/sveltekit-frontend/src/lib/components/+Dropdown.svelte): Custom dropdown menus.
     *   [`+Checkbox.svelte`](Deeds-App-doesn-t-work--main/web-app/sveltekit-frontend/src/lib/components/+Checkbox.svelte): Custom checkboxes.
-    *   **Buttons, Forms, Alerts:** Standard Bootstrap components with custom styling.
+    *   **Buttons, Forms, Alerts:** Standard bits-ui, melt-ui components with custom styling.
 
 **Aesthetic Implementation:**
 

@@ -1,6 +1,9 @@
 <script lang="ts">
   interface RegisterForm {
     error?: string;
+    name?: string;
+    email?: string;
+    role?: string;
     [key: string]: any;
   }
   import { enhance } from '$app/forms';
@@ -10,6 +13,7 @@
   let loading = false;
   let passwordStrength = 0;
   let password = '';
+  let confirmPassword = '';
 
   function checkPasswordStrength(pwd: string) {
     let strength = 0;
@@ -22,6 +26,7 @@
   }
 
   $: passwordStrength = checkPasswordStrength(password);
+  $: passwordsMatch = password === confirmPassword && confirmPassword !== '';
   $: strengthText = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'][passwordStrength] || 'Very Weak';
   $: strengthColor = ['var(--pico-del-color)', 'var(--pico-color-orange)', 'var(--pico-color-amber-500)', 'var(--pico-ins-color)', 'var(--pico-ins-color)'][passwordStrength] || 'var(--pico-del-color)';
 </script>
@@ -93,6 +98,7 @@
               type="text"
               id="name"
               name="name"
+              value={form?.name || ''}
               placeholder="John Doe"
               required
               autocomplete="name"
@@ -106,6 +112,7 @@
               type="email"
               id="email"
               name="email"
+              value={form?.email || ''}
               placeholder="prosecutor@example.com"
               required
               autocomplete="email"
@@ -141,21 +148,27 @@
               type="password"
               id="confirmPassword"
               name="confirmPassword"
+              bind:value={confirmPassword}
               placeholder="••••••••"
               required
               autocomplete="new-password"
               aria-required="true"
             />
+            {#if confirmPassword && !passwordsMatch}
+              <small style="color: var(--pico-del-color);">Passwords do not match</small>
+            {:else if confirmPassword && passwordsMatch}
+              <small style="color: var(--pico-ins-color);">Passwords match ✓</small>
+            {/if}
           </label>
           
           <label for="role">
             Role
             <select id="role" name="role" required aria-required="true">
               <option value="">Select your role...</option>
-              <option value="prosecutor">Prosecutor</option>
-              <option value="investigator">Investigator</option>
-              <option value="admin">Administrator</option>
-              <option value="analyst">Legal Analyst</option>
+              <option value="prosecutor" selected={form?.role === 'prosecutor'}>Prosecutor</option>
+              <option value="investigator" selected={form?.role === 'investigator'}>Investigator</option>
+              <option value="admin" selected={form?.role === 'admin'}>Administrator</option>
+              <option value="analyst" selected={form?.role === 'analyst'}>Legal Analyst</option>
             </select>
           </label>
           

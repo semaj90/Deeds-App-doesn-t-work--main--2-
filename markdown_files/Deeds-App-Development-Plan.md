@@ -80,19 +80,19 @@ graph TD
     SvelteKit_Frontend -->|API Calls| SvelteKit_Backend
 
     subgraph SvelteKit_Backend
-        SvelteKit_Backend -->|Drizzle ORM| SQLite_DB
+        SvelteKit_Backend -->|Drizzle ORM| postgres_DB
         SvelteKit_Backend -->|Qdrant Client| Qdrant_DB
         SvelteKit_Backend -->|LLM API| Local_LLM_Service
         SvelteKit_Backend -->|Server-side Cache (WardenNetCache)| In_Memory_Cache
     end
 
-    SQLite_DB[SQLite Database]
+    postgres_DB[postgres Database]
     Qdrant_DB[Qdrant Vector Database]
     Local_LLM_Service[Local LLM Service (Ollama/Llama.cpp)]
     In_Memory_Cache[Server-side Cache]
 
     subgraph Data Flow
-        SQLite_DB --> |Case Data, Persons of Interest, Evidence, Laws| SvelteKit_Backend
+        postgres_DB --> |Case Data, Persons of Interest, Evidence, Laws| SvelteKit_Backend
         Local_LLM_Service --> |Embeddings, NLP Analysis| Qdrant_DB
         Local_LLM_Service --> |Auto-complete Suggestions, Summaries| SvelteKit_Backend
         Qdrant_DB --> |Semantic Search Results| SvelteKit_Backend

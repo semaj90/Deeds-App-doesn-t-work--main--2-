@@ -1,10 +1,11 @@
 import { redirect } from "@sveltejs/kit";
 import type { Actions, ServerLoad } from "@sveltejs/kit";
-import { db } from '$lib/server/db';
-import { criminals, cases } from '$lib/server/db/unified-schema';
+import { db } from '../../lib/server/db';
+import { criminals, cases } from '../../lib/server/db/schema';
+import type { DashboardData } from './types';
 import { eq, ilike, sql, count, desc } from 'drizzle-orm';
 
-export const load: ServerLoad = async ({ url, locals }) => {
+export const load: ServerLoad = async ({ url, locals }): Promise<DashboardData> => {
     console.log('[dashboard/+page.server.ts] Load function called');
     
     // Check authentication

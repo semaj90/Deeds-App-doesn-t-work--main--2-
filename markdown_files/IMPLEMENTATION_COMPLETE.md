@@ -7,7 +7,7 @@ Your highly intelligent and interactive legal case management system has been **
 ## 🌟 **What We Accomplished**
 
 ### **1. Complete Database Setup ✅**
-- **SQLite Database**: `dev.db` with JSON1 extension enabled
+- **postgres Database**: `dev.db` 
 - **Drizzle ORM**: Fully configured with 18 tables
 - **Advanced Schema**: All enhancement tables created and tested
 - **Sample Data**: Rich test dataset with real-world examples
@@ -71,7 +71,7 @@ All 18 tables successfully created and populated:
 ## 🔧 **Technology Stack Implemented**
 
 - **Frontend**: SvelteKit 2.16.0 with Svelte 5.0
-- **Database**: SQLite with better-sqlite3 and JSON1
+- **Database**: postgres
 - **ORM**: Drizzle ORM 0.44.2 with SQLite adapter
 - **Styling**: TailwindCSS 4.1.10 with DaisyUI 5.0.43
 - **Authentication**: Custom JWT-based system
@@ -88,7 +88,7 @@ WardenNet/
 ├── 🖥️ desktop-app/                   🔄 Ready for Tauri integration
 ├── 📱 mobile-app/                    🔄 Ready for Flutter integration
 ├── ⚡ backend/                       🔄 Ready for Rust backend
-├── 💾 dev.db                         ✅ SQLite database with data
+├── 💾 dev.db                         ✅ postgres database with data
 ├── 📄 drizzle/                       ✅ Migrations applied
 └── ⚙️ drizzle.config.ts              ✅ Configured for SQLite
 ```
@@ -130,18 +130,18 @@ Your system is perfectly positioned for LLM integration:
 ## 🧩 SQLite3 JSON1 Extension & API Compatibility
 
 - **SQLite JSON1 extension is fully enabled and tested in `dev.db`.**
-- All JSON fields (e.g., `tags`, `data`, `embedding`) are stored as JSON and queried using SQLite's JSON1 functions.
+- All JSON fields (e.g., `tags`, `data`, `embedding`) are stored as JSON and queried using postgres JSON1 functions.
 - **Drizzle ORM** is configured to use JSON1 for all relevant fields, enabling:
   - Tag-based search and filtering in `/cases` and `/api/cases` endpoints
   - JSON array/object updates and queries in all API endpoints
   - Full compatibility with SvelteKit SSR, caching, and Playwright/unit tests
 - The database connection logic in `src/lib/server/db/index.ts` ensures:
-  - SQLite file path is used for local dev
+  - postgres file path is used for local dev
   - Directory is created if missing
   - WAL mode and foreign keys are enabled
-  - JSON1 extension is loaded if needed (modern SQLite/Better-SQLite3 includes it by default)
+  - JSON1 extension is loaded if needed (modern postgres)
 - **API endpoints** for cases, evidence, and all CRUD flows use JSON1 SQL (e.g., `json_each`, `json_extract`) for robust JSON support.
-- If you ever see errors about missing JSON1, update your SQLite/Better-SQLite3 version.
+- If you ever see errors about missing JSON1, update your postgres
 
 **Tested and Working:**
 - Tag-based search and filtering in UI and API
@@ -152,7 +152,7 @@ Your system is perfectly positioned for LLM integration:
 
 ## 🎉 **Mission Status: COMPLETE**
 
-✅ **Database**: SQLite with advanced schema
+✅ **Database**: postgres with advanced schema
 ✅ **Backend**: Drizzle ORM with all features
 ✅ **Frontend**: SvelteKit with smart components
 ✅ **Features**: All advanced capabilities implemented

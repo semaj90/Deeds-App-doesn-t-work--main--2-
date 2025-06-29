@@ -1,13 +1,22 @@
+import Database from 'better-sqlite3';
 import { Pool } from 'pg';
-import { type NodePgDatabase, drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from './schema'; // Use schema
+import { drizzle as sqliteDrizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import { drizzle as pgDrizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
+import * as schema from './schema';
 import { building } from '$app/environment';
-import { env } from '$env/dynamic/private';
+import { migrate as sqliteMigrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
+import dotenv from 'dotenv';
 
-let _db: NodePgDatabase<typeof schema> | null = null;
+// Load environment-specific variables
+const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
+dotenv.config({ path: envFile });
+
+let _db: BetterSQLite3Database<typeof schema> | NodePgDatabase<typeof schema> | null = null;
+let _sqlite: Database.Database | null = null;
 let _pool: Pool | null = null;
 
-function initializeDatabase(): NodePgDatabase<typeof schema> | null {
+function initializeDatabase(): BetterSQLite3Database<typeof schema> | NodePgDatabase<typeof schema> | null {
 	// Skip database initialization during SvelteKit build
 	if (building) {
 		console.log('Skipping database initialization during build');
@@ -16,26 +25,84 @@ function initializeDatabase(): NodePgDatabase<typeof schema> | null {
 
 	if (_db) return _db;
 
-	// Use SvelteKit's env module within the app, which falls back to process.env in scripts
-	const connectionString = env.DATABASE_URL || process.env.DATABASE_URL;
+	const databaseUrl = process.env.DATABASE_URL || 'sqlite:./dev.db';
+	const isSQLite = databaseUrl.startsWith('sqlite:');
 
-	if (!connectionString) {
-		throw new Error('DATABASE_URL environment variable is not set.');
+	if (isSQLite) {
+		// SQLite for development
+		const dbPath = databaseUrl.replace('sqlite:', '');
+		console.log('🗄️ Connecting to SQLite database:', dbPath);
+		
+		_sqlite = new Database(dbPath);
+		_sqlite.pragma('journal_mode = WAL');
+		
+		_db = sqliteDrizzle(_sqlite, { schema });
+
+		// Run SQLite migrations
+		try {
+			sqliteMigrate(_db as BetterSQLite3Database<typeof schema>, { migrationsFolder: './drizzle' });
+			console.log('✅ SQLite migrations completed');
+		} catch (error) {
+			console.log('⚠️ SQLite migration warning:', error);
+		}
+
+		console.log('✅ SQLite database connection established');
+	} else {
+		// PostgreSQL for testing/production
+		console.log('🐘 Connecting to PostgreSQL database:', databaseUrl);
+		
+		_pool = new Pool({
+			connectionString: databaseUrl,
+		});
+		
+		_db = pgDrizzle(_pool, { schema });
+
+		// Run PostgreSQL migrations
+		try {
+			pgMigrate(_db as NodePgDatabase<typeof schema>, { migrationsFolder: './drizzle' });
+			console.log('✅ PostgreSQL migrations completed');
+		} catch (error) {
+			console.log('⚠️ PostgreSQL migration warning:', error);
+		}
+
+		console.log('✅ PostgreSQL database connection established');
 	}
 
-	console.log('Connecting to database...');
-	_pool = new Pool({
-		connectionString,
-		ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false }
-	});
-
-	_db = drizzle(_pool, { schema }); // Pass schema to drizzle
-
-	console.log('Database connection established.');
 	return _db;
 }
 
-export const db: NodePgDatabase<typeof schema> = new Proxy({} as NodePgDatabase<typeof schema>, {
+// PostgreSQL left for production
+// import { Pool } from 'pg';
+// import { drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
+// import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
+// 
+// let _pool: Pool | null = null;
+// 
+// function initializePostgreSQL(): NodePgDatabase<typeof schema> | null {
+//   if (building) return null;
+//   if (_db) return _db;
+//   
+//   _pool = new Pool({
+//     host: process.env.DB_HOST || 'localhost',
+//     port: parseInt(process.env.DB_PORT || '5432'),
+//     user: process.env.DB_USER || 'postgres',
+//     password: process.env.DB_PASSWORD || 'postgres',
+//     database: process.env.DB_NAME || 'prosecutor_db',
+//   });
+//   
+//   _db = pgDrizzle(_pool, { schema });
+//   
+//   try {
+//     pgMigrate(_db, { migrationsFolder: './drizzle' });
+//     console.log('✅ PostgreSQL migrations completed');
+//   } catch (error) {
+//     console.log('⚠️ PostgreSQL migration warning:', error);
+//   }
+//   
+//   return _db;
+// }
+
+export const db: BetterSQLite3Database<typeof schema> | NodePgDatabase<typeof schema> = new Proxy({} as any, {
 	get(target, prop) {
 		const actualDb = initializeDatabase();
 		if (!actualDb) {
@@ -67,15 +134,35 @@ export const db: NodePgDatabase<typeof schema> = new Proxy({} as NodePgDatabase<
 	}
 });
 
-// Export the pool for direct access if needed
+// Export instances for direct access if needed
+export const sqlite = _sqlite;
 export const pool = _pool;
 
+// Helper functions
+export function isPostgreSQL(): boolean {
+	const databaseUrl = process.env.DATABASE_URL || 'sqlite:./dev.db';
+	return !databaseUrl.startsWith('sqlite:') && process.env.NODE_ENV !== 'development';
+}
+
+export function isSQLite(): boolean {
+	return !isPostgreSQL();
+}
+
+export function hasVectorSearch(): boolean {
+	return isPostgreSQL() && Boolean(process.env.QDRANT_URL);
+}
+
 // Graceful shutdown
-async function gracefulShutdown() {
+function gracefulShutdown() {
+	if (_sqlite) {
+		console.log('Closing SQLite database...');
+		_sqlite.close();
+		console.log('✅ SQLite database closed.');
+	}
 	if (_pool) {
-		console.log('Closing database pool...');
-		await _pool.end();
-		console.log('Database pool closed.');
+		console.log('Closing PostgreSQL pool...');
+		_pool.end();
+		console.log('✅ PostgreSQL pool closed.');
 	}
 }
 

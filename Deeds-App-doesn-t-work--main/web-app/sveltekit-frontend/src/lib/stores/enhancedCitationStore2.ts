@@ -512,6 +512,11 @@ class EnhancedCitationStore {
     return enhancedCitation;
   }
 
+  // Add notification (public method)
+  addNotification(notification: Omit<NotificationState, 'id' | 'timestamp'>) {
+    this.showNotification(notification);
+  }
+
   // Export to PDF using Playwright
   async exportToPDF(reportId: string, options: {
     includeCanvas?: boolean;

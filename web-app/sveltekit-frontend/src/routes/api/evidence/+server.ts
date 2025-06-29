@@ -1,61 +1,49 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
+import { db } from '$lib/server/db';
+import { evidence } from '$lib/server/db/schema';
+import { randomUUID } from 'crypto';
+import { desc } from 'drizzle-orm';
 
 export const GET: RequestHandler = async () => {
   try {
-    // Mock evidence data - replace with actual database query
-    const evidence = [
-      {
-        id: '1',
-        title: 'Surveillance Video - Main Street',
-        type: 'video',
-        caseId: '1',
-        uploadedBy: 'Officer Smith',
-        uploadedAt: new Date().toISOString(),
-        description: 'Security footage from the incident location',
-        status: 'verified'
-      },
-      {
-        id: '2',
-        title: 'Witness Statement - John Doe',
-        type: 'document',
-        caseId: '1',
-        uploadedBy: 'Detective Johnson',
-        uploadedAt: new Date(Date.now() - 3600000).toISOString(),
-        description: 'Written statement from key witness',
-        status: 'pending'
-      },
-      {
-        id: '3',
-        title: 'Fingerprint Analysis',
-        type: 'forensic',
-        caseId: '2',
-        uploadedBy: 'Lab Tech Davis',
-        uploadedAt: new Date(Date.now() - 7200000).toISOString(),
-        description: 'Fingerprint analysis results',
-        status: 'verified'
-      }
-    ];
-
-    return json(evidence);
+    // Fetch all evidence from the database, newest first
+    const allEvidence = await db.select().from(evidence).orderBy(desc(evidence.uploadedAt));
+    return json(allEvidence);
   } catch (error) {
     console.error('Error fetching evidence:', error);
     return json({ error: 'Failed to fetch evidence' }, { status: 500 });
   }
 };
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
   try {
     const data = await request.json();
-    
-    // Mock response - replace with actual database insertion
+    const user = locals.user;
+    if (!user) {
+      return json({ error: 'Not authenticated' }, { status: 401 });
+    }
+    const id = randomUUID();
+    const now = new Date();
     const newEvidence = {
-      id: Math.random().toString(36).substr(2, 9),
-      ...data,
-      uploadedAt: new Date().toISOString(),
-      status: 'pending'
+      id,
+      title: data.title,
+      description: data.description,
+      caseId: data.caseId,
+      criminalId: data.criminalId || null,
+      evidenceType: data.evidenceType || data.fileType || 'document',
+      fileUrl: data.fileUrl || null,
+      fileType: data.fileType || null,
+      fileSize: data.fileSize || null,
+      tags: data.tags || [],
+      uploadedBy: user.id,
+      uploadedAt: now,
+      updatedAt: now,
+      fileName: data.fileName || null,
+      summary: data.summary || null,
+      aiSummary: data.aiSummary || null
     };
-
+    await db.insert(evidence).values(newEvidence);
     return json(newEvidence, { status: 201 });
   } catch (error) {
     console.error('Error creating evidence:', error);

@@ -16,7 +16,7 @@ export async function createSession(token: string, userId: string) {
   const [session] = await db.insert(sessions).values({
     id: token,
     userId,
-    expiresAt: expiresAt.toISOString()
+    expiresAt: expiresAt
   }).returning();
   
   return session;
@@ -49,7 +49,7 @@ export async function validateSessionToken(token: string) {
     // Refresh session if it's close to expiring
     if (Date.now() >= expiresAtTime - 1000 * 60 * 60 * 24 * 15) {
       const newExpiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
-      session.expiresAt = newExpiresAt.toISOString();
+      session.expiresAt = newExpiresAt;
       await db.update(sessions)
         .set({ expiresAt: session.expiresAt })
         .where(eq(sessions.id, token));

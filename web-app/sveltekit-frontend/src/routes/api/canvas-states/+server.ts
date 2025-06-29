@@ -19,9 +19,14 @@ export async function GET({ url, locals }: RequestEvent) {
 
 		if (canvasId) {
 			// Get specific canvas state
+			const canvasIdNumber = parseInt(canvasId, 10);
+			if (isNaN(canvasIdNumber)) {
+				return json({ error: 'Invalid canvas ID' }, { status: 400 });
+			}
+			
 			const [canvasState] = await db.select()
 				.from(canvasStates)
-				.where(eq(canvasStates.id, canvasId))
+				.where(eq(canvasStates.id, canvasIdNumber))
 				.limit(1);
 
 			if (!canvasState) {
@@ -59,13 +64,14 @@ export async function POST({ request, locals }: RequestEvent) {
 		const data = await request.json();
 		
 		// Validate required fields
-		if (!data.reportId || !data.canvasData) {
-			return json({ error: 'Report ID and canvas data are required' }, { status: 400 });
+		if (!data.reportId || !data.canvasData || !data.caseId) {
+			return json({ error: 'Report ID, case ID and canvas data are required' }, { status: 400 });
 		}
 
 		const canvasStateData = {
 			title: data.title || 'Untitled Canvas',
 			reportId: data.reportId,
+			caseId: data.caseId,
 			canvasData: data.canvasData,
 			thumbnailUrl: data.thumbnailUrl || null,
 			dimensions: data.dimensions || { width: 800, height: 600 },
@@ -150,10 +156,15 @@ export async function DELETE({ url }: RequestEvent) {
 			return json({ error: 'Canvas state ID is required' }, { status: 400 });
 		}
 
+		const canvasIdNumber = parseInt(canvasId, 10);
+		if (isNaN(canvasIdNumber)) {
+			return json({ error: 'Invalid canvas ID' }, { status: 400 });
+		}
+
 		// Check if canvas state exists
 		const existingCanvasState = await db.select()
 			.from(canvasStates)
-			.where(eq(canvasStates.id, canvasId))
+			.where(eq(canvasStates.id, canvasIdNumber))
 			.limit(1);
 
 		if (!existingCanvasState.length) {
@@ -161,7 +172,7 @@ export async function DELETE({ url }: RequestEvent) {
 		}
 
 		// Delete the canvas state
-		await db.delete(canvasStates).where(eq(canvasStates.id, canvasId));
+		await db.delete(canvasStates).where(eq(canvasStates.id, canvasIdNumber));
 
 		return json({ success: true });
 	} catch (error) {

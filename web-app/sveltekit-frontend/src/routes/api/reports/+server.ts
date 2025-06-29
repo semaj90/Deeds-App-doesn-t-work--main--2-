@@ -100,6 +100,7 @@ export async function POST({ request, locals }: RequestEvent) {
 			content: data.content || '',
 			summary: data.summary || '',
 			caseId: data.caseId,
+			type: data.reportType || data.type || 'prosecution_memo',
 			reportType: data.reportType || 'prosecution_memo',
 			status: data.status || 'draft',
 			confidentialityLevel: data.confidentialityLevel || 'restricted',

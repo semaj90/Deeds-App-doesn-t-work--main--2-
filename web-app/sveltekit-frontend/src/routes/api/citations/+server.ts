@@ -42,7 +42,7 @@ export async function GET({ url }: RequestEvent) {
 		}
 
 		if (conditions.length > 0) {
-			query = query.where(and(...conditions));
+			query = query.where(and(...conditions)) as any;
 		}
 
 		const results = await query

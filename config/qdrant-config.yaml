@@ -1,0 +1,53 @@
+# Qdrant configuration optimized for memory usage and performance
+# This configuration balances search speed with memory efficiency
+
+service:
+  max_request_size_mb: 32
+  max_workers: 2
+  enable_cors: true
+
+storage:
+  # Memory optimization settings
+  storage_path: "/qdrant/storage"
+  snapshots_path: "/qdrant/snapshots"
+  
+  # Performance vs memory tradeoffs
+  optimizers:
+    # Reduce memory by limiting concurrent optimizations
+    max_segment_size: 20000
+    indexing_threshold: 20000
+    flush_interval_sec: 5
+    max_optimization_threads: 1
+  
+  # Write-ahead log settings
+  wal:
+    wal_capacity_mb: 32
+    wal_segments_ahead: 2
+
+cluster:
+  enabled: false
+
+telemetry:
+  disabled: true
+
+# Collection-specific configurations will be set via API
+collections:
+  default:
+    # HNSW parameters for balanced performance
+    hnsw_config:
+      m: 16
+      ef_construct: 100
+      full_scan_threshold: 10000
+      max_indexing_threads: 1
+    
+    # Quantization for memory efficiency
+    quantization_config:
+      scalar:
+        type: "int8"
+        quantile: 0.99
+    
+    # Optimizer settings
+    optimizer_config:
+      default_segment_number: 2
+      max_segment_size: 20000
+      indexing_threshold: 20000

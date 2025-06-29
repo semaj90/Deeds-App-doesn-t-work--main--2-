@@ -6,6 +6,7 @@
   import type { PageData } from './$types';
   import { userSessionStore } from '$lib/auth/userStore';
   import '$lib/components/app.css';
+  import 'uno.css';
 
   export let data: PageData;
 

@@ -1,7 +1,18 @@
-import { signOut } from '$lib/server/auth'; // Use signOut from your main auth setup
 import { redirect } from '@sveltejs/kit';
+import { invalidateSession, deleteSessionTokenCookie } from '../../lib/server/session';
+import type { RequestEvent } from '@sveltejs/kit';
 
-export async function GET({ request }) {
-    await signOut(request); // Auth.js signOut handles cookie clearing etc.
-    throw redirect(302, '/login'); // Redirect to login page
+export async function GET(event: RequestEvent) {
+  const sessionToken = event.cookies.get('session');
+  
+  if (sessionToken) {
+    // Invalidate the session in the database
+    await invalidateSession(sessionToken);
+  }
+  
+  // Clear the session cookie
+  deleteSessionTokenCookie(event);
+  
+  // Redirect to login page
+  throw redirect(302, '/login');
 }

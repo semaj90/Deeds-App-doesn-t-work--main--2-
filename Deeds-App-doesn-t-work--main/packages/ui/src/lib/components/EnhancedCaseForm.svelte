@@ -1,6 +1,5 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
-  import { page } from '$app/stores';
   import Button from './Button.svelte';
   import Card from './Card.svelte';
 
@@ -131,27 +130,29 @@
 
     <!-- Priority -->
     <div class="form-group mb-3">
-      <label class="form-label fw-semibold">
-        <i class="bi bi-exclamation-triangle me-1"></i>
-        Priority Level
-      </label>
-      <div class="d-flex gap-2 flex-wrap">
-        {#each priorityLevels as level}
-          <div class="form-check">
-            <input
-              class="form-check-input"
-              type="radio"
-              name="priority"
-              id="priority-{level.value}"
-              value={level.value}
-              bind:group={priority}
-            />
-            <label class="form-check-label badge bg-{level.color}" for="priority-{level.value}">
-              {level.label}
-            </label>
-          </div>
-        {/each}
-      </div>
+      <fieldset>
+        <legend class="form-label fw-semibold">
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          Priority Level
+        </legend>
+        <div class="d-flex gap-2 flex-wrap">
+          {#each priorityLevels as level}
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="priority"
+                id="priority-{level.value}"
+                value={level.value}
+                bind:group={priority}
+              />
+              <label class="form-check-label badge bg-{level.color}" for="priority-{level.value}">
+                {level.label}
+              </label>
+            </div>
+          {/each}
+        </div>
+      </fieldset>
     </div>
 
     <!-- Description -->
@@ -178,7 +179,7 @@
 
     <!-- Tags -->
     <div class="form-group mb-4">
-      <label class="form-label fw-semibold">
+      <label for="tag-input" class="form-label fw-semibold">
         <i class="bi bi-tags me-1"></i>
         Tags
       </label>
@@ -187,6 +188,7 @@
         <div class="input-group mb-2">
           <input
             type="text"
+            id="tag-input"
             class="form-control"
             placeholder="Add a tag..."
             bind:value={newTag}
@@ -324,5 +326,21 @@
   .spinner-border-sm {
     width: 1rem;
     height: 1rem;
+  }
+
+  /* Fieldset styling for priority section */
+  fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  fieldset legend {
+    float: none;
+    width: auto;
+    padding: 0;
+    margin-bottom: 0.5rem;
+    font-size: inherit;
+    line-height: inherit;
   }
 </style>

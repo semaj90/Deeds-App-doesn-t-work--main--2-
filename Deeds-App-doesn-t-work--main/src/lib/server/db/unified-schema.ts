@@ -344,3 +344,14 @@ export const caseActivitiesRelations = relations(caseActivities, ({ one }) => ({
     relationName: 'createdBy',
   }),
 }));
+
+// === TYPE EXPORTS ===
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;
+export type Profile = typeof profiles.$inferSelect;
+export type Criminal = typeof criminals.$inferSelect;
+export type Case = typeof cases.$inferSelect;
+export type Evidence = typeof evidence.$inferSelect;
+export type CaseActivity = typeof caseActivities.$inferSelect;

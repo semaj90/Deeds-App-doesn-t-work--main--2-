@@ -306,7 +306,6 @@ FALLBACK_KEYWORD_EXTRACTION=true
 
 ### Performance Optimization:
 - GPU acceleration for LLM inference
-- Redis caching for search results
 - CDN for static evidence files
 
 ## 🎉 Success Metrics

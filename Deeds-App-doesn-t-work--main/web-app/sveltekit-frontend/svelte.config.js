@@ -14,8 +14,8 @@ const config = {
 			// default options are fine
 		}),
 		alias: {
-			'$ui/*': '../../../packages/ui/src/lib/*',
-			'$lib/*': '../../../packages/lib/src/*'
+			'$ui/*': '../../../packages/ui/src/lib/*'
+			// $lib is handled automatically by SvelteKit and points to src/lib
 		}
 	}
 };

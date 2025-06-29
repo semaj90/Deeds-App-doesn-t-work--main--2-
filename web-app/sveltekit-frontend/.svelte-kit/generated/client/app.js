@@ -19,7 +19,17 @@ export const nodes = [
 	() => import('./nodes/15'),
 	() => import('./nodes/16'),
 	() => import('./nodes/17'),
-	() => import('./nodes/18')
+	() => import('./nodes/18'),
+	() => import('./nodes/19'),
+	() => import('./nodes/20'),
+	() => import('./nodes/21'),
+	() => import('./nodes/22'),
+	() => import('./nodes/23'),
+	() => import('./nodes/24'),
+	() => import('./nodes/25'),
+	() => import('./nodes/26'),
+	() => import('./nodes/27'),
+	() => import('./nodes/28')
 ];
 
 export const server_loads = [0];
@@ -28,20 +38,30 @@ export const dictionary = {
 		"/": [2],
 		"/ai-assistant": [4],
 		"/ai": [3],
-		"/cases": [~5],
-		"/cases/new": [~6],
-		"/cases/[id]": [~7],
-		"/dashboard": [~8],
-		"/evidence": [9],
-		"/law": [10],
-		"/login": [11],
-		"/logout": [12],
-		"/original-home": [13],
-		"/profile": [~14],
-		"/register": [~15],
-		"/report-builder": [16],
-		"/reports": [17],
-		"/ui-demo": [18]
+		"/bits-uno-demo": [5],
+		"/cases": [~6],
+		"/cases/new": [~7],
+		"/cases/[id]": [~8],
+		"/dashboard": [~9],
+		"/demo": [10],
+		"/editor": [11],
+		"/evidence": [12],
+		"/evidence/hash": [13],
+		"/frameworks-demo": [14],
+		"/interactive-canvas": [~15],
+		"/law": [16],
+		"/local-ai-demo": [17],
+		"/login": [18],
+		"/logout": [19],
+		"/original-home": [20],
+		"/profile": [~21],
+		"/rag-demo": [22],
+		"/register": [~23],
+		"/report-builder": [24],
+		"/reports": [25],
+		"/test-ai-ask": [26],
+		"/test-gemma3": [27],
+		"/ui-demo": [28]
 	};
 
 export const hooks = {

@@ -1,6 +1,6 @@
 <script lang="ts">  import { createEventDispatcher, onMount, tick } from 'svelte';
-  import { nlpClient } from 'packages/lib/src/nlp/client';
-  import type { CaseAnalysis } from 'packages/lib/src/nlp/types';
+  import { nlpClient } from '$lib/nlp/client';
+  import type { CaseAnalysis } from '$lib/nlp/types';
     export let value: string = '';
   export let placeholder: string = 'Start typing...';
   export let category: string = ''; // 'opening', 'closing', 'evidence_description', etc.

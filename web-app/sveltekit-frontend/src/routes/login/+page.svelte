@@ -6,6 +6,9 @@
   let email = '';
   let password = '';
   let errorMessage = '';
+  
+  // Check if user was redirected from registration
+  $: showRegistrationSuccess = $page.url.searchParams.get('registered') === 'true';
 
   // Demo user credentials
   const demoUsers = [
@@ -18,6 +21,8 @@
     loading = true;
     errorMessage = '';
 
+    console.log('Attempting login with:', { email, password: '***' });
+
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -27,16 +32,21 @@
         body: JSON.stringify({ email, password })
       });
 
+      console.log('Login response status:', response.status);
+
       if (response.ok) {
         const result = await response.json();
+        console.log('Login successful:', result);
         // Redirect to dashboard or intended page
         const redirectTo = $page.url.searchParams.get('from') || '/dashboard';
         window.location.href = redirectTo;
       } else {
         const error = await response.json();
-        errorMessage = error.message || 'Login failed';
+        console.error('Login failed:', error);
+        errorMessage = error.error || error.message || 'Login failed';
       }
     } catch (error) {
+      console.error('Network error:', error);
       errorMessage = 'Network error. Please try again.';
     } finally {
       loading = false;
@@ -98,6 +108,12 @@
         </header>
         
         <form on:submit={handleSubmit}>
+          {#if showRegistrationSuccess}
+            <div class="success-alert" role="alert">
+              <strong>Registration Successful!</strong> Your account has been created. Please sign in below.
+            </div>
+          {/if}
+          
           {#if errorMessage}
             <div class="error-alert" role="alert">
               <strong>Error:</strong> {errorMessage}
@@ -109,6 +125,7 @@
             <input
               type="email"
               id="email"
+              name="email"
               bind:value={email}
               placeholder="prosecutor@example.com"
               required
@@ -122,6 +139,7 @@
             <input
               type="password"
               id="password"
+              name="password"
               bind:value={password}
               placeholder="••••••••"
               required
@@ -238,6 +256,15 @@
     border: 1px solid var(--pico-del-color);
     border-radius: var(--pico-border-radius);
     color: var(--pico-del-color);
+  }
+  
+  .success-alert {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: var(--pico-ins-background-color);
+    border: 1px solid var(--pico-ins-color);
+    border-radius: var(--pico-border-radius);
+    color: var(--pico-ins-color);
   }
   
   .auth-form footer {

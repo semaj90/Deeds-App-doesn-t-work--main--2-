@@ -3,8 +3,9 @@
     import { page } from '$app/stores';
     import { enhance } from '$app/forms';
     import type { PageData } from './$types';
+    import type { DashboardData } from './types';
 
-    export let data: PageData;
+    export let data: DashboardData;
 
     // Helper function to format date
     function formatDate(date: string | Date) {
@@ -79,19 +80,19 @@
     <!-- Dashboard Stats -->
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-value">{data.dashboardStats.totalCases}</div>
+            <div class="stat-value">{data.dashboardStats?.totalCases || 0}</div>
             <div class="stat-label">Total Cases</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">{data.dashboardStats.openCases}</div>
+            <div class="stat-value">{data.dashboardStats?.openCases || 0}</div>
             <div class="stat-label">Open Cases</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">{data.dashboardStats.totalCriminals}</div>
+            <div class="stat-value">{data.dashboardStats?.totalCriminals || 0}</div>
             <div class="stat-label">Total Criminals</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">{data.dashboardStats.activeCriminals}</div>
+            <div class="stat-value">{data.dashboardStats?.activeCriminals || 0}</div>
             <div class="stat-label">High Threat</div>
         </div>
     </div>
@@ -101,14 +102,14 @@
         <div class="search-results">
             <h2>Search Results for "{data.searchTerm}"</h2>
             
-            {#if data.searchResults.cases.length > 0 || data.searchResults.criminals.length > 0}
+            {#if (data.searchResults?.cases?.length ?? 0) > 0 || (data.searchResults?.criminals?.length ?? 0) > 0}
                 <div class="results-grid">
                     <!-- Case Results -->
-                    {#if data.searchResults.cases.length > 0}
+                    {#if (data.searchResults?.cases?.length ?? 0) > 0}
                         <div class="results-section">
-                            <h3>Cases ({data.searchResults.cases.length})</h3>
+                            <h3>Cases ({data.searchResults?.cases?.length ?? 0})</h3>
                             <div class="case-list">
-                                {#each data.searchResults.cases as case_}
+                                {#each data.searchResults?.cases ?? [] as case_}
                                     <div class="case-card">
                                         <div class="case-header">
                                             <span class="case-number">{case_.caseNumber}</span>
@@ -127,17 +128,17 @@
                     {/if}
 
                     <!-- Criminal Results -->
-                    {#if data.searchResults.criminals.length > 0}
+                    {#if (data.searchResults?.criminals?.length ?? 0) > 0}
                         <div class="results-section">
-                            <h3>Criminals ({data.searchResults.criminals.length})</h3>
+                            <h3>Criminals ({data.searchResults?.criminals?.length ?? 0})</h3>
                             <div class="criminal-list">
-                                {#each data.searchResults.criminals as criminal}
+                                {#each data.searchResults?.criminals ?? [] as criminal}
                                     <div class="criminal-card">
                                         <div class="criminal-header">
                                             <span class="threat-badge {getThreatColor(criminal.threatLevel)}">{criminal.threatLevel}</span>
                                         </div>
                                         <h4><a href="/criminals/{criminal.id}">{criminal.firstName} {criminal.lastName}</a></h4>
-                                        {#if criminal.aliases && criminal.aliases.length > 0}
+                                        {#if Array.isArray(criminal.aliases) && criminal.aliases.length > 0}
                                             <p class="aliases">Aliases: {criminal.aliases.join(', ')}</p>
                                         {/if}
                                         <div class="criminal-meta">
@@ -227,7 +228,7 @@
                                 <span class="threat-badge {getThreatColor(criminal.threatLevel)}">{criminal.threatLevel}</span>
                             </div>
                             <h4><a href="/criminals/{criminal.id}">{criminal.firstName} {criminal.lastName}</a></h4>
-                            {#if criminal.aliases && criminal.aliases.length > 0}
+                            {#if Array.isArray(criminal.aliases) && criminal.aliases.length > 0}
                                 <p class="aliases">Aliases: {criminal.aliases.join(', ')}</p>
                             {/if}
                             <div class="criminal-meta">
@@ -256,7 +257,7 @@
                                 <span class="threat-badge high">⚠️ HIGH THREAT</span>
                             </div>
                             <h4><a href="/criminals/{criminal.id}">{criminal.firstName} {criminal.lastName}</a></h4>
-                            {#if criminal.aliases && criminal.aliases.length > 0}
+                            {#if Array.isArray(criminal.aliases) && criminal.aliases.length > 0}
                                 <p class="aliases">Aliases: {criminal.aliases.join(', ')}</p>
                             {/if}
                             <div class="criminal-meta">
@@ -553,6 +554,7 @@
         margin-bottom: 12px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }

@@ -1,1 +1,1 @@
-export { default as component } from "../../../../src/routes/cases/+page.svelte";
+export { default as component } from "../../../../src/routes/bits-uno-demo/+page.svelte";

@@ -122,9 +122,7 @@ npx playwright test
 
 4. **Database Integration**
    ```bash
-   # Switch to SQLite for desktop app
-   npm install sqlite3 better-sqlite3
-   # Update Drizzle config for SQLite
+   # Update Drizzle 
    ```
 
 ### **Phase 3: Build Desktop App**
@@ -141,7 +139,7 @@ desktop-app/
 │   ├── static/
 │   ├── package.json
 │   └── svelte.config.js    # Updated for static adapter
-└── database/               # SQLite database files
+└── database/               # postgres database files
     └── app.db
 ```
 
@@ -188,8 +186,8 @@ npm install @sveltejs/adapter-static
 ```
 
 ### **Step 4: Plan Database Strategy**
-- **Decision Required**: PostgreSQL vs SQLite for desktop app
-- **Recommendation**: SQLite for easier .exe distribution
+- **Decision Required**: PostgreSQL for desktop app
+- **Recommendation**: postgres, docker easier .exe distribution
 - **Migration**: Update Drizzle config and schema
 
 ---
@@ -218,7 +216,7 @@ npm install @sveltejs/adapter-static
 2. **Database Name**: `prosecutor_app` (consistent across all configs)
 3. **One Working Copy**: The restored app in web-app\ is our single source of truth
 4. **Tauri Integration**: Will require copying this working app to desktop-app structure
-5. **Database Choice**: SQLite recommended for desktop distribution (.exe)
+5. **Database Choice**: postgres recommended for desktop distribution (.exe)
 
 ---
 

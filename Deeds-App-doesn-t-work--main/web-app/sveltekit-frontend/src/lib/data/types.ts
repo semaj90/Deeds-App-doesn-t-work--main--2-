@@ -1,5 +1,5 @@
 import type { InferSelectModel, InferInsertModel } from 'drizzle-orm';
-import { cases, criminals, statutes, users, evidence, crimes } from '$lib/server/db/schema';
+import { cases, criminals, statutes, users, evidence, crimes } from '../server/db/unified-schema';
 
 // --- Book type for Case Books feature, books are reports, user generated, look up best lightweight non cms, crud posts editor,
 // cases have report generator, with persons of interests, evidence, previous cases, that can be stored into interactive report

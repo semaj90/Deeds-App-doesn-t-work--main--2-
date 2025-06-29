@@ -13,7 +13,7 @@ CREATE TABLE "account" (
 	CONSTRAINT "account_provider_providerAccountId_pk" PRIMARY KEY("provider","providerAccountId")
 );
 --> statement-breakpoint
-CREATE TABLE "ai_analyses" (
+CREATE TABLE IF NOT EXISTS "ai_analyses" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"report_id" uuid,
 	"citation_id" uuid,

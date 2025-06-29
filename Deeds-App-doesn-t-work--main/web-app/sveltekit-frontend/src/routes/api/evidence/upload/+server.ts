@@ -60,7 +60,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const fileUrl = `/uploads/evidence/${uniqueFileName}`; // Public URL
     const filePath = path.join(uploadDir, uniqueFileName); // Server-side path
 
-    fs.writeFileSync(filePath, Buffer.from(await file.arrayBuffer()));
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+    fs.writeFileSync(filePath, fileBuffer);
+
+    // Calculate SHA256 hash for file integrity
+    const fileHash = createHash('sha256').update(fileBuffer).digest('hex');
 
     // --- Extract metadata from PDF ---
     let verdictDate: string | undefined = undefined;
@@ -100,17 +104,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     }
 
     const newEvidenceArr = await db.insert(evidence).values({
-      caseId,
       title: file.name,
       description: `Uploaded file: ${file.name}`,
-      evidenceType: file.type.split('/')[0], // e.g., 'application' -> 'document'
       fileUrl,
       fileName: file.name,
       fileSize: file.size,
-      mimeType: file.type,
+      hash: fileHash, // Store SHA256 hash for integrity verification
       uploadedBy: userId,
-      aiAnalysis: { summary: aiSummary, tags: aiTags },
-      aiTags: Array.isArray(aiTags) ? aiTags : [],
+      evidenceType: file.type || 'unknown',
     }).returning();
     const newEvidence = newEvidenceArr[0];
     uploaded.push({ ...newEvidence, matchedCriminals, extracted: { verdictDate, criminalNames } });

@@ -18,7 +18,7 @@
 - **Cases Page**: ✅ Lists cases, integrates with Tauri API
 - **Reports Page**: ✅ Created, lists reports, integrates with Tauri API
 - **Profile Page**: ✅ Working with avatar upload
-- **Responsive Design**: ✅ DaisyUI/TailwindCSS styling
+- **Responsive Design**: picocss, unocss, vanilla css
 
 ### ✅ Desktop App (Tauri) Status
 - **Tauri Configuration**: ✅ Created proper tauri.conf.json

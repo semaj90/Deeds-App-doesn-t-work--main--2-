@@ -6,6 +6,15 @@
   let bio = user?.profile?.bio || '';
   let saveStatus = '';
 
+  let user = $page.data?.user;
+  
+  // If no user, redirect to login
+  if (!user) {
+    goto('/login');
+  }
+</script>
+
+
   async function saveProfile() {
     saveStatus = 'Saving...';
     const res = await fetch('/api/profile', {
@@ -76,4 +85,31 @@
       </div>
     </div>
   </div>
+</div>
+
+          <div>
+            <label class="label">
+              <span class="label-text">Member Since</span>
+            </label>
+            <input 
+              type="text" 
+              class="input input-bordered w-full" 
+              value={user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'} 
+              readonly 
+            />
+          </div>
+        </div>
+        
+        <div class="card-actions justify-end mt-6">
+          <button class="btn btn-primary" onclick="alert('Profile editing coming soon!')">
+            Edit Profile
+          </button>
+        </div>
+      </div>
+    </div>
+  {:else}
+    <div class="alert alert-warning">
+      <span>Please log in to view your profile.</span>
+    </div>
+  {/if}
 </div>

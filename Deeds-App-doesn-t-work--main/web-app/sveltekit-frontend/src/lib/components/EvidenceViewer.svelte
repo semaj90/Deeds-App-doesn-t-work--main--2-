@@ -173,6 +173,7 @@
 					plainTextContent: analysis.analysis,
 					keyFindings: [],
 					confidence: 0.85,
+					reviewStatus: 'pending', // Added required property
 					generatedBy: 'ai',
 					createdAt: new Date(),
 					updatedAt: new Date(),
@@ -193,7 +194,7 @@
 	<div class="evidence-header p-4 bg-gray-50 dark:bg-gray-700 border-b">
 		<div class="flex items-center justify-between">
 			<div>				<h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-					{evidenceFile.fileName || evidenceFile.filename}
+					{evidenceFile.fileName || evidenceFile.fileName}
 				</h3>
 				<p class="text-sm text-gray-600 dark:text-gray-300">
 					{(evidenceFile.fileType || evidenceFile.mimeType)?.toUpperCase()} • {Math.round(evidenceFile.fileSize / 1024)} KB
@@ -229,7 +230,7 @@
 		{:else if isImage}			<img
 				bind:this={mediaElement}
 				src={evidenceFile.filePath}
-				alt={evidenceFile.fileName || evidenceFile.filename}
+				alt={evidenceFile.fileName || evidenceFile.fileName}
 				class="w-full h-auto max-h-96 object-contain bg-gray-100 dark:bg-gray-700"
 			/>
 		{:else if isAudio}
@@ -250,7 +251,7 @@
 					Document preview not available. Click to download.
 				</p>				<a
 					href={evidenceFile.filePath}
-					download={evidenceFile.fileName || evidenceFile.filename}
+					download={evidenceFile.fileName || evidenceFile.fileName}
 					class="inline-block mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
 				>
 					Download Document

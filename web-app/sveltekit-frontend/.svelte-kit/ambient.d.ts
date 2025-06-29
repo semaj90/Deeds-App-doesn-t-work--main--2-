@@ -26,12 +26,23 @@
  * ```
  */
 declare module '$env/static/private' {
+	export const NODE_ENV: string;
 	export const DATABASE_URL: string;
-	export const POSTGRES_USER: string;
-	export const POSTGRES_PASSWORD: string;
-	export const POSTGRES_DB: string;
-	export const POSTGRES_HOST: string;
-	export const POSTGRES_PORT: string;
+	export const QDRANT_URL: string;
+	export const QDRANT_API_KEY: string;
+	export const REDIS_URL: string;
+	export const OPENAI_API_KEY: string;
+	export const VITE_APP_ENV: string;
+	export const VITE_API_URL: string;
+	export const OLLAMA_URL: string;
+	export const EMBEDDING_MODEL: string;
+	export const EMBEDDING_DIMENSION: string;
+	export const CACHE_TYPE: string;
+	export const LOKI_DB_PATH: string;
+	export const VECTOR_SEARCH_THRESHOLD: string;
+	export const VECTOR_SEARCH_LIMIT: string;
+	export const VECTOR_SEARCH_CACHE_TTL: string;
+	export const ENABLE_XSTATE_DEVTOOLS: string;
 	export const ALLUSERSPROFILE: string;
 	export const APPDATA: string;
 	export const BUNDLED_DEBUGPY_PATH: string;
@@ -64,9 +75,6 @@ declare module '$env/static/private' {
 	export const MSMPI_BENCHMARKS: string;
 	export const MSMPI_BIN: string;
 	export const NODE: string;
-	export const NODE_ENV: string;
-	export const NODE_EXE: string;
-	export const NPM_CLI_JS: string;
 	export const npm_command: string;
 	export const npm_config_cache: string;
 	export const npm_config_globalconfig: string;
@@ -86,8 +94,6 @@ declare module '$env/static/private' {
 	export const npm_package_json: string;
 	export const npm_package_name: string;
 	export const npm_package_version: string;
-	export const NPM_PREFIX_JS: string;
-	export const NPM_PREFIX_NPM_CLI_JS: string;
 	export const NUMBER_OF_PROCESSORS: string;
 	export const OneDrive: string;
 	export const OneDriveConsumer: string;
@@ -117,6 +123,7 @@ declare module '$env/static/private' {
 	export const USERDOMAIN_ROAMINGPROFILE: string;
 	export const USERNAME: string;
 	export const USERPROFILE: string;
+	export const VITE_USER_NODE_ENV: string;
 	export const VSCODE_DEBUGPY_ADAPTER_ENDPOINTS: string;
 	export const VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 	export const VSCODE_GIT_ASKPASS_MAIN: string;
@@ -155,12 +162,23 @@ declare module '$env/static/public' {
  */
 declare module '$env/dynamic/private' {
 	export const env: {
+		NODE_ENV: string;
 		DATABASE_URL: string;
-		POSTGRES_USER: string;
-		POSTGRES_PASSWORD: string;
-		POSTGRES_DB: string;
-		POSTGRES_HOST: string;
-		POSTGRES_PORT: string;
+		QDRANT_URL: string;
+		QDRANT_API_KEY: string;
+		REDIS_URL: string;
+		OPENAI_API_KEY: string;
+		VITE_APP_ENV: string;
+		VITE_API_URL: string;
+		OLLAMA_URL: string;
+		EMBEDDING_MODEL: string;
+		EMBEDDING_DIMENSION: string;
+		CACHE_TYPE: string;
+		LOKI_DB_PATH: string;
+		VECTOR_SEARCH_THRESHOLD: string;
+		VECTOR_SEARCH_LIMIT: string;
+		VECTOR_SEARCH_CACHE_TTL: string;
+		ENABLE_XSTATE_DEVTOOLS: string;
 		ALLUSERSPROFILE: string;
 		APPDATA: string;
 		BUNDLED_DEBUGPY_PATH: string;
@@ -193,9 +211,6 @@ declare module '$env/dynamic/private' {
 		MSMPI_BENCHMARKS: string;
 		MSMPI_BIN: string;
 		NODE: string;
-		NODE_ENV: string;
-		NODE_EXE: string;
-		NPM_CLI_JS: string;
 		npm_command: string;
 		npm_config_cache: string;
 		npm_config_globalconfig: string;
@@ -215,8 +230,6 @@ declare module '$env/dynamic/private' {
 		npm_package_json: string;
 		npm_package_name: string;
 		npm_package_version: string;
-		NPM_PREFIX_JS: string;
-		NPM_PREFIX_NPM_CLI_JS: string;
 		NUMBER_OF_PROCESSORS: string;
 		OneDrive: string;
 		OneDriveConsumer: string;
@@ -246,6 +259,7 @@ declare module '$env/dynamic/private' {
 		USERDOMAIN_ROAMINGPROFILE: string;
 		USERNAME: string;
 		USERPROFILE: string;
+		VITE_USER_NODE_ENV: string;
 		VSCODE_DEBUGPY_ADAPTER_ENDPOINTS: string;
 		VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 		VSCODE_GIT_ASKPASS_MAIN: string;

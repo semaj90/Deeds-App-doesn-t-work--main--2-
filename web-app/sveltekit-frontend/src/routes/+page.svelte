@@ -59,13 +59,13 @@
             </div>
             <div class="card-body">
               <div class="form-group">
-                <label class="form-label">Case Number</label>
-                <input type="text" class="form-input" value="CAS-2025-001234" readonly />
+                <label class="form-label" for="case-number">Case Number</label>
+                <input type="text" id="case-number" class="form-input" value="CAS-2025-001234" readonly />
               </div>
               
               <div class="form-group">
-                <label class="form-label">Case Status</label>
-                <select class="form-select">
+                <label class="form-label" for="case-status">Case Status</label>
+                <select id="case-status" class="form-select">
                   <option>Active Investigation</option>
                   <option>Pending Review</option>
                   <option>Closed</option>
@@ -73,8 +73,8 @@
               </div>
               
               <div class="form-group">
-                <label class="form-label">Priority Level</label>
-                <div class="priority-indicators">
+                <label class="form-label" for="priority-level">Priority Level</label>
+                <div class="priority-indicators" id="priority-level" role="radiogroup">
                   <div class="priority-high evidence-item">High Priority Case</div>
                   <div class="priority-medium evidence-item">Medium Priority Case</div>
                   <div class="priority-low evidence-item">Low Priority Case</div>

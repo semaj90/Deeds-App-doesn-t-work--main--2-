@@ -69,11 +69,11 @@ async function createCase(page: Page) {
 
 async function checkPostgres() {
   const client = new Client({
-    user: 'prosecutor_user',
+    user: 'postgres',
     host: 'localhost',
     database: 'prosecutor_db',
-    password: 'secure_password',
-    port: 5432,
+    password: 'postgres',
+    port: 5433,
   });
   await client.connect();
   

@@ -108,12 +108,12 @@
                 <span class="badge {getStatusBadgeClass(report.status)}">{report.status}</span>
                 
                 <div class="dropdown dropdown-end">
-                  <button tabindex="0" class="btn btn-ghost btn-sm">
+                  <button tabindex="0" class="btn btn-ghost btn-sm" aria-label="Actions menu">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
                     </svg>
                   </button>
-                  <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                  <ul class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
                     <li><a href="/reports/{report.id}">View</a></li>
                     <li><a href="/reports/{report.id}/edit">Edit</a></li>
                     <li><a href="/api/reports/{report.id}/export/pdf" target="_blank">Export PDF</a></li>

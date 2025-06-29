@@ -7,6 +7,9 @@ const config = {
 	// for more information about preprocessors
 	preprocess: vitePreprocess({
 		postcss: true,
+		scss: {
+			prependData: `@import 'src/styles/variables.scss';`
+		}
 	}),
 
 	kit: {

@@ -9,11 +9,35 @@
 	"/ai": [
 		"src/routes/+layout.server.ts"
 	],
+	"/api/admin/health": [
+		"src/routes/api/admin/health/+server.ts"
+	],
+	"/api/admin/logs": [
+		"src/routes/api/admin/logs/+server.ts"
+	],
+	"/api/admin/metrics": [
+		"src/routes/api/admin/metrics/+server.ts"
+	],
+	"/api/ai/ask": [
+		"src/routes/api/ai/ask/+server.ts"
+	],
+	"/api/ai/health/cloud": [
+		"src/routes/api/ai/health/cloud/+server.ts"
+	],
+	"/api/ai/health/local": [
+		"src/routes/api/ai/health/local/+server.ts"
+	],
 	"/api/ai/prompt": [
 		"src/routes/api/ai/prompt/+server.ts"
 	],
 	"/api/ai/suggestions": [
 		"src/routes/api/ai/suggestions/+server.ts"
+	],
+	"/api/ai/suggest": [
+		"src/routes/api/ai/suggest/+server.ts"
+	],
+	"/api/ai/test-gemma3": [
+		"src/routes/api/ai/test-gemma3/+server.ts"
 	],
 	"/api/auth/login": [
 		"src/routes/api/auth/login/+server.ts"
@@ -26,6 +50,9 @@
 	],
 	"/api/canvas-states": [
 		"src/routes/api/canvas-states/+server.ts"
+	],
+	"/api/canvas/save": [
+		"src/routes/api/canvas/save/+server.ts"
 	],
 	"/api/cases": [
 		"src/routes/api/cases/+server.ts"
@@ -54,17 +81,47 @@
 	"/api/citations": [
 		"src/routes/api/citations/+server.ts"
 	],
+	"/api/embeddings": [
+		"src/routes/api/embeddings/+server.ts"
+	],
 	"/api/evidence": [
 		"src/routes/api/evidence/+server.ts"
 	],
+	"/api/evidence/hash": [
+		"src/routes/api/evidence/hash/+server.ts"
+	],
+	"/api/evidence/hash/bulk": [
+		"src/routes/api/evidence/hash/bulk/+server.ts"
+	],
+	"/api/evidence/hash/history": [
+		"src/routes/api/evidence/hash/history/+server.ts"
+	],
 	"/api/llm/chat": [
 		"src/routes/api/llm/chat/+server.ts"
+	],
+	"/api/qdrant": [
+		"src/routes/api/qdrant/+server.ts"
+	],
+	"/api/qdrant/tag": [
+		"src/routes/api/qdrant/tag/+server.ts"
 	],
 	"/api/reports": [
 		"src/routes/api/reports/+server.ts"
 	],
 	"/api/reports/[reportId]/export/pdf": [
 		"src/routes/api/reports/[reportId]/export/pdf/+server.ts"
+	],
+	"/api/search/advanced": [
+		"src/routes/api/search/advanced/+server.ts"
+	],
+	"/api/search/cases": [
+		"src/routes/api/search/cases/+server.ts"
+	],
+	"/api/search/evidence": [
+		"src/routes/api/search/evidence/+server.ts"
+	],
+	"/api/search/vector": [
+		"src/routes/api/search/vector/+server.ts"
 	],
 	"/api/statutes": [
 		"src/routes/api/statutes/+server.ts"
@@ -74,6 +131,9 @@
 	],
 	"/api/user/profile": [
 		"src/routes/api/user/profile/+server.ts"
+	],
+	"/bits-uno-demo": [
+		"src/routes/+layout.server.ts"
 	],
 	"/cases": [
 		"src/routes/cases/+page.server.ts",
@@ -91,10 +151,29 @@
 		"src/routes/dashboard/+page.server.ts",
 		"src/routes/+layout.server.ts"
 	],
+	"/demo": [
+		"src/routes/+layout.server.ts"
+	],
+	"/editor": [
+		"src/routes/+layout.server.ts"
+	],
 	"/evidence": [
 		"src/routes/+layout.server.ts"
 	],
+	"/evidence/hash": [
+		"src/routes/+layout.server.ts"
+	],
+	"/frameworks-demo": [
+		"src/routes/+layout.server.ts"
+	],
+	"/interactive-canvas": [
+		"src/routes/interactive-canvas/+page.server.ts",
+		"src/routes/+layout.server.ts"
+	],
 	"/law": [
+		"src/routes/+layout.server.ts"
+	],
+	"/local-ai-demo": [
 		"src/routes/+layout.server.ts"
 	],
 	"/login": [
@@ -110,6 +189,9 @@
 		"src/routes/profile/+page.server.ts",
 		"src/routes/+layout.server.ts"
 	],
+	"/rag-demo": [
+		"src/routes/+layout.server.ts"
+	],
 	"/register": [
 		"src/routes/register/+page.server.ts",
 		"src/routes/+layout.server.ts"
@@ -118,6 +200,12 @@
 		"src/routes/+layout.server.ts"
 	],
 	"/reports": [
+		"src/routes/+layout.server.ts"
+	],
+	"/test-ai-ask": [
+		"src/routes/+layout.server.ts"
+	],
+	"/test-gemma3": [
 		"src/routes/+layout.server.ts"
 	],
 	"/ui-demo": [

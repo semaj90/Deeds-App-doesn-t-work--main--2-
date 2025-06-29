@@ -20,6 +20,7 @@
     "studio": "npm run db:studio"
   },
   "devDependencies": {
+    "@types/fabric": "^5.3.10",
     "better-sqlite3": "^11.10.0",
     "drizzle-kit": "^0.31.1",
     "drizzle-orm": "^0.44.2",
@@ -27,6 +28,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^2.5.0",
+    "@types/better-sqlite3": "^7.6.13",
     "dotenv": "^16.5.0",
     "fabric": "^6.7.0",
     "node-fetch": "^3.3.2",

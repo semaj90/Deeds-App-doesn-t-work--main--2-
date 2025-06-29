@@ -45,9 +45,9 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 
     // For now, return a success response indicating PDF would be generated
     // In a real implementation, this would:
-    // 1. Generate PDF using a library like Puppeteer or PDFKit
+    // 1. Generate PDF using a library like PDFKit
     // 2. Store the PDF file
-    // 3. Return download URL or stream the PDF
+    // 3. Return download URL, localstorage or stream the PDF
     
     const pdfMetadata = {
       reportId: reportId,

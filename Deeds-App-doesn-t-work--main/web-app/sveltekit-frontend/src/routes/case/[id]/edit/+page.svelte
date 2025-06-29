@@ -19,9 +19,9 @@
         id: caseItem.id,
         title: caseItem.title,
         description: caseItem.description,
-        summary: caseItem.summary,
+        aiSummary: caseItem.aiSummary,
         status: caseItem.status,
-        date_opened: caseItem.dateOpened
+        createdAt: caseItem.createdAt
       });
       alert('Case updated successfully!');
       await goto(`/case/${caseItem.id}`);
@@ -59,8 +59,8 @@
     </div>
 
     <div class="mb-3">
-      <label for="summary" class="form-label">Summary</label>
-      <textarea class="form-control" id="summary" name="summary" bind:value={caseItem.summary} rows="5"></textarea>
+      <label for="aiSummary" class="form-label">AI Summary</label>
+      <textarea class="form-control" id="aiSummary" name="aiSummary" bind:value={caseItem.aiSummary} rows="5"></textarea>
     </div>
 
     <div class="mb-3">
@@ -73,8 +73,8 @@
     </div>
 
     <div class="mb-3">
-      <label for="date_opened" class="form-label">Date Opened</label>
-      <input type="date" class="form-control" id="date_opened" name="date_opened" bind:value={caseItem.dateOpened} required />
+      <label for="createdAt" class="form-label">Date Created</label>
+      <input type="date" class="form-control" id="createdAt" name="createdAt" bind:value={caseItem.createdAt} required />
     </div>
 
     <div class="mb-3">
@@ -82,35 +82,35 @@
       <textarea class="form-control" id="description" name="description" bind:value={caseItem.description} rows="5"></textarea>
     </div>
 
-    <!-- New fields for case management -->
+    <!-- Case management fields using valid schema properties -->
     <div class="mb-3">
-      <label for="verdict" class="form-label">Verdict</label>
-      <select class="form-select" id="verdict" name="verdict" bind:value={caseItem.verdict}>
-        <option value="">Select Verdict</option>
-        <option value="Guilty">Guilty</option>
-        <option value="Not Guilty">Not Guilty</option>
-        <option value="Pending">Pending</option>
+      <label for="priority" class="form-label">Priority</label>
+      <select class="form-select" id="priority" name="priority" bind:value={caseItem.priority}>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+        <option value="urgent">Urgent</option>
       </select>
     </div>
 
     <div class="mb-3">
-      <label for="courtDates" class="form-label">Court Dates (comma-separated)</label>
-      <input type="text" class="form-control" id="courtDates" name="courtDates" bind:value={caseItem.courtDates} />
+      <label for="category" class="form-label">Category</label>
+      <input type="text" class="form-control" id="category" name="category" bind:value={caseItem.category} />
     </div>
 
     <div class="mb-3">
-      <label for="linkedCriminals" class="form-label">Linked Criminals (comma-separated IDs)</label>
-      <input type="text" class="form-control" id="linkedCriminals" name="linkedCriminals" bind:value={caseItem.linkedCriminals} />
+      <label for="dangerScore" class="form-label">Danger Score (0-100)</label>
+      <input type="number" class="form-control" id="dangerScore" name="dangerScore" bind:value={caseItem.dangerScore} min="0" max="100" />
     </div>
 
     <div class="mb-3">
-      <label for="linkedCrimes" class="form-label">Linked Crimes (comma-separated IDs)</label>
-      <input type="text" class="form-control" id="linkedCrimes" name="linkedCrimes" bind:value={caseItem.linkedCrimes} />
+      <label for="location" class="form-label">Location</label>
+      <input type="text" class="form-control" id="location" name="location" bind:value={caseItem.location} />
     </div>
 
     <div class="mb-3">
-      <label for="notes" class="form-label">Notes</label>
-      <textarea class="form-control" id="notes" name="notes" bind:value={caseItem.notes} rows="5"></textarea>
+      <label for="jurisdiction" class="form-label">Jurisdiction</label>
+      <input type="text" class="form-control" id="jurisdiction" name="jurisdiction" bind:value={caseItem.jurisdiction} />
     </div>
 
     <div class="d-grid gap-2 d-md-flex justify-content-md-end">

@@ -1,0 +1,53 @@
+{
+  "models": {
+    "embedding": {
+      "name": "legal-bert-base-uncased",
+      "path": "./legal-bert",
+      "dimensions": 768,
+      "available": true,
+      "description": "Legal domain BERT model for embedding generation"
+    },
+    "chat": {
+      "name": "gemma-37b-q4",
+      "path": "./gemma37B_Q4_K_M",
+      "contextLength": 2048,
+      "available": true,
+      "description": "Quantized Gemma model for legal chat assistance"
+    },
+    "classification": {
+      "name": "legal-bert-classification",
+      "path": "./legal-bert",
+      "classes": ["contract", "evidence", "statute", "case_law", "regulation"],
+      "available": true,
+      "description": "Legal document classification model"
+    }
+  },
+  "development": {
+    "preferLocal": true,
+    "fallbackToCloud": true,
+    "autoDownload": false,
+    "enableDevtools": true
+  },
+  "paths": {
+    "modelsDir": "./models",
+    "cacheDir": "./cache",
+    "configFile": "./config/llm/local-config.json"
+  },
+  "performance": {
+    "maxConcurrentRequests": 3,
+    "cacheEnabled": true,
+    "cacheTTL": 3600,
+    "timeout": 30000
+  },
+  "integration": {
+    "wysiwyg": {
+      "enabled": true,
+      "features": ["citation", "summarization", "legal_analysis"]
+    },
+    "rag": {
+      "enabled": true,
+      "vectorStore": "qdrant",
+      "fallbackStore": "sqlite, postgres"
+    }
+  }
+}

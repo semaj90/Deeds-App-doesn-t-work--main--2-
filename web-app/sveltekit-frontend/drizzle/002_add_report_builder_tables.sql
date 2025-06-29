@@ -69,7 +69,7 @@ CREATE TABLE "canvas_states" (
 );
 
 -- AI Analyses table for storing AI-generated insights and suggestions
-CREATE TABLE "ai_analyses" (
+CREATE TABLE IF NOT EXISTS "ai_analyses" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"report_id" uuid,
 	"citation_id" uuid,

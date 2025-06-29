@@ -56,8 +56,8 @@ export const actions = {
           dangerScore: parseInt(data.get('dangerScore') as string) || 0,
           status: status,
           aiSummary: data.get('aiSummary') as string || null,
-          updatedAt: new Date().toISOString(),
-          closedAt: status === 'closed' ? new Date().toISOString() : null
+          updatedAt: new Date(),
+          closedAt: status === 'closed' ? new Date() : null
         })
         .where(eq(cases.id, caseId));
       

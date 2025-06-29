@@ -1,8 +1,9 @@
 import { db } from '$lib/server/db';
 import { users } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid'; // Import uuid
+import { v4 as uuidv4 } from 'uuid';
 import type { Actions } from './$types';
 
 const SALT_ROUNDS = 10;
@@ -23,9 +24,8 @@ export const actions: Actions = {
 		}
 
 		try {
-			const existingUser = await db.query.users.findFirst({
-				where: (usersTable, { eq }) => eq(usersTable.email, email),
-			});
+			const existingUserResults = await db.select().from(users).where(eq(users.email, email)).limit(1);
+			const existingUser = existingUserResults[0];
 
 			if (existingUser) {
 				return fail(400, { error: 'User with this email already exists.' });
@@ -33,11 +33,19 @@ export const actions: Actions = {
 
 			const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
+			// Split name into first and last name (simple split by space)
+			const nameParts = name.trim().split(' ');
+			const firstName = nameParts[0] || '';
+			const lastName = nameParts.slice(1).join(' ') || '';
+
 			await db.insert(users).values({
 				id: uuidv4(), // Generate a unique ID
-				name,
+				firstName,
+				lastName,
+				name, // Also store the full name
 				email,
 				hashedPassword,
+				role: 'prosecutor', // Default role
 			});
 
 		} catch (e) {

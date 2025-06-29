@@ -29,12 +29,20 @@
 <div class="container mx-auto px-4 py-8">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-3xl font-bold">Evidence Management</h1>
-    <a href="/evidence/upload" class="btn btn-primary">
-      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-      </svg>
-      Upload Evidence
-    </a>
+    <div class="flex gap-3">
+      <a href="/evidence/hash" class="btn btn-outline">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Hash Verification
+      </a>
+      <a href="/evidence/upload" class="btn btn-primary">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+        </svg>
+        Upload Evidence
+      </a>
+    </div>
   </div>
 
   {#if loading}
@@ -64,7 +72,7 @@
         <div class="card bg-base-100 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">
-              {item.filename || 'Unknown File'}
+              {item.filename || item.fileName || 'Unknown File'}
               <div class="badge badge-secondary text-xs">{item.type || 'File'}</div>
             </h2>
             <p class="text-xs opacity-70">
@@ -72,13 +80,39 @@
             </p>
             {#if item.thumbnail}
               <figure class="mt-2">
-                <img src={item.thumbnail} alt={item.filename} class="w-full h-24 object-cover rounded" />
+                <img src={item.thumbnail} alt={item.filename || item.fileName} class="w-full h-24 object-cover rounded" />
               </figure>
             {/if}
+            
+            <!-- Hash Status -->
+            <div class="flex items-center gap-2 mt-2">
+              {#if item.hash}
+                <div class="badge badge-success badge-xs">
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  Hash Verified
+                </div>
+              {:else}
+                <div class="badge badge-warning badge-xs">
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                  </svg>
+                  No Hash
+                </div>
+              {/if}
+              {#if item.hash}
+                <code class="text-xs opacity-60 font-mono">{item.hash.substring(0, 8)}...</code>
+              {/if}
+            </div>
+            
             <div class="text-xs opacity-60 mt-2">
               Uploaded: {item.uploadedAt ? new Date(item.uploadedAt).toLocaleDateString() : 'Unknown'}
             </div>
             <div class="card-actions justify-end">
+              {#if item.hash}
+                <a href="/evidence/hash?hash={item.hash}" class="btn btn-ghost btn-xs">Verify</a>
+              {/if}
               <a href="/evidence/{item.id}" class="btn btn-primary btn-xs">View</a>
             </div>
           </div>

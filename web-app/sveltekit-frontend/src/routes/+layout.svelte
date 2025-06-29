@@ -1,11 +1,16 @@
 <script lang="ts">
   import '$lib/styles/unified.css';
+  import '../styles/main.scss';
   import 'uno.css';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import Settings from '$lib/components/Settings.svelte';
   import UserDropdown from '$lib/components/UserDropdown.svelte';
+  import Notifications from '$lib/components/ui/Notifications.svelte';
+  import ModalManager from '$lib/components/ui/ModalManager.svelte';
+  import { notifications } from '$lib/stores/notification';
+  import { modals } from '$lib/stores/modal';
   import { initializeTauri } from '$lib/tauri';
   
   let user = $page.data?.user;
@@ -103,3 +108,7 @@
   on:close={handleSettingsClose}
   on:save={handleSettingsSave}
 />
+
+<!-- Global UI Components -->
+<Notifications />
+<ModalManager />

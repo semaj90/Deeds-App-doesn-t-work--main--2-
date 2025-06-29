@@ -58,12 +58,12 @@
 
 ### **Phase 4: Tauri Integration**
 
-1.  **SQLite Bundling**: Place the SQLite database file (`sqlite.db`) in a known location within the `src-tauri/` directory (e.g., `src-tauri/assets/sqlite.db`) to be bundled with the app.
+
 2.  **Rust Authentication Crate**:
     *   Add `bcrypt` (or a similar hashing crate) to `src-tauri/Cargo.toml` for password verification.
     *   Create a Rust command `auth_login` in [`src-tauri/src/main.rs`](src-tauri/src/main.rs). This command will:
         *   Take username/email and password as arguments.
-        *   Connect to the bundled SQLite database.
+        *   Connect to the bundled postgres
         *   Retrieve the hashed password for the given user.
         *   Use the Rust `bcrypt` crate to verify the provided password against the stored hash.
         *   Return a success/failure status and potentially user role or a session token to the SvelteKit frontend.

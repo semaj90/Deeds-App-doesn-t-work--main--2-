@@ -25,6 +25,13 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
+export const sessions = pgTable('sessions', {
+  id: text('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at', { mode: 'date' }).notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
 // === THEMES & UI CUSTOMIZATION ===
 
 export const themes = pgTable('themes', {
@@ -289,6 +296,28 @@ export const canvasStates = pgTable('canvas_states', {
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
+// === CRIMES TABLE ===
+
+export const crimes = pgTable('crimes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  caseId: uuid('case_id').references(() => cases.id, { onDelete: 'cascade' }),
+  criminalId: uuid('criminal_id').references(() => criminals.id, { onDelete: 'cascade' }),
+  statuteId: uuid('statute_id').references(() => statutes.id),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  chargeLevel: varchar('charge_level', { length: 50 }),
+  status: varchar('status', { length: 50 }).default('pending').notNull(),
+  incidentDate: timestamp('incident_date', { mode: 'date' }),
+  arrestDate: timestamp('arrest_date', { mode: 'date' }),
+  filingDate: timestamp('filing_date', { mode: 'date' }),
+  notes: text('notes'),
+  aiSummary: text('ai_summary'),
+  metadata: jsonb('metadata').default({}).notNull(),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
 // === RELATIONSHIPS ===
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -390,6 +419,25 @@ export const canvasStatesRelations = relations(canvasStates, ({ one }) => ({
   case: one(cases, {
     fields: [canvasStates.caseId],
     references: [cases.id],
+  }),
+}));
+
+export const crimesRelations = relations(crimes, ({ one }) => ({
+  case: one(cases, {
+    fields: [crimes.caseId],
+    references: [cases.id],
+  }),
+  criminal: one(criminals, {
+    fields: [crimes.criminalId],
+    references: [criminals.id],
+  }),
+  statute: one(statutes, {
+    fields: [crimes.statuteId],
+    references: [statutes.id],
+  }),
+  createdBy: one(users, {
+    fields: [crimes.createdBy],
+    references: [users.id],
   }),
 }));
 

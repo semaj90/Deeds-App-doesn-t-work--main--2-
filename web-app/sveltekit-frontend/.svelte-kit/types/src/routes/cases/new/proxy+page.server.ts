@@ -21,10 +21,9 @@ export const actions = {
     const id = randomUUID();
     // Get session from Auth.js
     const user = locals.user;
-    const session = locals.session;
     const createdBy = user?.id;
     
-    if (!createdBy || !session) {
+    if (!createdBy) {
       return fail(401, { error: 'Not authenticated.' });
     }
     

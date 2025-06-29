@@ -4,23 +4,18 @@
 	import { goto } from '$app/navigation';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import { avatarStore } from '$lib/stores/avatarStore';
-	
-	let user = $page.data?.user;
+
+	let user = $page.data.user;
 	let profileForm = {
 		name: '',
 		email: '',
 		firstName: '',
 		lastName: ''
 	};
-	
+
 	let isUpdating = false;
 	let updateMessage = '';
-	
-	// If no user, redirect to login
-	if (!user) {
-		goto('/login');
-	}
-	
+
 	onMount(() => {
 		if (user) {
 			profileForm = {

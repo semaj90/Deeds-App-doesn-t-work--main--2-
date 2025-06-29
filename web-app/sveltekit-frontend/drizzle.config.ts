@@ -1,18 +1,31 @@
 import { defineConfig } from 'drizzle-kit';
+import dotenv from 'dotenv';
+
+// Load environment-specific config
+const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
+dotenv.config({ path: envFile });
+
+const databaseUrl = process.env.DATABASE_URL || 'sqlite:./dev.db';
+const isSQLite = databaseUrl.startsWith('sqlite:');
+
+console.log(`📊 Drizzle Config - Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`📊 Database: ${isSQLite ? 'SQLite' : 'PostgreSQL'}`);
 
 export default defineConfig({
-  // Use unified schema for consistent database structure
-  schema: './src/lib/server/db/schema.ts',
+  schema: isSQLite ? './src/lib/server/db/schema-sqlite.ts' : './src/lib/server/db/unified-schema.ts',
   out: './drizzle',
-  dialect: 'postgresql',
-  dbCredentials: {
-    host: process.env.DATABASE_HOST || 'localhost',
-    port: parseInt(process.env.DATABASE_PORT || '5433'),
-    user: process.env.DATABASE_USER || 'postgres',
-    password: process.env.DATABASE_PASSWORD || 'postgres',
-    database: process.env.DATABASE_NAME || 'prosecutor_db',
-    ssl: false,
-  },
-  strict: true,
+  dialect: isSQLite ? 'sqlite' : 'postgresql',
+  dbCredentials: isSQLite 
+    ? { url: databaseUrl.replace('sqlite:', '') }
+    : databaseUrl.startsWith('postgresql://') 
+      ? { url: databaseUrl }
+      : { 
+          host: 'localhost',
+          port: 5432,
+          user: 'postgres',
+          password: 'postgres',
+          database: 'prosecutor_db'
+        },
   verbose: true,
+  strict: true,
 });
